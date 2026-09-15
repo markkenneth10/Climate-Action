@@ -8,7 +8,7 @@ const path = require('path');
 const url = require('url');
 const crypto = require('crypto');
 
-const PORT = process.env.PORT || process.env.WEB_PORT || 3000;
+const PORT = (process.env.PORT && process.env.PORT !== '8080') ? process.env.PORT : (process.env.APP_PORT || 3000);
 const USER_PUBLIC_DIR = path.join(__dirname, 'public');
 const ADMIN_DIR = path.join(__dirname, 'admin');
 
@@ -21,9 +21,48 @@ const MIME_TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon'
 };
+
+// Uploads Directory & In-Memory Media Cache
+const UPLOADS_DIR = path.join(USER_PUBLIC_DIR, 'uploads');
+const uploadedFilesCache = new Map();
+
+function initUploadsCache() {
+  try {
+    if (!fs.existsSync(UPLOADS_DIR)) {
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    } else {
+      const files = fs.readdirSync(UPLOADS_DIR);
+      files.forEach(file => {
+        try {
+          const filePath = path.join(UPLOADS_DIR, file);
+          const stat = fs.statSync(filePath);
+          if (stat.isFile()) {
+            const ext = path.extname(file).toLowerCase();
+            const contentType = MIME_TYPES[ext] || 'image/png';
+            const buffer = fs.readFileSync(filePath);
+            uploadedFilesCache.set(`/uploads/${file}`, {
+              filename: file,
+              url: `/uploads/${file}`,
+              category: file.split('_')[0] || 'media',
+              buffer,
+              contentType,
+              size: buffer.length,
+              timestamp: stat.mtimeMs
+            });
+          }
+        } catch (_) {}
+      });
+    }
+  } catch (err) {
+    console.warn('Uploads directory init warning:', err.message);
+  }
+}
+initUploadsCache();
 
 // ==========================================
 // SESSION MANAGEMENT (ADMIN PORTAL)
@@ -103,8 +142,24 @@ let adminStore = [
   }
 ];
 
-// 2. Citizen Users (Clean state - authentic citizens register their accounts)
-let userStore = [];
+// 2. Citizen Users (Pre-configured active citizen and registration pool)
+let userStore = [
+  {
+    id: "citizen-mk-01",
+    email: "markkennethulgasan@gmail.com",
+    password: "password123",
+    name: "Mark Kenneth Ulgasan",
+    phone: "+63 917 888 2468",
+    barangay: "Barangay Makilas",
+    role: "citizen",
+    ecoPoints: 750,
+    level: "Climate Advocate",
+    badges: ["🎖️ Eco Warden", "🌳 Tree Protector", "🌊 Watershed Guardian"],
+    rank: 12,
+    status: "Active",
+    createdAt: Date.now() - 15 * 86400000
+  }
+];
 
 // 3. Website Configuration & CMS Content (Authoritative municipal climate information)
 let websiteConfig = {
@@ -113,6 +168,8 @@ let websiteConfig = {
   websiteLogo: "🌱",
   logoType: "emoji", // "emoji" or "image"
   logoImageUrl: "",
+  heroImageUrl: "",
+  aboutImageUrl: "",
   emergencyHotline: "(02) 8888-ECO",
   denrHotline: "#911-DENR",
   healthHotline: "(02) 8999-CLIMATE",
@@ -189,8 +246,139 @@ let userGuidesStore = [
   }
 ];
 
-// 7. Incident Reports Store (Clean baseline for verified citizen incident reports)
-let reportsStore = [];
+// 7. Incident Reports Store (Baseline verified citizen incident reports)
+let reportsStore = [
+  {
+    id: "CAR-2026-00128",
+    title: "Severe Stormwater Flooding Along Riverside Culvert",
+    category: "Flooding",
+    severity: "Critical",
+    barangay: "Barangay Makilas",
+    landmark: "Purok 4 Riverside Causeway near Spillway",
+    description: "Water levels rose above road level after heavy thunderstorm downpour due to clogged drainage culvert. Silt and plastic waste are obstructing water passage toward the river basin.",
+    photoUrl: "https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=800&q=80",
+    latitude: 14.6590,
+    longitude: 121.0540,
+    status: "Investigating",
+    submittedBy: "Mark Kenneth Ulgasan",
+    userEmail: "markkennethulgasan@gmail.com",
+    assignedTo: "CENRO Quick Response Team Alpha",
+    statusRemarks: "Field inspection dispatched at 10:45 AM. Backhoe scheduled for drainage declogging.",
+    inspectionNotes: "High silt volume confirmed. Eco-warden assigned for traffic rerouting.",
+    timeline: [
+      { step: "Report Submitted", date: "Sep 15, 2026 10:24 AM", done: true, remarks: "Incident logged via Citizen Portal." },
+      { step: "Verified by Barangay Eco-Warden", date: "Sep 15, 2026 10:35 AM", done: true, remarks: "Barangay Captain verified site severity." },
+      { step: "Assigned to CENRO", date: "Sep 15, 2026 10:40 AM", done: true, remarks: "Assigned to CENRO Field Response Team Alpha." },
+      { step: "Under Investigation", date: "Sep 15, 2026 11:00 AM", done: true, current: true, remarks: "Hydrology assessment in progress." },
+      { step: "Resolved", date: "Pending", done: false, remarks: "Awaiting culvert clearance completion." }
+    ],
+    timestamp: new Date("2026-09-15T10:24:00").getTime()
+  },
+  {
+    id: "CAR-2026-00127",
+    title: "Commercial Waste Dumping in Vacant Public Lot",
+    category: "Illegal Dumping",
+    severity: "High",
+    barangay: "Poblacion",
+    landmark: "Behind Central Public Market Alley 3",
+    description: "Multiple non-biodegradable sacks and rotten organic market refuse dumped overnight without municipal permit. Strong odor and pest swarms detected.",
+    photoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80",
+    latitude: 14.6515,
+    longitude: 121.0620,
+    status: "In Progress",
+    submittedBy: "Elena Santos",
+    userEmail: "elena.santos@gmail.com",
+    assignedTo: "Solid Waste Management Division",
+    statusRemarks: "Municipal dump truck on site collecting hazardous refuse. Violation notice served.",
+    inspectionNotes: "Commercial establishment identified via packaging stamps. Notice of Violation issued.",
+    timeline: [
+      { step: "Report Submitted", date: "Sep 14, 2026 04:12 PM", done: true, remarks: "Logged by citizen." },
+      { step: "Verified by Barangay Eco-Warden", date: "Sep 14, 2026 04:45 PM", done: true, remarks: "Evidence photographed." },
+      { step: "Assigned to CENRO", date: "Sep 14, 2026 05:10 PM", done: true, remarks: "Assigned to SWM Division." },
+      { step: "Under Investigation", date: "Sep 15, 2026 08:30 AM", done: true, remarks: "Clean-up team dispatched." },
+      { step: "Resolved", date: "In Progress", done: false, current: true, remarks: "Refuse extraction ongoing." }
+    ],
+    timestamp: new Date("2026-09-14T16:12:00").getTime()
+  },
+  {
+    id: "CAR-2026-00126",
+    title: "Oily Effluent Discharge into Malinis Creek Tributary",
+    category: "Water Pollution",
+    severity: "Critical",
+    barangay: "Lumbia",
+    landmark: "Beside Old Sawmill Bridge",
+    description: "Dark oily substance seen draining directly into the river tributary. Water surface shows rainbow sheen and foul petroleum odor.",
+    photoUrl: "https://images.unsplash.com/photo-1618083707368-b3823daa2726?auto=format&fit=crop&w=800&q=80",
+    latitude: 14.6620,
+    longitude: 121.0710,
+    status: "Resolved",
+    submittedBy: "Roberto Gomez",
+    userEmail: "roberto.gomez@gmail.com",
+    assignedTo: "DENR Environmental Quality Division",
+    statusRemarks: "Oil boom containment deployed. Auto repair shop fined ₱45,000 under RA 9275.",
+    inspectionNotes: "Water quality samples re-tested. Dissolved oxygen levels normalized.",
+    timeline: [
+      { step: "Report Submitted", date: "Sep 13, 2026 09:45 AM", done: true, remarks: "Logged with chemical photos." },
+      { step: "Verified by Barangay Eco-Warden", date: "Sep 13, 2026 10:15 AM", done: true, remarks: "Water turbidity confirmed high." },
+      { step: "Assigned to CENRO", date: "Sep 13, 2026 10:30 AM", done: true, remarks: "DENR-EMB notified." },
+      { step: "Under Investigation", date: "Sep 13, 2026 01:00 PM", done: true, remarks: "Oil containment deployed." },
+      { step: "Resolved", date: "Sep 14, 2026 05:00 PM", done: true, remarks: "Remediation complete. Violator cited." }
+    ],
+    timestamp: new Date("2026-09-13T09:45:00").getTime()
+  },
+  {
+    id: "CAR-2026-00125",
+    title: "Unauthorized Hardwood Tree Cutting on Hillside",
+    category: "Deforestation",
+    severity: "High",
+    barangay: "Taway",
+    landmark: "Upper Ridge Trailhead Footpath",
+    description: "Observed chainsaws felling mature Narra and Mahogany trees on slope without CENRO tree cutting permit signboard.",
+    photoUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80",
+    latitude: 14.6430,
+    longitude: 121.0490,
+    status: "Pending",
+    submittedBy: "Clara Mendoza",
+    userEmail: "clara.mendoza@gmail.com",
+    assignedTo: "Forest Protection & Watershed Unit",
+    statusRemarks: "Investigation docketed. Forest rangers assigned for site perimeter inspection.",
+    inspectionNotes: "Pending confirmation with Municipal Forestry Registry.",
+    timeline: [
+      { step: "Report Submitted", date: "Sep 12, 2026 03:22 PM", done: true, current: true, remarks: "Submitted via mobile app." },
+      { step: "Verified by Barangay Eco-Warden", date: "Pending", done: false, remarks: "Warden scheduled for verification." },
+      { step: "Assigned to CENRO", date: "Pending", done: false, remarks: "Pending assignment." },
+      { step: "Under Investigation", date: "Pending", done: false, remarks: "Pending field review." },
+      { step: "Resolved", date: "Pending", done: false, remarks: "Pending action." }
+    ],
+    timestamp: new Date("2026-09-12T15:22:00").getTime()
+  },
+  {
+    id: "CAR-2026-00124",
+    title: "Persistent Open Waste Burning Creating Dense Smog",
+    category: "Air Pollution",
+    severity: "Moderate",
+    barangay: "Maasin",
+    landmark: "Compound behind Sitio Maligaya",
+    description: "Repeated open burning of agricultural husks and plastics causing thick smoke drift across residential neighborhood and school zone.",
+    photoUrl: "https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=800&q=80",
+    latitude: 14.6480,
+    longitude: 121.0740,
+    status: "Investigating",
+    submittedBy: "Danilo Cruz",
+    userEmail: "danilo.cruz@gmail.com",
+    assignedTo: "Barangay Public Safety & Clean Air Unit",
+    statusRemarks: "Barangay Tanod deployed to extinguish smoldering embers. Citation ticket issued.",
+    inspectionNotes: "Property owner summoned to Barangay Hall for RA 8749 compliance lecture.",
+    timeline: [
+      { step: "Report Submitted", date: "Sep 11, 2026 11:06 AM", done: true, remarks: "Reported by resident." },
+      { step: "Verified by Barangay Eco-Warden", date: "Sep 11, 2026 11:30 AM", done: true, remarks: "Smoke plume confirmed visible." },
+      { step: "Assigned to CENRO", date: "Sep 11, 2026 01:15 PM", done: true, remarks: "Air Quality unit alerted." },
+      { step: "Under Investigation", date: "Sep 11, 2026 02:00 PM", done: true, current: true, remarks: "Extinguishment & enforcement in progress." },
+      { step: "Resolved", date: "Pending", done: false, remarks: "Follow-up monitoring scheduled." }
+    ],
+    timestamp: new Date("2026-09-11T11:06:00").getTime()
+  }
+];
 
 // Helper to parse JSON request bodies
 function parseBody(req) {
@@ -380,11 +568,11 @@ const server = http.createServer(async (req, res) => {
     // ------------------------------------------
     // 3. Website Configuration & CMS
     // ------------------------------------------
-    if (pathname === '/api/config' && req.method === 'GET') {
+    if ((pathname === '/api/config' || pathname === '/api/admin/config') && req.method === 'GET') {
       return sendJson(200, { config: websiteConfig });
     }
 
-    if (pathname === '/api/config' && req.method === 'PUT') {
+    if ((pathname === '/api/config' || pathname === '/api/admin/config') && (req.method === 'PUT' || req.method === 'POST')) {
       const session = getAdminSession(req);
       if (!session || !isAdminRole(session.role)) {
         return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
@@ -430,11 +618,11 @@ const server = http.createServer(async (req, res) => {
     // ------------------------------------------
     // 5. Announcements
     // ------------------------------------------
-    if (pathname === '/api/announcements' && req.method === 'GET') {
+    if ((pathname === '/api/announcements' || pathname === '/api/admin/announcements') && req.method === 'GET') {
       return sendJson(200, { announcements: announcementsStore });
     }
 
-    if (pathname === '/api/announcements' && req.method === 'POST') {
+    if ((pathname === '/api/announcements' || pathname === '/api/admin/announcements') && req.method === 'POST') {
       const session = getAdminSession(req);
       if (!session || !isAdminRole(session.role)) {
         return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
@@ -450,6 +638,7 @@ const server = http.createServer(async (req, res) => {
         priority: data.priority || 'Normal',
         pinned: !!data.pinned,
         content: data.content,
+        imageUrl: data.imageUrl || '',
         author: data.author || session.name || 'City Administration',
         timestamp: Date.now()
       };
@@ -461,12 +650,13 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    if (pathname.startsWith('/api/announcements/') && req.method === 'DELETE') {
+    if ((pathname.startsWith('/api/announcements/') || pathname.startsWith('/api/admin/announcements/')) && req.method === 'DELETE') {
       const session = getAdminSession(req);
       if (!session || !isAdminRole(session.role)) {
         return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
       }
-      const annId = pathname.split('/')[3];
+      const parts = pathname.split('/');
+      const annId = parts[parts.length - 1];
       announcementsStore = announcementsStore.filter(a => a.id !== annId);
       return sendJson(200, { success: true, message: 'Announcement deleted' });
     }
@@ -494,6 +684,7 @@ const server = http.createServer(async (req, res) => {
         category: data.category || 'General',
         summary: data.summary || '',
         content: data.content,
+        imageUrl: data.imageUrl || '',
         updatedAt: Date.now()
       };
       userGuidesStore.push(newGuide);
@@ -689,6 +880,131 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ------------------------------------------
+    // 9.5. Image Upload & Media Management (Admin)
+    // ------------------------------------------
+    if (pathname === '/api/admin/upload-image' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+
+      const data = await parseBody(req);
+      const imagePayload = data.image || data.dataUrl || data.imageData;
+      if (!imagePayload) {
+        return sendJson(400, { error: 'No image data provided' });
+      }
+
+      let base64Data = imagePayload;
+      let detectedExt = '.png';
+      let contentType = 'image/png';
+
+      // Check if data URL format: data:image/png;base64,...
+      const matches = imagePayload.match(/^data:([A-Za-z0-9+/]+);base64,(.+)$/);
+      if (matches) {
+        contentType = matches[1];
+        base64Data = matches[2];
+        if (contentType.includes('jpeg') || contentType.includes('jpg')) detectedExt = '.jpg';
+        else if (contentType.includes('png')) detectedExt = '.png';
+        else if (contentType.includes('webp')) detectedExt = '.webp';
+        else if (contentType.includes('svg')) detectedExt = '.svg';
+        else if (contentType.includes('gif')) detectedExt = '.gif';
+      } else if (data.filename) {
+        const ext = path.extname(data.filename).toLowerCase();
+        if (ext) {
+          detectedExt = ext;
+          contentType = MIME_TYPES[ext] || 'image/png';
+        }
+      }
+
+      let buffer;
+      try {
+        buffer = Buffer.from(base64Data, 'base64');
+      } catch (err) {
+        return sendJson(400, { error: 'Failed to decode base64 image data' });
+      }
+
+      if (!buffer || buffer.length === 0) {
+        return sendJson(400, { error: 'Empty image buffer received' });
+      }
+      if (buffer.length > 10 * 1024 * 1024) {
+        return sendJson(400, { error: 'Image size exceeds maximum limit of 10MB' });
+      }
+
+      const prefix = (data.category || 'media').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const uniqueId = crypto.randomBytes(6).toString('hex');
+      const filename = `${prefix}_${Date.now()}_${uniqueId}${detectedExt}`;
+      const urlPath = `/uploads/${filename}`;
+
+      // Store in memory cache
+      uploadedFilesCache.set(urlPath, {
+        filename,
+        url: urlPath,
+        category: data.category || 'media',
+        buffer,
+        contentType,
+        size: buffer.length,
+        timestamp: Date.now()
+      });
+
+      // Write to public/uploads directory on disk
+      try {
+        if (!fs.existsSync(UPLOADS_DIR)) {
+          fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+        }
+        fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
+      } catch (fsErr) {
+        console.warn('Could not write uploaded file to disk (served from memory cache):', fsErr.message);
+      }
+
+      return sendJson(200, {
+        success: true,
+        message: 'Image uploaded successfully',
+        url: urlPath,
+        filename,
+        contentType,
+        size: buffer.length
+      });
+    }
+
+    if (pathname === '/api/admin/uploads' && req.method === 'GET') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+
+      const list = Array.from(uploadedFilesCache.values()).map(item => ({
+        url: item.url,
+        filename: item.filename,
+        category: item.category,
+        size: item.size,
+        contentType: item.contentType,
+        timestamp: item.timestamp
+      })).reverse();
+
+      return sendJson(200, { uploads: list });
+    }
+
+    if (pathname.startsWith('/api/admin/uploads/') && req.method === 'DELETE') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+
+      const targetFile = pathname.replace('/api/admin/uploads/', '');
+      const cacheKey = `/uploads/${targetFile}`;
+      uploadedFilesCache.delete(cacheKey);
+
+      try {
+        const filePath = path.join(UPLOADS_DIR, targetFile);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (_) {}
+
+      return sendJson(200, { success: true, message: 'Image deleted successfully' });
+    }
+
+    // ------------------------------------------
     // 10. Incident Reports API
     // ------------------------------------------
     if (pathname === '/api/reports' && req.method === 'GET') {
@@ -767,6 +1083,18 @@ const server = http.createServer(async (req, res) => {
     // ------------------------------------------
     // 12. Separate Directory Access: Admin vs User Web Data
     // ------------------------------------------
+    // Fast serving for uploaded images (cache or memory)
+    if (uploadedFilesCache.has(pathname)) {
+      const cached = uploadedFilesCache.get(pathname);
+      res.writeHead(200, {
+        'Content-Type': cached.contentType || 'image/png',
+        'Content-Length': cached.buffer.length,
+        'Cache-Control': 'public, max-age=31536000'
+      });
+      res.end(cached.buffer);
+      return;
+    }
+
     const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/');
 
     if (isAdminRoute) {

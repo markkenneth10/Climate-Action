@@ -150,7 +150,10 @@ function switchAdminTab(tabName) {
 
   // Load tab-specific data if needed
   if (tabName === 'triage') renderFullReportsTable();
-  if (tabName === 'cms') loadCMSData();
+  if (tabName === 'cms') {
+    loadCMSData();
+    loadMediaGallery();
+  }
   if (tabName === 'weather') loadWeatherData();
   if (tabName === 'announcements') loadAnnouncements();
   if (tabName === 'users') loadUsersData();
@@ -310,6 +313,291 @@ async function saveAdminTriageUpdate() {
   }
 }
 
+// Helper: Read file as Base64 Data URL
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Centralized image uploader to /api/admin/upload-image
+async function uploadImageFile(file, category = 'media') {
+  if (!file) throw new Error('No file selected');
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('File size exceeds 10MB limit. Please choose a smaller image.');
+  }
+  const dataUrl = await readFileAsDataUrl(file);
+  const res = await adminFetch('/api/admin/upload-image', {
+    method: 'POST',
+    body: JSON.stringify({
+      image: dataUrl,
+      filename: file.name,
+      category: category
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+    throw new Error(err.error || 'Failed to upload image file');
+  }
+  return await res.json();
+}
+
+// Updates the admin top header logo based on configuration
+function updateAdminHeaderLogo(config) {
+  const headerLogoEl = document.getElementById('admin-header-logo');
+  if (!headerLogoEl) return;
+
+  const isImageMode = config.logoType === 'image' && config.logoImageUrl;
+  if (isImageMode) {
+    headerLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" class="admin-logo-img">`;
+    headerLogoEl.classList.add('has-image');
+  } else {
+    headerLogoEl.textContent = config.websiteLogo || '🌱';
+    headerLogoEl.classList.remove('has-image');
+  }
+}
+
+// Logo Mode & Emoji Handlers
+function setLogoMode(mode) {
+  const hiddenType = document.getElementById('cms-logo-type');
+  if (hiddenType) hiddenType.value = mode;
+
+  const btnImage = document.getElementById('btn-mode-image-logo');
+  const btnEmoji = document.getElementById('btn-mode-emoji-logo');
+  const panelImage = document.getElementById('cms-logo-image-panel');
+  const panelEmoji = document.getElementById('cms-logo-emoji-panel');
+
+  if (mode === 'image') {
+    if (btnImage) {
+      btnImage.style.borderColor = '#10b981';
+      btnImage.style.color = '#34d399';
+    }
+    if (btnEmoji) {
+      btnEmoji.style.borderColor = '#1c4228';
+      btnEmoji.style.color = '#94a3b8';
+    }
+    if (panelImage) panelImage.style.display = 'block';
+    if (panelEmoji) panelEmoji.style.display = 'none';
+  } else {
+    if (btnEmoji) {
+      btnEmoji.style.borderColor = '#10b981';
+      btnEmoji.style.color = '#34d399';
+    }
+    if (btnImage) {
+      btnImage.style.borderColor = '#1c4228';
+      btnImage.style.color = '#94a3b8';
+    }
+    if (panelImage) panelImage.style.display = 'none';
+    if (panelEmoji) panelEmoji.style.display = 'block';
+  }
+}
+
+function setLogoEmoji(emoji) {
+  const logoInput = document.getElementById('cms-website-logo');
+  if (logoInput) logoInput.value = emoji;
+  setLogoMode('emoji');
+}
+
+// Handle Logo File Upload
+async function handleLogoFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById('cms-logo-status');
+  if (statusEl) statusEl.textContent = '⏳ Uploading logo image...';
+
+  try {
+    const result = await uploadImageFile(file, 'logo');
+    const logoUrl = result.url;
+
+    document.getElementById('cms-logo-image-url').value = logoUrl;
+    const previewImg = document.getElementById('cms-logo-preview-img');
+    const previewPh = document.getElementById('cms-logo-preview-placeholder');
+    if (previewImg) {
+      previewImg.src = logoUrl;
+      previewImg.style.display = 'block';
+    }
+    if (previewPh) previewPh.style.display = 'none';
+
+    const removeBtn = document.getElementById('btn-remove-logo-img');
+    if (removeBtn) removeBtn.style.display = 'inline-block';
+
+    setLogoMode('image');
+    updateAdminHeaderLogo({ logoType: 'image', logoImageUrl: logoUrl });
+
+    if (statusEl) statusEl.textContent = `✅ Uploaded "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`;
+    loadMediaGallery();
+  } catch (err) {
+    if (statusEl) statusEl.textContent = `❌ ${err.message}`;
+    alert(err.message);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function handleRemoveLogoImage() {
+  document.getElementById('cms-logo-image-url').value = '';
+  const previewImg = document.getElementById('cms-logo-preview-img');
+  const previewPh = document.getElementById('cms-logo-preview-placeholder');
+  if (previewImg) {
+    previewImg.src = '';
+    previewImg.style.display = 'none';
+  }
+  if (previewPh) previewPh.style.display = 'block';
+
+  const removeBtn = document.getElementById('btn-remove-logo-img');
+  if (removeBtn) removeBtn.style.display = 'none';
+
+  setLogoMode('emoji');
+  updateAdminHeaderLogo({ logoType: 'emoji', websiteLogo: document.getElementById('cms-website-logo').value });
+
+  const statusEl = document.getElementById('cms-logo-status');
+  if (statusEl) statusEl.textContent = 'Image logo removed. Switched to symbol mode.';
+}
+
+// Hero Banner Image Upload
+async function handleHeroFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const result = await uploadImageFile(file, 'hero');
+    document.getElementById('cms-hero-image-url').value = result.url;
+    const img = document.getElementById('cms-hero-preview-img');
+    const ph = document.getElementById('cms-hero-placeholder');
+    if (img) {
+      img.src = result.url;
+      img.style.display = 'block';
+    }
+    if (ph) ph.style.display = 'none';
+    const removeBtn = document.getElementById('btn-remove-hero-img');
+    if (removeBtn) removeBtn.style.display = 'inline-block';
+    loadMediaGallery();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function handleRemoveHeroImage() {
+  document.getElementById('cms-hero-image-url').value = '';
+  const img = document.getElementById('cms-hero-preview-img');
+  const ph = document.getElementById('cms-hero-placeholder');
+  if (img) {
+    img.src = '';
+    img.style.display = 'none';
+  }
+  if (ph) ph.style.display = 'block';
+  const removeBtn = document.getElementById('btn-remove-hero-img');
+  if (removeBtn) removeBtn.style.display = 'none';
+}
+
+// About System Graphic Upload
+async function handleAboutFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const result = await uploadImageFile(file, 'about');
+    document.getElementById('cms-about-image-url').value = result.url;
+    const img = document.getElementById('cms-about-preview-img');
+    const ph = document.getElementById('cms-about-placeholder');
+    if (img) {
+      img.src = result.url;
+      img.style.display = 'block';
+    }
+    if (ph) ph.style.display = 'none';
+    const removeBtn = document.getElementById('btn-remove-about-img');
+    if (removeBtn) removeBtn.style.display = 'inline-block';
+    loadMediaGallery();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function handleRemoveAboutImage() {
+  document.getElementById('cms-about-image-url').value = '';
+  const img = document.getElementById('cms-about-preview-img');
+  const ph = document.getElementById('cms-about-placeholder');
+  if (img) {
+    img.src = '';
+    img.style.display = 'none';
+  }
+  if (ph) ph.style.display = 'block';
+  const removeBtn = document.getElementById('btn-remove-about-img');
+  if (removeBtn) removeBtn.style.display = 'none';
+}
+
+// Media Gallery Loader
+async function loadMediaGallery() {
+  const grid = document.getElementById('admin-media-gallery-grid');
+  if (!grid) return;
+
+  try {
+    const res = await adminFetch('/api/admin/uploads');
+    if (!res.ok) return;
+    const data = await res.json();
+    const uploads = data.uploads || [];
+
+    if (uploads.length === 0) {
+      grid.innerHTML = `<div style="grid-column: 1/-1; color:#94a3b8; font-size:0.85rem; padding:1.5rem; text-align:center; background:#061009; border-radius:8px;">No media files uploaded yet. Upload a logo, hero banner, announcement poster, or guide diagram to see it here.</div>`;
+      return;
+    }
+
+    grid.innerHTML = uploads.map(item => `
+      <div class="media-gallery-card">
+        <div class="media-thumb-box">
+          <img src="${item.url}" alt="${item.filename}">
+        </div>
+        <div style="font-size:0.75rem; font-weight:700; color:#fff; word-break:break-all; line-height:1.2;">
+          ${item.filename}
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#94a3b8;">
+          <span style="background:#133320; color:#34d399; padding:0.1rem 0.4rem; border-radius:4px; text-transform:uppercase;">${item.category || 'media'}</span>
+          <span>${(item.size / 1024).toFixed(1)} KB</span>
+        </div>
+        <div style="display:flex; gap:0.35rem; margin-top:0.25rem;">
+          <button type="button" onclick="copyMediaUrl('${item.url}')" class="btn-admin-outline" style="flex:1; font-size:0.7rem; padding:0.25rem 0.4rem;">
+            Copy Link
+          </button>
+          <button type="button" onclick="deleteMediaAsset('${item.filename}')" class="btn-admin-danger" style="font-size:0.7rem; padding:0.25rem 0.45rem;">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Failed to load media gallery:', err);
+  }
+}
+
+function copyMediaUrl(url) {
+  const full = window.location.origin + url;
+  navigator.clipboard.writeText(full).then(() => {
+    alert(`Copied image URL to clipboard:\n${full}`);
+  }).catch(() => {
+    alert(`Image URL: ${full}`);
+  });
+}
+
+async function deleteMediaAsset(filename) {
+  if (!confirm(`Delete image asset "${filename}"?`)) return;
+  try {
+    const res = await adminFetch(`/api/admin/uploads/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+    if (res.ok) {
+      loadMediaGallery();
+    }
+  } catch (e) {
+    alert('Failed to delete image asset.');
+  }
+}
+
 // 3. Website CMS & Branding
 async function loadCMSData() {
   try {
@@ -319,13 +607,75 @@ async function loadCMSData() {
 
     // Header branding sync
     document.getElementById('admin-header-title').textContent = config.websiteName || 'Climate Action';
-    document.getElementById('admin-header-logo').textContent = config.websiteLogo || '🌱';
+    updateAdminHeaderLogo(config);
 
     // Form inputs
     document.getElementById('cms-website-name').value = config.websiteName || '';
     document.getElementById('cms-website-subtitle').value = config.websiteSubtitle || '';
     document.getElementById('cms-website-logo').value = config.websiteLogo || '🌱';
     document.getElementById('cms-emergency-hotline').value = config.emergencyHotline || '';
+
+    // Logo state & Image preview
+    const logoType = config.logoType || (config.logoImageUrl ? 'image' : 'emoji');
+    const logoUrl = config.logoImageUrl || '';
+    document.getElementById('cms-logo-type').value = logoType;
+    document.getElementById('cms-logo-image-url').value = logoUrl;
+
+    const previewImg = document.getElementById('cms-logo-preview-img');
+    const previewPh = document.getElementById('cms-logo-preview-placeholder');
+    const removeBtn = document.getElementById('btn-remove-logo-img');
+
+    if (logoUrl) {
+      if (previewImg) {
+        previewImg.src = logoUrl;
+        previewImg.style.display = 'block';
+      }
+      if (previewPh) previewPh.style.display = 'none';
+      if (removeBtn) removeBtn.style.display = 'inline-block';
+    } else {
+      if (previewImg) previewImg.style.display = 'none';
+      if (previewPh) previewPh.style.display = 'block';
+      if (removeBtn) removeBtn.style.display = 'none';
+    }
+    setLogoMode(logoType);
+
+    // Hero Banner Image
+    const heroUrl = config.heroImageUrl || '';
+    document.getElementById('cms-hero-image-url').value = heroUrl;
+    const heroImg = document.getElementById('cms-hero-preview-img');
+    const heroPh = document.getElementById('cms-hero-placeholder');
+    const removeHeroBtn = document.getElementById('btn-remove-hero-img');
+    if (heroUrl) {
+      if (heroImg) {
+        heroImg.src = heroUrl;
+        heroImg.style.display = 'block';
+      }
+      if (heroPh) heroPh.style.display = 'none';
+      if (removeHeroBtn) removeHeroBtn.style.display = 'inline-block';
+    } else {
+      if (heroImg) heroImg.style.display = 'none';
+      if (heroPh) heroPh.style.display = 'block';
+      if (removeHeroBtn) removeHeroBtn.style.display = 'none';
+    }
+
+    // About System Graphic
+    const aboutUrl = config.aboutImageUrl || '';
+    document.getElementById('cms-about-image-url').value = aboutUrl;
+    const aboutImg = document.getElementById('cms-about-preview-img');
+    const aboutPh = document.getElementById('cms-about-placeholder');
+    const removeAboutBtn = document.getElementById('btn-remove-about-img');
+    if (aboutUrl) {
+      if (aboutImg) {
+        aboutImg.src = aboutUrl;
+        aboutImg.style.display = 'block';
+      }
+      if (aboutPh) aboutPh.style.display = 'none';
+      if (removeAboutBtn) removeAboutBtn.style.display = 'inline-block';
+    } else {
+      if (aboutImg) aboutImg.style.display = 'none';
+      if (aboutPh) aboutPh.style.display = 'block';
+      if (removeAboutBtn) removeAboutBtn.style.display = 'none';
+    }
 
     document.getElementById('cms-climate-change').value = config.climateChangeInfo || '';
     document.getElementById('cms-climate-action').value = config.climateActionInfo || '';
@@ -348,6 +698,10 @@ async function handleSaveCMS(e) {
     websiteName: document.getElementById('cms-website-name').value.trim(),
     websiteSubtitle: document.getElementById('cms-website-subtitle').value.trim(),
     websiteLogo: document.getElementById('cms-website-logo').value.trim(),
+    logoType: document.getElementById('cms-logo-type').value || 'emoji',
+    logoImageUrl: document.getElementById('cms-logo-image-url').value.trim(),
+    heroImageUrl: document.getElementById('cms-hero-image-url').value.trim(),
+    aboutImageUrl: document.getElementById('cms-about-image-url').value.trim(),
     emergencyHotline: document.getElementById('cms-emergency-hotline').value.trim(),
 
     climateChangeInfo: document.getElementById('cms-climate-change').value.trim(),
@@ -369,8 +723,8 @@ async function handleSaveCMS(e) {
     });
     if (res.ok) {
       document.getElementById('admin-header-title').textContent = updates.websiteName;
-      document.getElementById('admin-header-logo').textContent = updates.websiteLogo;
-      alert('✅ All Website Information, CMS Content & Branding updated successfully! These changes are immediately active on the citizen website.');
+      updateAdminHeaderLogo(updates);
+      alert('✅ All Website Information, Logo & Media Branding updated successfully! These changes are immediately active on the citizen website.');
     } else {
       alert('Failed to save website configuration.');
     }
@@ -434,6 +788,37 @@ async function handleSaveWeather(e) {
 }
 
 // 5. Announcements & Notifications
+async function handleAnnouncementImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const result = await uploadImageFile(file, 'announcement');
+    document.getElementById('ann-image-url').value = result.url;
+    const previewBox = document.getElementById('ann-image-preview-box');
+    const previewThumb = document.getElementById('ann-image-preview-thumb');
+    const filenameEl = document.getElementById('ann-image-filename');
+
+    if (previewThumb) previewThumb.src = result.url;
+    if (filenameEl) filenameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    if (previewBox) previewBox.style.display = 'flex';
+    loadMediaGallery();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function clearAnnouncementImage() {
+  const urlInput = document.getElementById('ann-image-url');
+  if (urlInput) urlInput.value = '';
+  const previewBox = document.getElementById('ann-image-preview-box');
+  if (previewBox) previewBox.style.display = 'none';
+  const fileInput = document.getElementById('ann-image-file');
+  if (fileInput) fileInput.value = '';
+}
+
 async function loadAnnouncements() {
   try {
     const res = await fetch('/api/announcements');
@@ -447,14 +832,19 @@ async function loadAnnouncements() {
     }
 
     container.innerHTML = list.map(a => `
-      <div style="background:#09160d; border:1px solid #1c4228; border-radius:10px; padding:1rem; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
-        <div>
-          <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+      <div style="background:#09160d; border:1px solid #1c4228; border-radius:10px; padding:1rem; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
+        <div style="flex:1; min-width:250px;">
+          <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; flex-wrap:wrap;">
             <span class="badge-${a.priority.toLowerCase()}">${a.priority}</span>
             <span style="font-weight:700; color:#fff; font-size:0.95rem;">${a.title}</span>
             <span style="font-size:0.75rem; color:#94a3b8;">(${a.category})</span>
           </div>
           <p style="font-size:0.85rem; color:#cbd5e1; line-height:1.5;">${a.content}</p>
+          ${a.imageUrl ? `
+            <div style="margin-top:0.6rem;">
+              <img src="${a.imageUrl}" alt="${a.title}" style="max-height:120px; max-width:240px; border-radius:6px; object-fit:cover; border:1px solid #1c4228;">
+            </div>
+          ` : ''}
           <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem;">
             By ${a.author} • ${new Date(a.timestamp).toLocaleString()}
           </div>
@@ -477,6 +867,7 @@ async function handleCreateAnnouncement(e) {
     category: document.getElementById('ann-category').value,
     priority: document.getElementById('ann-priority').value,
     content: document.getElementById('ann-content').value.trim(),
+    imageUrl: document.getElementById('ann-image-url').value.trim(),
     author: currentAdmin ? currentAdmin.name : 'Administration',
     pinned: true
   };
@@ -490,8 +881,9 @@ async function handleCreateAnnouncement(e) {
 
     if (res.ok) {
       document.getElementById('admin-announcement-form').reset();
+      clearAnnouncementImage();
       await loadAnnouncements();
-      alert('🚀 Announcement published! All online and visiting citizens will receive this update.');
+      alert('🚀 Announcement published with media! All online and visiting citizens will receive this update.');
     } else {
       alert('Failed to publish announcement.');
     }
@@ -568,6 +960,38 @@ async function toggleUserStatus(userId, currentStatus) {
   }
 }
 
+// User Guides Diagram Handlers
+async function handleGuideImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const result = await uploadImageFile(file, 'guide');
+    document.getElementById('guide-image-url').value = result.url;
+    const previewBox = document.getElementById('guide-image-preview-box');
+    const previewThumb = document.getElementById('guide-image-preview-thumb');
+    const filenameEl = document.getElementById('guide-image-filename');
+
+    if (previewThumb) previewThumb.src = result.url;
+    if (filenameEl) filenameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    if (previewBox) previewBox.style.display = 'flex';
+    loadMediaGallery();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function clearGuideImage() {
+  const urlInput = document.getElementById('guide-image-url');
+  if (urlInput) urlInput.value = '';
+  const previewBox = document.getElementById('guide-image-preview-box');
+  if (previewBox) previewBox.style.display = 'none';
+  const fileInput = document.getElementById('guide-image-file');
+  if (fileInput) fileInput.value = '';
+}
+
 // User Guides
 async function loadUserGuides() {
   try {
@@ -582,14 +1006,19 @@ async function loadUserGuides() {
     }
 
     container.innerHTML = guides.map(g => `
-      <div style="background:#09160d; border:1px solid #1c4228; border-radius:10px; padding:1rem; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
-        <div>
+      <div style="background:#09160d; border:1px solid #1c4228; border-radius:10px; padding:1rem; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
+        <div style="flex:1; min-width:250px;">
           <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
             <span style="font-size:1.2rem;">${g.icon || '📖'}</span>
             <span style="font-weight:700; color:#fff; font-size:0.95rem;">${g.title}</span>
             <span style="font-size:0.75rem; color:#34d399;">[${g.category}]</span>
           </div>
           <p style="font-size:0.82rem; color:#cbd5e1; margin-bottom:0.5rem;">${g.summary || ''}</p>
+          ${g.imageUrl ? `
+            <div style="margin-bottom:0.6rem;">
+              <img src="${g.imageUrl}" alt="${g.title}" style="max-height:110px; max-width:220px; border-radius:6px; object-fit:cover; border:1px solid #1c4228;">
+            </div>
+          ` : ''}
           <div style="font-size:0.78rem; color:#94a3b8; background:#061009; padding:0.5rem 0.75rem; border-radius:6px; font-family:monospace;">
             ${g.content}
           </div>
@@ -612,7 +1041,8 @@ async function handleCreateGuide(e) {
     icon: document.getElementById('guide-icon').value.trim() || '📖',
     category: document.getElementById('guide-category').value,
     summary: document.getElementById('guide-summary').value.trim(),
-    content: document.getElementById('guide-content').value.trim()
+    content: document.getElementById('guide-content').value.trim(),
+    imageUrl: document.getElementById('guide-image-url').value.trim()
   };
 
   try {
@@ -623,6 +1053,7 @@ async function handleCreateGuide(e) {
     });
     if (res.ok) {
       document.getElementById('admin-guide-form').reset();
+      clearGuideImage();
       loadUserGuides();
       alert('Guide added to user website!');
     }
