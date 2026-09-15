@@ -2077,18 +2077,121 @@ textarea.form-control {
 
 /* Mobile Breakpoint (<= 640px) */
 @media (max-width: 640px) {
+  /* Prevent any horizontal overflow on phone */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+
   /* Show Mobile Bottom Navigation */
   .mobile-bottom-nav {
     display: flex;
   }
-  .btn-hamburger-mobile {
+
+  /* Header adjustments for small phone screens */
+  .header-nav {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .nav-top-row {
+    padding: 0.5rem 0.75rem;
+    gap: 0.35rem;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+
+  .brand-wrapper {
+    gap: 0.45rem;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .brand-icon-box {
+    width: 36px;
+    height: 36px;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+  }
+
+  .brand-name {
+    font-size: 1rem;
+    white-space: nowrap;
+    letter-spacing: -0.02em;
+  }
+
+  .brand-sub {
+    display: none; /* Hide long subtitle on phones to preserve horizontal space */
+  }
+
+  .badge-portal-pill {
+    font-size: 0.62rem;
+    padding: 0.12rem 0.45rem;
+  }
+
+  .header-right-actions {
     display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
   }
-  .nav-sub-bar {
-    display: none; /* Replaced by Bottom Nav + Drawer */
-  }
+
   .weather-pill-header {
     display: none;
+  }
+
+  .btn-icon-nav {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  /* CRITICAL: On phone screens, hide the user name/role text so it doesn't push the hamburger button off-screen */
+  .citizen-profile-menu-wrapper .user-profile-trigger {
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .citizen-profile-menu-wrapper .user-text-info {
+    display: none !important;
+  }
+
+  .user-avatar-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  /* Mobile Hamburger Toggle is fully visible with generous touch target */
+  .btn-hamburger-mobile {
+    display: flex;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    margin-left: 0.1rem;
+  }
+
+  .user-dropdown-menu {
+    right: -45px;
+    max-width: calc(100vw - 24px);
+    width: 290px;
+  }
+
+  .notif-dropdown-menu {
+    right: -75px;
+    max-width: calc(100vw - 24px);
+    width: 310px;
+  }
+
+  .nav-sub-bar {
+    display: none; /* Replaced by Bottom Nav + Drawer */
   }
 
   /* Padding on body so bottom nav doesn't cover content */
@@ -2098,6 +2201,10 @@ textarea.form-control {
 
   .main-wrapper {
     padding: 1rem 0.85rem 2rem;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
 
   /* Top weather adjustments */
@@ -2120,6 +2227,24 @@ textarea.form-control {
   }
   .telemetry-item-val {
     font-size: 0.95rem;
+  }
+
+  /* PAGASA Status Strip on mobile: wrap so text never clips */
+  .pagasa-status-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    padding: 0.65rem 0.85rem;
+  }
+  .pagasa-alert-badge {
+    align-self: flex-start;
+    font-size: 0.72rem;
+  }
+  .pagasa-advisory-ticker {
+    white-space: normal;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    width: 100%;
   }
 
   /* Reports stat grid on mobile */
@@ -2159,5 +2284,22 @@ textarea.form-control {
     left: 1rem;
     right: 1rem;
     bottom: calc(var(--bottom-nav-height) + 12px);
+  }
+}
+
+/* Extra small devices (<= 380px) */
+@media (max-width: 380px) {
+  .badge-portal-pill {
+    display: none; /* Hide badge on very narrow screens to prevent any wrapping */
+  }
+  .brand-name {
+    font-size: 0.95rem;
+  }
+  .nav-top-row {
+    padding: 0.45rem 0.5rem;
+    gap: 0.25rem;
+  }
+  .header-right-actions {
+    gap: 0.25rem;
   }
 }

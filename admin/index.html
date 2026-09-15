@@ -54,32 +54,43 @@
     
     <!-- Topbar -->
     <header class="admin-topbar">
-      <div class="admin-brand">
-        <div class="admin-logo-box" id="admin-header-logo">🌱</div>
-        <div>
-          <div class="admin-brand-title">
-            <span id="admin-header-title">Climate Action</span>
-            <span id="admin-role-badge" class="admin-badge-super">SUPER ADMIN</span>
+      <div class="admin-topbar-left">
+        <button class="btn-admin-hamburger" id="admin-mobile-toggle" onclick="toggleAdminMobileSidebar()" aria-label="Toggle navigation menu">
+          ☰
+        </button>
+        <div class="admin-brand">
+          <div class="admin-logo-box" id="admin-header-logo">🌱</div>
+          <div>
+            <div class="admin-brand-title">
+              <span id="admin-header-title">Climate Action</span>
+              <span id="admin-role-badge" class="admin-badge-super">👑 SUPER ADMIN</span>
+            </div>
+            <div class="admin-brand-subtitle">Central Ecological Management & Governance Console</div>
           </div>
-          <div style="font-size: 0.75rem; color: #64748b;">Central Ecological Management & Governance Console</div>
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 1rem;">
-        <div style="text-align: right;">
-          <div style="font-weight: 700; font-size: 0.88rem; color: #fff;" id="admin-profile-name">Mark Kenneth Ulgasan</div>
-          <div style="font-size: 0.72rem; color: #34d399;" id="admin-profile-dept">Executive Directorate</div>
+      <div class="admin-topbar-right">
+        <div class="admin-user-pill">
+          <div class="admin-avatar-circle" id="admin-avatar-initials">MK</div>
+          <div class="admin-user-details" style="text-align: left;">
+            <div style="font-weight: 800; font-size: 0.85rem; color: #fff;" id="admin-profile-name">Mark Kenneth Ulgasan</div>
+            <div style="font-size: 0.7rem; color: #A7F3D0;" id="admin-profile-dept">Executive Directorate</div>
+          </div>
         </div>
 
-        <a href="/" target="_blank" class="btn-admin-outline" style="text-decoration: none; font-size: 0.8rem; display: flex; align-items: center; gap: 0.35rem;">
-          🌐 View Citizen Site ↗
+        <a href="/" target="_blank" class="btn-admin-outline" style="text-decoration: none; font-size: 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.25);">
+          🌐 <span class="admin-site-link-text">Citizen Site</span> ↗
         </a>
 
-        <button onclick="handleAdminLogout()" class="btn-admin-outline" style="color: #f87171; border-color: #7f1d1d;">
+        <button onclick="handleAdminLogout()" class="btn-admin-outline" style="color: #FECACA; border-color: rgba(239, 68, 68, 0.4); background: rgba(127, 29, 29, 0.3);">
           Sign Out
         </button>
       </div>
     </header>
+
+    <!-- Mobile Drawer Backdrop -->
+    <div class="admin-sidebar-backdrop" onclick="closeAdminMobileSidebar()"></div>
 
     <div class="admin-shell">
       <!-- Sidebar Navigation -->

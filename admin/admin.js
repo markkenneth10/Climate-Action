@@ -148,6 +148,9 @@ function switchAdminTab(tabName) {
   const target = document.getElementById(`tab-${tabName}`);
   if (target) target.style.display = 'block';
 
+  // Automatically close mobile sidebar when tab clicked
+  closeAdminMobileSidebar();
+
   // Load tab-specific data if needed
   if (tabName === 'triage') renderFullReportsTable();
   if (tabName === 'cms') {
@@ -158,8 +161,23 @@ function switchAdminTab(tabName) {
   if (tabName === 'announcements') loadAnnouncements();
   if (tabName === 'users') loadUsersData();
   if (tabName === 'guides') loadUserGuides();
-  if (tabName === 'subadmins' && currentAdmin.role === 'super_admin') loadSubAdminsData();
-  if (tabName === 'settings' && currentAdmin.role === 'super_admin') loadSuperAdminSettings();
+  if (tabName === 'subadmins' && currentAdmin && currentAdmin.role === 'super_admin') loadSubAdminsData();
+  if (tabName === 'settings' && currentAdmin && currentAdmin.role === 'super_admin') loadSuperAdminSettings();
+}
+
+// Admin Mobile Sidebar Navigation Controls
+function toggleAdminMobileSidebar() {
+  const sidebar = document.querySelector('.admin-sidebar');
+  const backdrop = document.querySelector('.admin-sidebar-backdrop');
+  if (sidebar) sidebar.classList.toggle('mobile-open');
+  if (backdrop) backdrop.classList.toggle('active');
+}
+
+function closeAdminMobileSidebar() {
+  const sidebar = document.querySelector('.admin-sidebar');
+  const backdrop = document.querySelector('.admin-sidebar-backdrop');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('active');
 }
 
 // Refresh all telemetry

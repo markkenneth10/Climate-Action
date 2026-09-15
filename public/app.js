@@ -314,6 +314,9 @@ function updateAuthUI() {
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+              <button class="dropdown-item-link" onclick="switchTab('profile'); closeAllDropdowns();">
+                <span>👤</span> View Citizen Profile & Eco-Points
+              </button>
               <button class="dropdown-item-link" onclick="switchTab('tracker'); closeAllDropdowns();">
                 <span>📋</span> My Reported Incidents (5)
               </button>
@@ -971,107 +974,140 @@ function initOrUpdatePreviewMap() {
   const container = document.getElementById('dashboard-preview-map');
   if (!container) return;
 
-  if (!state.previewMapInstance) {
-    state.previewMapInstance = L.map('dashboard-preview-map', {
-      zoomControl: false,
-      attributionControl: false
-    }).setView([14.6538, 121.0583], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18
-    }).addTo(state.previewMapInstance);
+  // Safeguard: Leaflet script might load asynchronously or fail on slow mobile network
+  if (typeof L === 'undefined' || !L.map) {
+    console.warn('Leaflet GIS library not yet loaded. Map preview deferred.');
+    return;
   }
 
-  // Clear previous markers
-  state.previewMapMarkers.forEach(m => state.previewMapInstance.removeLayer(m));
-  state.previewMapMarkers = [];
+  try {
+    if (!state.previewMapInstance) {
+      if (container._leaflet_id) {
+        container._leaflet_id = null;
+      }
+      state.previewMapInstance = L.map('dashboard-preview-map', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([14.6538, 121.0583], 13);
 
-  // Plot reports
-  state.reports.forEach(r => {
-    if (!r.latitude || !r.longitude) return;
-    let color = '#16A765';
-    let rad = 7;
-    if (r.severity === 'Critical') { color = '#DC3545'; rad = 10; }
-    else if (r.severity === 'High') { color = '#EA580C'; rad = 8; }
-    else if (r.status === 'Investigating') { color = '#F4B400'; rad = 7; }
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18
+      }).addTo(state.previewMapInstance);
+    }
 
-    const circle = L.circleMarker([r.latitude, r.longitude], {
-      radius: rad,
-      fillColor: color,
-      color: '#FFFFFF',
-      weight: 1.5,
-      fillOpacity: 0.85
-    }).addTo(state.previewMapInstance);
+    // Clear previous markers
+    if (state.previewMapMarkers) {
+      state.previewMapMarkers.forEach(m => {
+        try { state.previewMapInstance.removeLayer(m); } catch (e) {}
+      });
+    }
+    state.previewMapMarkers = [];
 
-    circle.bindPopup(`<strong>${r.category}</strong><br>${escapeHtml(r.title)}<br>📍 ${r.barangay}`);
-    state.previewMapMarkers.push(circle);
-  });
+    // Plot reports
+    state.reports.forEach(r => {
+      if (!r.latitude || !r.longitude) return;
+      let color = '#16A765';
+      let rad = 7;
+      if (r.severity === 'Critical') { color = '#DC3545'; rad = 10; }
+      else if (r.severity === 'High') { color = '#EA580C'; rad = 8; }
+      else if (r.status === 'Investigating') { color = '#F4B400'; rad = 7; }
+
+      const circle = L.circleMarker([r.latitude, r.longitude], {
+        radius: rad,
+        fillColor: color,
+        color: '#FFFFFF',
+        weight: 1.5,
+        fillOpacity: 0.85
+      }).addTo(state.previewMapInstance);
+
+      circle.bindPopup(`<strong>${r.category}</strong><br>${escapeHtml(r.title)}<br>📍 ${r.barangay}`);
+      state.previewMapMarkers.push(circle);
+    });
+  } catch (err) {
+    console.warn('Preview map initialization handled safely:', err);
+  }
 }
 
 function initOrUpdateFullMap() {
   const container = document.getElementById('web-map-container');
   if (!container) return;
 
-  if (!state.fullMapInstance) {
-    state.fullMapInstance = L.map('web-map-container').setView([14.6538, 121.0583], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors | Metro Verde GIS'
-    }).addTo(state.fullMapInstance);
+  if (typeof L === 'undefined' || !L.map) {
+    console.warn('Leaflet GIS library not yet loaded. Full map deferred.');
+    return;
   }
 
-  // Clear previous markers
-  state.fullMapMarkers.forEach(m => state.fullMapInstance.removeLayer(m));
-  state.fullMapMarkers = [];
-
-  state.reports.forEach(r => {
-    if (!r.latitude || !r.longitude) return;
-    let color = '#16A765';
-    let rad = 8;
-    if (r.severity === 'Critical') { color = '#DC3545'; rad = 12; }
-    else if (r.severity === 'High') { color = '#EA580C'; rad = 10; }
-    else if (r.status === 'Investigating') { color = '#F4B400'; rad = 8; }
-    else if (r.status === 'In Progress') { color = '#0284C7'; rad = 8; }
-
-    const circle = L.circleMarker([r.latitude, r.longitude], {
-      radius: rad,
-      fillColor: color,
-      color: '#FFFFFF',
-      weight: 2,
-      fillOpacity: 0.85
-    }).addTo(state.fullMapInstance);
-
-    circle.bindPopup(`
-      <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; line-height:1.4;">
-        <strong style="color:${color};">${r.category}</strong><br>
-        <strong>${escapeHtml(r.title)}</strong><br>
-        <span>📍 ${escapeHtml(r.barangay)}</span><br>
-        <span style="font-size:11px; color:#5A6A80;">Status: ${r.status}</span>
-      </div>
-    `);
-
-    circle.on('click', () => {
-      const pinBox = document.getElementById('map-pin-detail-box');
-      if (pinBox) {
-        pinBox.innerHTML = `
-          <div style="background: var(--surface-alt); padding: 0.85rem; border-radius: 8px; border-left: 4px solid ${color};">
-            <div style="font-weight: 800; color: var(--text-main);">${escapeHtml(r.title)}</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin: 0.35rem 0;">📍 ${escapeHtml(r.barangay)} • ${escapeHtml(r.landmark || '')}</div>
-            <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
-              <span class="status-badge" style="background:${color}22; color:${color}; font-size:0.72rem;">${r.severity}</span>
-              <span class="status-badge in-progress" style="font-size:0.72rem;">${r.status}</span>
-            </div>
-            <button onclick="openReportTimelineModal('${r.id}', '${escapeHtml(r.category)}', '${escapeHtml(r.barangay)}', '${r.status}')" class="btn-primary" style="margin-top: 0.75rem; width: 100%; padding: 0.45rem; font-size: 0.78rem;">
-              View Resolution Timeline
-            </button>
-          </div>
-        `;
+  try {
+    if (!state.fullMapInstance) {
+      if (container._leaflet_id) {
+        container._leaflet_id = null;
       }
-    });
+      state.fullMapInstance = L.map('web-map-container').setView([14.6538, 121.0583], 13);
 
-    state.fullMapMarkers.push(circle);
-  });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors | Metro Verde GIS'
+      }).addTo(state.fullMapInstance);
+    }
+
+    // Clear previous markers
+    if (state.fullMapMarkers) {
+      state.fullMapMarkers.forEach(m => {
+        try { state.fullMapInstance.removeLayer(m); } catch (e) {}
+      });
+    }
+    state.fullMapMarkers = [];
+
+    state.reports.forEach(r => {
+      if (!r.latitude || !r.longitude) return;
+      let color = '#16A765';
+      let rad = 8;
+      if (r.severity === 'Critical') { color = '#DC3545'; rad = 12; }
+      else if (r.severity === 'High') { color = '#EA580C'; rad = 10; }
+      else if (r.status === 'Investigating') { color = '#F4B400'; rad = 8; }
+      else if (r.status === 'In Progress') { color = '#0284C7'; rad = 8; }
+
+      const circle = L.circleMarker([r.latitude, r.longitude], {
+        radius: rad,
+        fillColor: color,
+        color: '#FFFFFF',
+        weight: 2,
+        fillOpacity: 0.85
+      }).addTo(state.fullMapInstance);
+
+      circle.bindPopup(`
+        <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; line-height:1.4;">
+          <strong style="color:${color};">${r.category}</strong><br>
+          <strong>${escapeHtml(r.title)}</strong><br>
+          <span>📍 ${escapeHtml(r.barangay)}</span><br>
+          <span style="font-size:11px; color:#5A6A80;">Status: ${r.status}</span>
+        </div>
+      `);
+
+      circle.on('click', () => {
+        const pinBox = document.getElementById('map-pin-detail-box');
+        if (pinBox) {
+          pinBox.innerHTML = `
+            <div style="background: var(--surface-alt); padding: 0.85rem; border-radius: 8px; border-left: 4px solid ${color};">
+              <div style="font-weight: 800; color: var(--text-main);">${escapeHtml(r.title)}</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin: 0.35rem 0;">📍 ${escapeHtml(r.barangay)} • ${escapeHtml(r.landmark || '')}</div>
+              <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
+                <span class="status-badge" style="background:${color}22; color:${color}; font-size:0.72rem;">${r.severity}</span>
+                <span class="status-badge in-progress" style="font-size:0.72rem;">${r.status}</span>
+              </div>
+              <button onclick="openReportTimelineModal('${r.id}', '${escapeHtml(r.category)}', '${escapeHtml(r.barangay)}', '${r.status}')" class="btn-primary" style="margin-top: 0.75rem; width: 100%; padding: 0.45rem; font-size: 0.78rem;">
+                View Resolution Timeline
+              </button>
+            </div>
+          `;
+        }
+      });
+
+      state.fullMapMarkers.push(circle);
+    });
+  } catch (err) {
+    console.warn('Full map initialization handled safely:', err);
+  }
 }
 
 // 7. Incident Tracker View & Search
