@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Climate Action | Mobile & Web Climate Action Reporting and Information System</title>
+  <title id="page-title">Climate Action | Mobile & Web Climate Action Reporting and Information System</title>
   <meta name="description" content="Official Web Portal for Mobile Climate Action Reporting and Information System. Report environmental incidents, track LGU responses, learn verified climate information, and take community climate action.">
   
   <!-- Fonts & Icons -->
@@ -21,14 +21,14 @@
   <!-- Top Navigation Bar -->
   <header class="header-nav">
     <div class="nav-container">
-      <div class="brand-wrapper">
-        <div class="brand-icon">🌱</div>
+      <div class="brand-wrapper" onclick="switchTab('dashboard')" style="cursor: pointer;">
+        <div class="brand-icon" id="site-logo-icon">🌱</div>
         <div>
           <div class="brand-title">
-            Climate Action
-            <span class="badge-web">Web Portal</span>
+            <span id="site-brand-name">Climate Action</span>
+            <span class="badge-web">Citizen Portal</span>
           </div>
-          <div class="brand-sub">Reporting & Information System • Metro Verde</div>
+          <div class="brand-sub" id="site-brand-sub">Reporting & Information System • Metro Verde</div>
         </div>
       </div>
 
@@ -38,20 +38,47 @@
           <li><button class="nav-btn" data-tab="report">🚨 Report Incident</button></li>
           <li><button class="nav-btn" data-tab="tracker">📋 Incident Tracker</button></li>
           <li><button class="nav-btn" data-tab="map">🗺️ GIS Map</button></li>
-          <li><button class="nav-btn" data-tab="education">📚 Climate Info</button></li>
+          <li><button class="nav-btn" data-tab="education">📚 Climate Info & CMS</button></li>
+          <li><button class="nav-btn" data-tab="guides">📖 User Guides</button></li>
           <li><button class="nav-btn" data-tab="quiz">🧠 Climate Quiz</button></li>
           <li><button class="nav-btn" data-tab="activities">🌿 Activities</button></li>
-          <li><button class="nav-btn" data-tab="admin">🛡️ LGU Dispatch</button></li>
         </ul>
       </nav>
 
-      <div class="role-switcher-web">
-        <span>👤 Role:</span>
-        <select id="user-role-select" class="role-select">
-          <option value="citizen">Juan Dela Cruz (Citizen)</option>
-          <option value="officer">Engr. Aris Mendoza (DENR/CENRO)</option>
-          <option value="admin">Dir. Elena Santos (Administrator)</option>
-        </select>
+      <!-- Right Header Actions: Weather, Notifications, User Auth & Admin Link -->
+      <div class="header-right-actions">
+        <!-- Live Weather Pill -->
+        <div class="weather-pill-header" id="header-weather-pill" onclick="switchTab('dashboard')" title="Click to view full climate advisory">
+          <span id="header-weather-icon">⛅</span>
+          <span id="header-weather-text">32°C • Yellow Alert</span>
+        </div>
+
+        <!-- Notification Bell -->
+        <div class="notif-dropdown-wrapper">
+          <button class="btn-icon-nav" id="btn-notif-bell" onclick="toggleNotificationsMenu()" title="Notifications & Advisories">
+            🔔<span class="notif-badge-count" id="notif-badge-count">2</span>
+          </button>
+          
+          <div class="notif-dropdown-menu" id="notif-dropdown-menu">
+            <div class="notif-header">
+              <span style="font-weight: 700;">📢 Official Announcements & Alerts</span>
+              <button onclick="markAllNotifsRead()" style="background:none; border:none; color:var(--primary); font-size:0.75rem; font-weight:700; cursor:pointer;">Mark read</button>
+            </div>
+            <div class="notif-list" id="notif-items-list">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Citizen User Auth Pill / Login Button -->
+        <div id="citizen-auth-container">
+          <!-- Rendered by JS: either Sign In button or User Profile Pill -->
+        </div>
+
+        <!-- Separate Dedicated Admin Portal Button -->
+        <a href="/admin.html" class="btn-admin-nav" title="Access CENRO Administrative Command Console">
+          🛡️ Staff / Admin Portal
+        </a>
       </div>
     </div>
   </header>
@@ -59,37 +86,73 @@
   <!-- Main Container -->
   <main class="main-wrapper">
 
-    <!-- Cross Platform Announcement -->
-    <div class="cross-platform-banner">
-      <div class="cross-platform-info">
-        <div class="cross-platform-icon">📲</div>
+    <!-- Active High-Priority Announcement Banner (if any) -->
+    <div id="urgent-announcement-banner" class="announcement-alert-banner" style="display: none;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.3rem;">🚨</span>
         <div>
-          <h4 style="font-weight: 700; font-size: 0.95rem; color: var(--primary-dark);">Cross-Platform Web & Mobile Access</h4>
-          <p style="font-size: 0.82rem; color: var(--text-muted);">
-            Access all reporting, geospatial tracking, and climate education features via desktop web browsers, mobile browsers, or the Android APK companion.
-          </p>
+          <strong id="urgent-ann-title">Emergency Advisory</strong>: 
+          <span id="urgent-ann-body" style="font-size: 0.88rem;">Important municipal climate alert.</span>
         </div>
       </div>
-      <div>
-        <button class="btn-outline" id="btn-show-thesis-summary">📄 View Thesis Project Summary</button>
-      </div>
+      <button onclick="dismissUrgentBanner()" class="btn-close-banner">&times;</button>
     </div>
 
     <!-- SECTION 1: DASHBOARD -->
     <section id="section-dashboard" class="portal-section active">
+      <!-- Live Weather & Climate Advisory Card (Managed by Admin) -->
+      <div class="weather-advisory-card" id="dashboard-weather-card">
+        <div class="weather-top-row">
+          <div class="weather-main-info">
+            <span class="weather-condition-icon" id="dash-weather-icon">⛅</span>
+            <div>
+              <div class="weather-temp-display">
+                <span id="dash-weather-temp">32</span>°C
+                <span class="weather-heat-index" id="dash-weather-heat">Heat Index: 38°C</span>
+              </div>
+              <div class="weather-condition-label" id="dash-weather-condition">Partly Cloudy with Scattered Showers</div>
+            </div>
+          </div>
+
+          <div class="weather-telemetry-badges">
+            <div class="weather-badge-item">
+              <span class="badge-title">PAGASA ALERT</span>
+              <span class="badge-val-pill alert-yellow" id="dash-weather-alert">Yellow Alert</span>
+            </div>
+            <div class="weather-badge-item">
+              <span class="badge-title">AIR QUALITY</span>
+              <span class="badge-val-text" id="dash-weather-aqi">Moderate (AQI 68)</span>
+            </div>
+            <div class="weather-badge-item">
+              <span class="badge-title">TYPHOON</span>
+              <span class="badge-val-text" id="dash-weather-typhoon">Signal No. 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="weather-advisory-message">
+          <strong>📢 Municipal Advisory:</strong>
+          <span id="dash-weather-advisory-text">Loading latest climate advisory...</span>
+        </div>
+        <div class="weather-safety-tip">
+          💡 <strong>Citizen Safety Tip:</strong> <span id="dash-weather-safety-text">Stay hydrated and report storm culvert obstructions.</span>
+        </div>
+      </div>
+
       <!-- Hero Banner -->
       <div class="hero-banner">
         <div class="hero-content">
           <span class="hero-tag">Official Municipal Climate Portal</span>
-          <h1 class="hero-title">Mobile & Web Climate Action Reporting System</h1>
-          <p class="hero-desc">
+          <h1 class="hero-title" id="dash-hero-title">Mobile & Web Climate Action Reporting System</h1>
+          <p class="hero-desc" id="dash-hero-desc">
             Empowering citizens across Metro Verde to report environmental incidents, monitor local government resolution workflows in real-time, access verified climate education, and participate in community ecological restoration.
           </p>
           
           <div class="quick-action-bar">
-            <button class="btn-primary" onclick="switchTab('report')">🚨 Report Environmental Incident</button>
+            <button class="btn-primary" onclick="handleReportButtonClick()">🚨 Report Environmental Incident</button>
             <button class="btn-secondary" onclick="switchTab('tracker')">🔍 Track Existing Reports</button>
             <button class="btn-secondary" onclick="switchTab('map')">🗺️ View Hotspot Map</button>
+            <button class="btn-secondary" onclick="switchTab('education')">📖 Climate & Website Info</button>
           </div>
 
           <div class="hero-stats-grid">
@@ -99,15 +162,15 @@
             </div>
             <div class="hero-stat-card">
               <div class="hero-stat-val" id="kpi-resolved-reports">5</div>
-              <div class="hero-stat-label">Resolved (62%)</div>
+              <div class="hero-stat-label">Resolved (<span id="kpi-resolution-rate">62%</span>)</div>
             </div>
             <div class="hero-stat-card">
               <div class="hero-stat-val" id="kpi-critical-reports">3</div>
               <div class="hero-stat-label">Critical / High Priority</div>
             </div>
             <div class="hero-stat-card">
-              <div class="hero-stat-val" id="kpi-active-volunteers">1,420</div>
-              <div class="hero-stat-label">Citizen Champions</div>
+              <div class="hero-stat-val" id="kpi-registered-users">4</div>
+              <div class="hero-stat-label">Active Citizens</div>
             </div>
           </div>
         </div>
@@ -140,7 +203,7 @@
         <!-- Upcoming Climate Events -->
         <div class="card">
           <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 class="section-title">🌱 Upcoming Activities</h3>
+            <h3 class="section-title">🌱 Community Activities</h3>
             <a href="#" onclick="switchTab('activities'); return false;" style="font-size:0.8rem; color:var(--primary); font-weight:700; text-decoration:none;">Join →</a>
           </div>
           <div id="dashboard-activity-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
@@ -150,127 +213,131 @@
       </div>
     </section>
 
-    <!-- SECTION 2: REPORT INCIDENT -->
+    <!-- SECTION 2: REPORT INCIDENT (REQUIRES CITIZEN LOGIN) -->
     <section id="section-report" class="portal-section">
       <div class="section-header">
         <h2 class="section-title">🚨 Submit Environmental Incident Report</h2>
         <p class="section-desc">Report illegal dumping, deforestation, open burning, water pollution, or flood hazards to municipal authorities.</p>
       </div>
 
-      <div class="grid-2">
-        <!-- Report Form -->
+      <!-- Auth Required Gate Banner (Displayed if user is not logged in) -->
+      <div id="report-auth-gate" class="auth-gate-card" style="display: none;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔒</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">Citizen Sign In Required to Submit Reports</h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); max-width: 500px; margin: 0 auto 1.25rem;">
+          To prevent fraudulent submissions, maintain an auditable public record, and allow you to track the 6-stage resolution lifecycle with eco-points rewards, please log in or create an account.
+        </p>
+        <div style="display: flex; justify-content: center; gap: 0.75rem;">
+          <button class="btn-primary" onclick="openAuthModal('login')">🔑 Log In to My Account</button>
+          <button class="btn-secondary" onclick="openAuthModal('register')">📝 Create Citizen Account</button>
+        </div>
+      </div>
+
+      <!-- Form Container (Only enabled when authenticated) -->
+      <div id="report-form-container" class="grid-2">
+        <!-- Form Left Column -->
         <div class="card">
-          <form id="report-form">
+          <div class="reporter-session-banner" id="reporter-session-info" style="margin-bottom: 1rem; background: var(--primary-tint); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-focus); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Reporting as:</span>
+              <strong style="color: var(--primary-dark); margin-left: 4px;" id="reporter-display-name">Juan Dela Cruz</strong>
+              <span style="font-size: 0.75rem; color: var(--text-muted);" id="reporter-display-email">(juan@example.com)</span>
+            </div>
+            <span class="badge-low" style="font-size: 0.7rem;">Verified Citizen</span>
+          </div>
+
+          <form id="incident-report-form" onsubmit="handleFormSubmit(event)">
             <div class="form-group">
-              <label class="form-label" for="report-category">Environmental Issue Category *</label>
+              <label class="form-label" for="report-title">Incident Headline / Summary *</label>
+              <input type="text" id="report-title" class="form-control" placeholder="e.g. Uncontrolled industrial runoff into community creek" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="report-category">Environmental Hazard Category *</label>
               <select id="report-category" class="form-control" required>
-                <option value="Improper waste disposal">🚯 Improper waste disposal (Open dumps, plastic waste)</option>
-                <option value="Illegal cutting of trees">🪓 Illegal cutting of trees (Deforestation, unauthorized felling)</option>
-                <option value="Open burning">🔥 Open burning (Agricultural slash, burning garbage)</option>
-                <option value="Water pollution">🧪 Water pollution (River chemical dumping, wastewater)</option>
-                <option value="Flooding">🌊 Flooding (Clogged drainage, tidal or river overflow)</option>
-                <option value="Extreme heat vulnerability">☀️ Extreme heat vulnerability (Lack of shade, unventilated public areas)</option>
-                <option value="Storm / Typhoon damage">🌀 Storm / Typhoon damage (Uprooted trees, hazardous debris)</option>
-                <option value="Lack of vegetation">🌱 Lack of urban vegetation (Heat island hotspot)</option>
-                <option value="Water shortage">💧 Water shortage (Contaminated community well, dry tap)</option>
-                <option value="Air pollution">💨 Air pollution (Factory emission, heavy smoke belching)</option>
+                <option value="">Select hazard category...</option>
+                <option value="Improper waste disposal">Improper waste disposal (Plastic & Garbage Dumping)</option>
+                <option value="Illegal cutting of trees">Illegal cutting of trees (Deforestation / Logging)</option>
+                <option value="Open burning">Open burning (Agricultural / Tire / Trash Burning)</option>
+                <option value="Flooding">Choked Drainage & Severe Flash Flooding Hazard</option>
+                <option value="Water pollution">Chemical / Industrial Water Pollution</option>
+                <option value="Air pollution">Toxic Smokestack / Vehicular Emissions</option>
+                <option value="Extreme heat vulnerability">Severe Urban Heat Exposure</option>
+                <option value="Water shortage">Groundwater Contamination / Dry Well</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Severity Level Assessment *</label>
-              <div class="severity-picker">
-                <div class="severity-option critical">
-                  <input type="radio" id="sev-crit" name="report-severity" value="Critical" required>
-                  <label for="sev-crit">🔴 Critical</label>
-                </div>
-                <div class="severity-option high">
-                  <input type="radio" id="sev-high" name="report-severity" value="High">
-                  <label for="sev-high">🟠 High</label>
-                </div>
-                <div class="severity-option moderate">
-                  <input type="radio" id="sev-mod" name="report-severity" value="Moderate" checked>
-                  <label for="sev-mod">🟡 Moderate</label>
-                </div>
-                <div class="severity-option low">
-                  <input type="radio" id="sev-low" name="report-severity" value="Low">
-                  <label for="sev-low">🟢 Low</label>
-                </div>
-              </div>
+              <label class="form-label" for="report-severity">Hazard Severity Assessment *</label>
+              <select id="report-severity" class="form-control" required>
+                <option value="Low">Low - Minor litter or seedling planting request</option>
+                <option value="Moderate" selected>Moderate - Accumulating waste / non-toxic smoke</option>
+                <option value="High">High - Large open dump / active fire / flooded street</option>
+                <option value="Critical">Critical - Immediate poison runoff / illegal logging / emergency life threat</option>
+              </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="report-title">Incident Title *</label>
-              <input type="text" id="report-title" class="form-control" placeholder="e.g. Uncollected toxic waste accumulating by riverbank" required>
+              <label class="form-label" for="report-barangay">Barangay (Jurisdiction) *</label>
+              <select id="report-barangay" class="form-control" required>
+                <option value="Barangay Makilas">Barangay Makilas (River Basin Corridor)</option>
+                <option value="Barangay San Isidro">Barangay San Isidro (Forest Boundary)</option>
+                <option value="Barangay Bagong Silang">Barangay Bagong Silang (Agricultural Plain)</option>
+                <option value="Barangay Tabing Ilog">Barangay Tabing Ilog (Flood-Prone Culvert)</option>
+                <option value="Barangay Riverside">Barangay Riverside (Industrial Zone)</option>
+                <option value="Barangay Malinis">Barangay Malinis (Urban Commercial Center)</option>
+                <option value="Barangay Pag-asa">Barangay Pag-asa (Hilly Residential)</option>
+                <option value="Barangay Maligaya">Barangay Maligaya (Coastal Estuary)</option>
+              </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="report-description">Detailed Description *</label>
-              <textarea id="report-description" class="form-control" placeholder="Describe the environmental hazard, estimated volume, proximity to waterways, and immediate public risk..." required></textarea>
+              <label class="form-label" for="report-landmark">Exact Location, Street, or Landmark *</label>
+              <input type="text" id="report-landmark" class="form-control" placeholder="e.g. Purok 3 near Makilas Spillway behind basketball court" required>
             </div>
 
-            <div class="grid-2" style="gap: 1rem; margin-bottom: 1.15rem;">
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label" for="report-barangay">Barangay *</label>
-                <select id="report-barangay" class="form-control" required>
-                  <option value="Barangay Makilas">Barangay Makilas (River Basin)</option>
-                  <option value="Barangay Malinis">Barangay Malinis (Uptown)</option>
-                  <option value="Barangay Bagong Silang">Barangay Bagong Silang (Coastal)</option>
-                  <option value="Barangay San Isidro">Barangay San Isidro (Highlands)</option>
-                  <option value="Barangay Tabing Ilog">Barangay Tabing Ilog (Flood Zone)</option>
-                  <option value="Barangay Riverside">Barangay Riverside (Industrial)</option>
-                  <option value="Barangay Luntiang Bayan">Barangay Luntiang Bayan (Forest Reserve)</option>
-                  <option value="Barangay Pag-asa">Barangay Pag-asa (Agricultural)</option>
-                </select>
-              </div>
-
-              <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label" for="report-landmark">Exact Landmark / Street</label>
-                <input type="text" id="report-landmark" class="form-control" placeholder="e.g. Near Makilas Bridge, Sitio Ilaya">
-              </div>
+            <div class="form-group">
+              <label class="form-label" for="report-desc">Comprehensive Description & Observed Impact *</label>
+              <textarea id="report-desc" class="form-control" rows="4" placeholder="Detail the duration of violation, suspected parties, water discoloration, smoke smell, or community safety risks..." required></textarea>
             </div>
 
-            <!-- Photo Upload with Preview -->
+            <!-- Photographic Evidence Attachment -->
             <div class="form-group">
               <label class="form-label">Photographic Evidence</label>
-              <div class="photo-uploader" id="photo-upload-box" onclick="triggerPhotoPick()">
-                <input type="file" id="photo-file-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(this)">
-                <div id="photo-placeholder-content">
-                  <div style="font-size:2rem; margin-bottom: 0.5rem;">📸</div>
-                  <p style="font-weight: 700; font-size: 0.9rem; color: var(--primary);">Click or Drag to Upload Incident Photo</p>
-                  <p style="font-size: 0.75rem; color: var(--text-muted);">Supports JPG, PNG with automatic GPS coordinate geotagging</p>
+              <div class="photo-upload-box" onclick="document.getElementById('photo-input').click()">
+                <input type="file" id="photo-input" accept="image/*" style="display: none;" onchange="handlePhotoSelect(event)">
+                <div id="photo-upload-placeholder">
+                  <div style="font-size: 2rem; margin-bottom: 0.5rem;">📷</div>
+                  <div style="font-weight: 600; color: var(--primary);">Click to attach incident photograph</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">JPEG, PNG supported (Max 5MB)</div>
                 </div>
-                <img id="photo-preview-img" class="photo-preview" alt="Incident evidence preview">
+                <img id="photo-preview-img" style="display: none; max-height: 180px; width: auto; border-radius: 8px; margin: 0 auto;" alt="Preview">
               </div>
             </div>
 
-            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem;">
-              🚀 Submit Environmental Report (+10 Climate Points)
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem;" id="btn-submit-report">
+              🚀 Submit Environmental Report (+50 Eco-Points)
             </button>
           </form>
         </div>
 
-        <!-- Reporting Guidance & Impact Card -->
-        <div>
-          <div class="card" style="margin-bottom: 1.25rem; background: var(--primary-tint); border-color: #A7F3D0;">
-            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">
-              📋 Citizen Reporting Guidelines
-            </h3>
-            <p style="font-size: 0.85rem; color: var(--primary-dark); line-height: 1.6; margin-bottom: 0.75rem;">
-              Your submission directly triggers municipal emergency response and CENRO field inspections under Republic Act 9003 (Ecological Solid Waste Management) and Clean Water Act (RA 9275).
+        <!-- SLA & Resolution Guidelines Column -->
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="card">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">🏛️ Municipal Reporting Protocols</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem;" id="reporting-guide-text">
+              Reports undergo automated triage and are forwarded to the City Environment and Natural Resources Office (CENRO). Critical issues receive on-site dispatch within 4 hours.
             </p>
-            <ul style="font-size: 0.8rem; color: var(--primary-dark); padding-left: 1.2rem; line-height: 1.6;">
-              <li><strong>Take clear photos:</strong> Capture both close-up evidence and surrounding context.</li>
-              <li><strong>Precise location:</strong> Include recognizable street corners or barangay halls.</li>
-              <li><strong>Emergency Hazards:</strong> For immediate chemical spills or wildfire threats, call 911 immediately in addition to this digital report.</li>
-            </ul>
+            <div style="background: var(--surface-alt); padding: 0.75rem; border-radius: 8px; font-size: 0.8rem;">
+              <strong>⚖️ Republic Act 9003 & 8749 Compliance:</strong>
+              <div style="margin-top: 0.25rem; color: var(--text-muted);">
+                Citizens reporting verified violations are protected under Environmental Whistleblower regulations. Falsification of reports is strictly prohibited.
+              </div>
+            </div>
           </div>
 
           <div class="card">
             <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">⚡ Real-time LGU Resolution SLA</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
-              Each ticket undergoes an auditable 6-stage lifecycle monitored by barangay officers:
-            </p>
             <div class="workflow-track" style="padding: 0.5rem 0;">
               <div class="workflow-step completed">
                 <div class="step-node">1</div>
@@ -376,19 +443,98 @@
       </div>
     </section>
 
-    <!-- SECTION 5: CLIMATE EDUCATION & LIBRARY -->
+    <!-- SECTION 5: CLIMATE INFORMATION & WEBSITE CMS (DYNAMICALLY EDITED BY ADMIN) -->
     <section id="section-education" class="portal-section">
       <div class="section-header">
-        <h2 class="section-title">📚 Verified Climate Action & Education Library</h2>
-        <p class="section-desc">Peer-reviewed and agency-verified guides on disaster preparedness, zero-waste, and ecological restoration.</p>
+        <h2 class="section-title">📚 Climate Knowledge & Official Website Information</h2>
+        <p class="section-desc">Authoritative guides, environmental legal frameworks, climate action directives, and project background curated by municipal administrators.</p>
       </div>
 
+      <!-- CMS Dynamic Core Information Cards -->
+      <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
+        
+        <!-- 1. Climate Change in Metro Verde -->
+        <div class="card" style="border-left: 4px solid #ef4444;">
+          <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.5rem;">
+            <span style="font-size: 1.5rem;">🔥</span>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary-dark);">Climate Change Realities in Metro Verde</h3>
+          </div>
+          <p id="cms-display-climate-change" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main);">
+            Loading climate change documentation...
+          </p>
+        </div>
+
+        <!-- 2. Climate Action Directives -->
+        <div class="card" style="border-left: 4px solid #10b981;">
+          <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.5rem;">
+            <span style="font-size: 1.5rem;">🌱</span>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary-dark);">Community Climate Action & Restoration</h3>
+          </div>
+          <p id="cms-display-climate-action" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main);">
+            Loading climate action directives...
+          </p>
+        </div>
+
+        <!-- 3. Climate Awareness & Environmental Laws -->
+        <div class="card" style="border-left: 4px solid #0284c7;">
+          <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.5rem;">
+            <span style="font-size: 1.5rem;">⚖️</span>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary-dark);">Climate Awareness & Environmental Laws</h3>
+          </div>
+          <p id="cms-display-climate-awareness" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main);">
+            Loading environmental laws and policies...
+          </p>
+        </div>
+
+        <!-- 4. Website Information: About, Why Created, Who Created -->
+        <div class="card" style="background: var(--surface-alt); border: 1px solid var(--border);">
+          <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1rem;">
+            <span style="font-size: 1.5rem;">🏛️</span>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary-dark);">Official Website Background & Governance</h3>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; font-size: 0.85rem;">
+            <div>
+              <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.25rem;">📖 About This Website:</strong>
+              <div id="cms-display-about" style="color: var(--text-muted); line-height: 1.5;"></div>
+            </div>
+            <div>
+              <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.25rem;">💡 Why This System Was Created:</strong>
+              <div id="cms-display-why" style="color: var(--text-muted); line-height: 1.5;"></div>
+            </div>
+            <div>
+              <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.25rem;">👨‍💻 Leadership & System Author:</strong>
+              <div id="cms-display-who" style="color: var(--text-muted); line-height: 1.5;"></div>
+            </div>
+            <div>
+              <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.25rem;">🤝 Institutional Partners:</strong>
+              <div id="cms-display-partners" style="color: var(--text-muted); line-height: 1.5;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Peer-Reviewed Educational Articles Grid -->
+      <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; color: var(--primary-dark);">📖 Scientific Articles & Research Library</h3>
       <div id="articles-grid" class="grid-3">
         <!-- Rendered by JS -->
       </div>
     </section>
 
-    <!-- SECTION 6: CLIMATE QUIZ & REWARDS -->
+    <!-- SECTION 6: USER GUIDES (MANAGED BY ADMIN) -->
+    <section id="section-guides" class="portal-section">
+      <div class="section-header">
+        <h2 class="section-title">📖 Official Citizen User Guides</h2>
+        <p class="section-desc">Practical instructions for filing verified reports, monitoring ticket progress, and unlocking civic rewards.</p>
+      </div>
+
+      <div id="user-guides-container" style="display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Rendered by JS from /api/user-guides -->
+      </div>
+    </section>
+
+    <!-- SECTION 7: CLIMATE QUIZ & REWARDS -->
     <section id="section-quiz" class="portal-section">
       <div class="section-header">
         <h2 class="section-title">🧠 Climate Awareness & Policy Quiz</h2>
@@ -402,7 +548,7 @@
       </div>
     </section>
 
-    <!-- SECTION 7: COMMUNITY ACTIVITIES -->
+    <!-- SECTION 8: COMMUNITY ACTIVITIES -->
     <section id="section-activities" class="portal-section">
       <div class="section-header">
         <h2 class="section-title">🌿 Community Climate Action & Restoration</h2>
@@ -414,112 +560,93 @@
       </div>
     </section>
 
-    <!-- SECTION 8: LGU ADMIN & CENRO DISPATCH -->
-    <section id="section-admin" class="portal-section">
-      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2 class="section-title">🛡️ LGU CENRO Environmental Dispatch Console</h2>
-          <p class="section-desc">Manage citizen reports, assign cleanup teams, record field inspection remarks, and export thesis evaluation data.</p>
-        </div>
-        <button class="btn-primary" onclick="exportThesisSummary()">📄 Export Academic Summary</button>
-      </div>
-
-      <!-- Quick Action Analytics -->
-      <div class="grid-4" style="margin-bottom: 1.5rem;">
-        <div class="card">
-          <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">PENDING REVIEW</div>
-          <div style="font-size: 1.5rem; font-weight: 800; color: #D97706;" id="admin-kpi-pending">2</div>
-        </div>
-        <div class="card">
-          <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">IN PROGRESS / DISPATCHED</div>
-          <div style="font-size: 1.5rem; font-weight: 800; color: #2563EB;" id="admin-kpi-progress">1</div>
-        </div>
-        <div class="card">
-          <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">RESOLVED / CLOSED</div>
-          <div style="font-size: 1.5rem; font-weight: 800; color: #059669;" id="admin-kpi-resolved">5</div>
-        </div>
-        <div class="card">
-          <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">RESOLUTION SUCCESS RATE</div>
-          <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);" id="admin-kpi-rate">62.5%</div>
-        </div>
-      </div>
-
-      <!-- Admin Incident Management Table -->
-      <div class="card" style="padding: 0; overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
-          <thead>
-            <tr style="background: var(--surface-alt); border-bottom: 1px solid var(--border);">
-              <th style="padding: 0.75rem 1rem;">Ticket ID</th>
-              <th style="padding: 0.75rem 1rem;">Category</th>
-              <th style="padding: 0.75rem 1rem;">Severity</th>
-              <th style="padding: 0.75rem 1rem;">Barangay</th>
-              <th style="padding: 0.75rem 1rem;">Status</th>
-              <th style="padding: 0.75rem 1rem;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="admin-incident-table-body">
-            <!-- Rendered by JS -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-
   </main>
 
-  <!-- Incident Detail Modal -->
-  <div class="modal-overlay" id="incident-modal">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeModal('incident-modal')">&times;</button>
-      <div id="modal-incident-body">
-        <!-- Rendered by JS -->
+  <!-- CITIZEN AUTHENTICATION MODAL (SIGN IN & REGISTER) -->
+  <div class="modal-overlay" id="auth-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 480px;">
+      <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+      
+      <!-- Tab Switch: Login vs Register -->
+      <div class="auth-tabs-header">
+        <button class="auth-tab-btn active" id="auth-tab-login" onclick="setAuthMode('login')">Citizen Sign In</button>
+        <button class="auth-tab-btn" id="auth-tab-register" onclick="setAuthMode('register')">Create Account</button>
+      </div>
+
+      <!-- Quick Demo Login Helpers -->
+      <div style="background: var(--surface-alt); padding: 0.75rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.78rem;">
+        <span style="font-weight: 700; color: var(--primary);">Quick Demo Accounts:</span>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem;">
+          <button type="button" onclick="quickFillCitizen('juan@example.com', 'password123')" class="btn-demo-pill">Juan Dela Cruz</button>
+          <button type="button" onclick="quickFillCitizen('maria@example.com', 'password123')" class="btn-demo-pill">Maria Santos</button>
+        </div>
+      </div>
+
+      <!-- Form View: Login -->
+      <form id="citizen-login-form" onsubmit="handleCitizenLogin(event)">
+        <div class="form-group">
+          <label class="form-label" for="citizen-login-email">Email Address</label>
+          <input type="email" id="citizen-login-email" class="form-control" placeholder="juan@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="citizen-login-password">Password</label>
+          <input type="password" id="citizen-login-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <div id="auth-login-error" class="auth-error-msg" style="display: none;"></div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 0.8rem;">
+          Sign In to Citizen Account
+        </button>
+      </form>
+
+      <!-- Form View: Register -->
+      <form id="citizen-register-form" onsubmit="handleCitizenRegister(event)" style="display: none;">
+        <div class="form-group">
+          <label class="form-label" for="reg-name">Full Name *</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="e.g. Juan Dela Cruz" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email Address *</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="e.g. juan@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-phone">Contact Number</label>
+          <input type="tel" id="reg-phone" class="form-control" placeholder="+63 917 123 4567">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-barangay">Barangay Residence *</label>
+          <select id="reg-barangay" class="form-control" required>
+            <option value="Barangay Makilas">Barangay Makilas</option>
+            <option value="Barangay San Isidro">Barangay San Isidro</option>
+            <option value="Barangay Bagong Silang">Barangay Bagong Silang</option>
+            <option value="Barangay Tabing Ilog">Barangay Tabing Ilog</option>
+            <option value="Barangay Riverside">Barangay Riverside</option>
+            <option value="Barangay Malinis">Barangay Malinis</option>
+            <option value="Barangay Pag-asa">Barangay Pag-asa</option>
+            <option value="Barangay Maligaya">Barangay Maligaya</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Create Password *</label>
+          <input type="password" id="reg-password" class="form-control" placeholder="Minimum 6 characters" required>
+        </div>
+        <div id="auth-reg-error" class="auth-error-msg" style="display: none;"></div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 0.8rem;">
+          Register Citizen Account (+50 Welcome Points)
+        </button>
+      </form>
+
+      <div style="margin-top: 1rem; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+        Are you an LGU / CENRO Staff member? <a href="/admin.html" style="color: var(--primary); font-weight: 700;">Go to Admin Portal</a>
       </div>
     </div>
   </div>
 
-  <!-- Thesis Summary Modal -->
-  <div class="modal-overlay" id="thesis-modal">
-    <div class="modal-content" style="max-width: 760px;">
-      <button class="modal-close" onclick="closeModal('thesis-modal')">&times;</button>
-      <div style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
-        <span class="hero-tag">Academic Research & Demonstration</span>
-        <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-dark);">Mobile Climate Action Reporting and Information System</h2>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Executive System Summary for Academic Thesis Evaluation and Municipal Review</p>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.85rem;">
-        <div class="card" style="background: var(--surface-alt);">
-          <h4 style="font-weight: 700; color: var(--primary-dark); margin-bottom: 0.5rem;">📊 System Performance & Deployment Telemetry</h4>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.8rem;">
-            <div><strong>Mobile Platform:</strong> Android (Kotlin, Jetpack Compose, Room DB)</div>
-            <div><strong>Web Portal:</strong> Responsive HTML5, Modern CSS, Node.js API</div>
-            <div><strong>Total Reported Incidents:</strong> <span id="thesis-total-incidents">8</span> cases</div>
-            <div><strong>Resolution Rate:</strong> <span id="thesis-resolution-rate">62.5%</span></div>
-            <div><strong>Highest Risk Category:</strong> Improper waste disposal & Deforestation</div>
-            <div><strong>Top Vulnerable Sector:</strong> Barangay Makilas (River Basin Corridor)</div>
-          </div>
-        </div>
-
-        <div>
-          <h4 style="font-weight: 700; margin-bottom: 0.35rem;">🌱 Key Thesis Findings</h4>
-          <ol style="padding-left: 1.2rem; line-height: 1.6; color: var(--text-main);">
-            <li><strong>Reduced Response Latency:</strong> Geotagged photographic reporting reduces municipal verification cycle from 72 hours to under 4 hours.</li>
-            <li><strong>Cross-Platform Accessibility:</strong> Dual Mobile App and Web Portal deployment ensures 100% citizen accessibility regardless of device specification.</li>
-            <li><strong>Incentivized Civic Engagement:</strong> Climate points gamification increased cleanup volunteer turnout by 48% across 8 pilot barangays.</li>
-          </ol>
-        </div>
-
-        <div>
-          <h4 style="font-weight: 700; margin-bottom: 0.35rem;">🏛️ Municipal Recommendations</h4>
-          <ul style="padding-left: 1.2rem; line-height: 1.6; color: var(--text-muted);">
-            <li>Institutionalize direct webhook dispatches to Barangay Disaster Risk Reduction and Management Committees (BDRRMC).</li>
-            <li>Incorporate seasonal flood gauge telemetry with the GIS Hotspot Cartography layer.</li>
-          </ul>
-        </div>
-      </div>
-
-      <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
-        <button class="btn-outline" onclick="window.print()">🖨️ Print Summary</button>
-        <button class="btn-primary" onclick="closeModal('thesis-modal')">Done</button>
+  <!-- Incident Detail Modal -->
+  <div class="modal-overlay" id="incident-modal" style="display: none;">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('incident-modal')">&times;</button>
+      <div id="modal-incident-body">
+        <!-- Rendered by JS -->
       </div>
     </div>
   </div>
@@ -535,15 +662,15 @@
     <div class="footer-grid">
       <div>
         <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 1.1rem; color: var(--primary-dark); margin-bottom: 0.5rem;">
-          <span>🌱</span> Climate Action System
+          <span id="footer-logo">🌱</span> <span id="footer-brand-name">Climate Action</span>
         </div>
-        <p style="line-height: 1.6;">
-          Mobile & Web Climate Action Reporting and Information System. A research and public service initiative for local climate resilience.
+        <p style="line-height: 1.6;" id="footer-about-text">
+          Mobile & Web Climate Action Reporting and Information System. Empowering community environmental governance in Metro Verde.
         </p>
       </div>
       <div>
         <div class="footer-title">Municipal Partners</div>
-        <p style="line-height: 1.6;">
+        <p style="line-height: 1.6;" id="footer-partners-text">
           • City Environment and Natural Resources Office (CENRO)<br>
           • City Disaster Risk Reduction and Management Office (CDRRMO)<br>
           • Department of Environment and Natural Resources (DENR)
@@ -552,10 +679,15 @@
       <div>
         <div class="footer-title">Emergency Hotlines</div>
         <p style="line-height: 1.6;">
-          🚨 Municipal Disaster Rescue: (02) 8888-ECO<br>
-          🌿 Environmental Protection Unit: #911-DENR<br>
-          🏥 City Health Hotline: (02) 8999-CLIMATE
+          🚨 Municipal Disaster Rescue: <span id="footer-hotline-eco">(02) 8888-ECO</span><br>
+          🌿 Environmental Protection: #911-DENR<br>
+          🏥 City Health Helpline: (02) 8999-CLIMATE
         </p>
+        <div style="margin-top: 0.75rem;">
+          <a href="/admin.html" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-decoration: none;">
+            🛡️ Administrative Dispatch & Console Login →
+          </a>
+        </div>
       </div>
     </div>
   </footer>
