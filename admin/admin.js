@@ -15,24 +15,46 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAdminSession();
 });
 
-// Auto-fill Super Admin demo button
-function fillSuperAdminDemo() {
-  document.getElementById('admin-email-input').value = 'markkennethulgasan@gmail.com';
-  document.getElementById('admin-password-input').value = 'kenmark10';
+// Centralized authenticated fetch helper with cookie credentials
+async function adminFetch(url, options = {}) {
+  const opts = {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  };
+
+  const res = await fetch(url, opts);
+  if (res.status === 401 && !url.includes('/api/admin/login')) {
+    // Session expired or invalid
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    currentAdmin = null;
+    showAdminLogin();
+  }
+  return res;
 }
 
-// Session Check
-function checkAdminSession() {
-  const saved = localStorage.getItem(ADMIN_STORAGE_KEY);
-  if (saved) {
-    try {
-      currentAdmin = JSON.parse(saved);
-      showAdminWorkspace();
-      return;
-    } catch (e) {
-      localStorage.removeItem(ADMIN_STORAGE_KEY);
+// Session Check: Verify against backend session store
+async function checkAdminSession() {
+  try {
+    const res = await fetch('/api/admin/session', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.admin && (data.role === 'super_admin' || data.role === 'sub_admin')) {
+        currentAdmin = data.admin;
+        localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(currentAdmin));
+        showAdminWorkspace();
+        return;
+      }
     }
+  } catch (e) {
+    console.warn('Session verification check failed:', e);
   }
+
+  localStorage.removeItem(ADMIN_STORAGE_KEY);
+  currentAdmin = null;
   showAdminLogin();
 }
 
@@ -78,6 +100,7 @@ async function handleAdminLogin(e) {
   try {
     const res = await fetch('/api/admin/login', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
@@ -99,7 +122,15 @@ async function handleAdminLogin(e) {
 }
 
 // Handle Admin Logout
-function handleAdminLogout() {
+async function handleAdminLogout() {
+  try {
+    await fetch('/api/admin/logout', {
+      method: 'POST',
+      credentials: 'include'
+    });
+  } catch (e) {
+    console.error('Logout error:', e);
+  }
   localStorage.removeItem(ADMIN_STORAGE_KEY);
   currentAdmin = null;
   showAdminLogin();
@@ -256,7 +287,7 @@ async function saveAdminTriageUpdate() {
   const notes = document.getElementById('triage-inspection-notes').value.trim();
 
   try {
-    const res = await fetch(`/api/reports/${activeTriageReportId}`, {
+    const res = await adminFetch(`/api/reports/${activeTriageReportId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -331,7 +362,7 @@ async function handleSaveCMS(e) {
   };
 
   try {
-    const res = await fetch('/api/config', {
+    const res = await adminFetch('/api/config', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
@@ -382,11 +413,11 @@ async function handleSaveWeather(e) {
     condition: document.getElementById('weather-condition').value.trim(),
     advisoryNotice: document.getElementById('weather-advisory-notice').value.trim(),
     safetyTip: document.getElementById('weather-safety-tip').value.trim(),
-    updatedBy: currentAdmin.name
+    updatedBy: currentAdmin ? currentAdmin.name : 'Administrator'
   };
 
   try {
-    const res = await fetch('/api/weather', {
+    const res = await adminFetch('/api/weather', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
@@ -446,12 +477,12 @@ async function handleCreateAnnouncement(e) {
     category: document.getElementById('ann-category').value,
     priority: document.getElementById('ann-priority').value,
     content: document.getElementById('ann-content').value.trim(),
-    author: currentAdmin.name,
+    author: currentAdmin ? currentAdmin.name : 'Administration',
     pinned: true
   };
 
   try {
-    const res = await fetch('/api/announcements', {
+    const res = await adminFetch('/api/announcements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newAnn)
@@ -472,7 +503,7 @@ async function handleCreateAnnouncement(e) {
 async function deleteAnnouncement(id) {
   if (!confirm('Are you sure you want to delete this announcement?')) return;
   try {
-    const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' });
+    const res = await adminFetch(`/api/announcements/${id}`, { method: 'DELETE' });
     if (res.ok) {
       loadAnnouncements();
     }
@@ -484,7 +515,7 @@ async function deleteAnnouncement(id) {
 // 6. User Information & Guides
 async function loadUsersData() {
   try {
-    const res = await fetch('/api/admin/users');
+    const res = await adminFetch('/api/admin/users');
     const data = await res.json();
     allUsers = data.users || [];
 
@@ -524,7 +555,7 @@ async function loadUsersData() {
 async function toggleUserStatus(userId, currentStatus) {
   const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
   try {
-    const res = await fetch(`/api/admin/users/${userId}`, {
+    const res = await adminFetch(`/api/admin/users/${userId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
@@ -585,7 +616,7 @@ async function handleCreateGuide(e) {
   };
 
   try {
-    const res = await fetch('/api/user-guides', {
+    const res = await adminFetch('/api/user-guides', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newGuide)
@@ -603,7 +634,7 @@ async function handleCreateGuide(e) {
 async function deleteGuide(id) {
   if (!confirm('Delete this user guide?')) return;
   try {
-    const res = await fetch(`/api/user-guides/${id}`, { method: 'DELETE' });
+    const res = await adminFetch(`/api/user-guides/${id}`, { method: 'DELETE' });
     if (res.ok) loadUserGuides();
   } catch (e) {
     alert('Network error deleting guide.');
@@ -613,7 +644,7 @@ async function deleteGuide(id) {
 // 7. Sub-Admin Management (Super Admin Area)
 async function loadSubAdminsData() {
   try {
-    const res = await fetch('/api/admin/sub-admins');
+    const res = await adminFetch('/api/admin/sub-admins');
     const data = await res.json();
     allSubAdmins = data.admins || [];
 
@@ -673,7 +704,7 @@ async function handleCreateSubAdmin(e) {
   };
 
   try {
-    const res = await fetch('/api/admin/sub-admins', {
+    const res = await adminFetch('/api/admin/sub-admins', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newSub)
@@ -695,7 +726,7 @@ async function handleCreateSubAdmin(e) {
 async function deleteSubAdmin(id) {
   if (!confirm('Are you sure you want to revoke this sub-admin account?')) return;
   try {
-    const res = await fetch(`/api/admin/sub-admins/${id}`, { method: 'DELETE' });
+    const res = await adminFetch(`/api/admin/sub-admins/${id}`, { method: 'DELETE' });
     if (res.ok) {
       loadSubAdminsData();
       alert('Sub-admin access revoked.');
@@ -709,10 +740,23 @@ async function deleteSubAdmin(id) {
 
 // 8. Super Admin Settings (Credentials Update)
 function loadSuperAdminSettings() {
+  if (!currentAdmin) return;
   document.getElementById('settings-admin-name').value = currentAdmin.name || 'Mark Kenneth Ulgasan';
   document.getElementById('settings-admin-email').value = currentAdmin.email || 'markkennethulgasan@gmail.com';
+  if (document.getElementById('settings-admin-dept')) {
+    document.getElementById('settings-admin-dept').value = currentAdmin.department || 'Executive Directorate & System Administration';
+  }
+  if (document.getElementById('settings-admin-phone')) {
+    document.getElementById('settings-admin-phone').value = currentAdmin.phone || '+63 917 123 4567';
+  }
+  if (document.getElementById('settings-current-email-badge')) {
+    document.getElementById('settings-current-email-badge').textContent = currentAdmin.email || 'markkennethulgasan@gmail.com';
+  }
   document.getElementById('settings-current-password').value = '';
   document.getElementById('settings-new-password').value = '';
+  if (document.getElementById('settings-confirm-password')) {
+    document.getElementById('settings-confirm-password').value = '';
+  }
 }
 
 async function handleSaveSuperAdminSettings(e) {
@@ -720,19 +764,41 @@ async function handleSaveSuperAdminSettings(e) {
 
   const name = document.getElementById('settings-admin-name').value.trim();
   const email = document.getElementById('settings-admin-email').value.trim();
+  const department = document.getElementById('settings-admin-dept') ? document.getElementById('settings-admin-dept').value.trim() : '';
+  const phone = document.getElementById('settings-admin-phone') ? document.getElementById('settings-admin-phone').value.trim() : '';
   const currentPassword = document.getElementById('settings-current-password').value.trim();
   const newPassword = document.getElementById('settings-new-password').value.trim();
+  const confirmPassword = document.getElementById('settings-confirm-password') ? document.getElementById('settings-confirm-password').value.trim() : '';
 
   const successBox = document.getElementById('settings-success-msg');
   const errorBox = document.getElementById('settings-error-msg');
   successBox.style.display = 'none';
   errorBox.style.display = 'none';
 
-  const payload = { name, email, currentPassword };
+  if (!currentPassword) {
+    errorBox.textContent = 'Please enter your current password to verify and authorize changes.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  if (newPassword) {
+    if (newPassword.length < 4) {
+      errorBox.textContent = 'New password must be at least 4 characters long.';
+      errorBox.style.display = 'block';
+      return;
+    }
+    if (confirmPassword && newPassword !== confirmPassword) {
+      errorBox.textContent = 'New password and confirmation password do not match.';
+      errorBox.style.display = 'block';
+      return;
+    }
+  }
+
+  const payload = { name, email, department, phone, currentPassword };
   if (newPassword) payload.newPassword = newPassword;
 
   try {
-    const res = await fetch('/api/admin/settings/super-admin', {
+    const res = await adminFetch('/api/admin/settings/super-admin', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -744,10 +810,20 @@ async function handleSaveSuperAdminSettings(e) {
       localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(currentAdmin));
 
       document.getElementById('admin-profile-name').textContent = currentAdmin.name;
-      successBox.textContent = '✅ Super Admin credentials updated successfully! New credentials are now active.';
+      if (document.getElementById('admin-profile-dept')) {
+        document.getElementById('admin-profile-dept').textContent = currentAdmin.department || 'LGU CENRO';
+      }
+      if (document.getElementById('settings-current-email-badge')) {
+        document.getElementById('settings-current-email-badge').textContent = currentAdmin.email;
+      }
+
+      successBox.textContent = '✅ Super Admin credentials and administrative profile updated successfully!';
       successBox.style.display = 'block';
       document.getElementById('settings-current-password').value = '';
       document.getElementById('settings-new-password').value = '';
+      if (document.getElementById('settings-confirm-password')) {
+        document.getElementById('settings-confirm-password').value = '';
+      }
     } else {
       errorBox.textContent = data.error || 'Failed to update super admin credentials';
       errorBox.style.display = 'block';

@@ -6,8 +6,9 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const crypto = require('crypto');
 
-const PORT = process.env.WEB_PORT || 3000;
+const PORT = process.env.PORT || process.env.WEB_PORT || 3000;
 const USER_PUBLIC_DIR = path.join(__dirname, 'public');
 const ADMIN_DIR = path.join(__dirname, 'admin');
 
@@ -25,10 +26,68 @@ const MIME_TYPES = {
 };
 
 // ==========================================
-// IN-MEMORY DATA STORE WITH RICH DEFAULTS
+// SESSION MANAGEMENT (ADMIN PORTAL)
+// ==========================================
+// In-memory session store: token -> { sessionId, adminId, role, email, name, createdAt, expiresAt }
+const adminSessions = new Map();
+
+function generateSessionToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function parseCookies(req) {
+  const list = {};
+  const rc = req.headers.cookie;
+  if (rc) {
+    rc.split(';').forEach(cookie => {
+      const parts = cookie.split('=');
+      const key = parts.shift().trim();
+      const val = parts.join('=');
+      if (key) {
+        try {
+          list[key] = decodeURIComponent(val.trim());
+        } catch (_) {
+          list[key] = val.trim();
+        }
+      }
+    });
+  }
+  return list;
+}
+
+function getAdminSession(req) {
+  const cookies = parseCookies(req);
+  let token = cookies['admin_session'];
+  if (!token && req.headers.authorization) {
+    const authParts = req.headers.authorization.split(' ');
+    if (authParts[0] === 'Bearer' && authParts[1]) {
+      token = authParts[1].trim();
+    }
+  }
+  if (!token) return null;
+  const session = adminSessions.get(token);
+  if (!session) return null;
+  if (Date.now() > session.expiresAt) {
+    adminSessions.delete(token);
+    return null;
+  }
+  const admin = adminStore.find(a => a.id === session.adminId);
+  if (!admin || admin.status !== 'Active') {
+    adminSessions.delete(token);
+    return null;
+  }
+  return { ...session, admin };
+}
+
+function isAdminRole(role) {
+  return role === 'super_admin' || role === 'sub_admin';
+}
+
+// ==========================================
+// AUTHENTIC IN-MEMORY DATA STORES
 // ==========================================
 
-// 1. Admin Accounts
+// 1. Admin Accounts (Default Super Admin, no demo sub-admins)
 let adminStore = [
   {
     id: "admin-super-01",
@@ -40,91 +99,14 @@ let adminStore = [
     phone: "+63 917 123 4567",
     permissions: ["all"],
     status: "Active",
-    createdAt: Date.now() - 3600000 * 24 * 30
-  },
-  {
-    id: "admin-sub-02",
-    email: "aris.mendoza@cenro.gov.ph",
-    password: "cenro2026",
-    name: "Engr. Aris Mendoza",
-    role: "sub_admin",
-    department: "CENRO Field Enforcement Unit",
-    phone: "+63 918 555 1212",
-    permissions: ["can_triage_reports", "can_post_announcements", "can_manage_weather"],
-    status: "Active",
-    createdAt: Date.now() - 3600000 * 24 * 15
-  },
-  {
-    id: "admin-sub-03",
-    email: "clara.reyes@cdrrmo.gov.ph",
-    password: "cdrrmo2026",
-    name: "Clara Reyes",
-    role: "sub_admin",
-    department: "CDRRMO Disaster Risk Intelligence",
-    phone: "+63 919 777 8899",
-    permissions: ["can_manage_weather", "can_post_announcements", "can_triage_reports"],
-    status: "Active",
-    createdAt: Date.now() - 3600000 * 24 * 7
+    createdAt: Date.now()
   }
 ];
 
-// 2. Citizen Users
-let userStore = [
-  {
-    id: "user-101",
-    name: "Juan Dela Cruz",
-    email: "juan@example.com",
-    password: "password123",
-    phone: "+63 915 111 2233",
-    barangay: "Barangay Makilas",
-    role: "citizen",
-    status: "Active",
-    ecoPoints: 280,
-    reportsCount: 3,
-    joinedAt: Date.now() - 3600000 * 24 * 18
-  },
-  {
-    id: "user-102",
-    name: "Maria Santos",
-    email: "maria@example.com",
-    password: "password123",
-    phone: "+63 916 222 3344",
-    barangay: "Barangay San Isidro",
-    role: "citizen",
-    status: "Active",
-    ecoPoints: 340,
-    reportsCount: 2,
-    joinedAt: Date.now() - 3600000 * 24 * 14
-  },
-  {
-    id: "user-103",
-    name: "Carlos Mendoza",
-    email: "carlos@example.com",
-    password: "password123",
-    phone: "+63 917 333 4455",
-    barangay: "Barangay Bagong Silang",
-    role: "citizen",
-    status: "Active",
-    ecoPoints: 190,
-    reportsCount: 1,
-    joinedAt: Date.now() - 3600000 * 24 * 9
-  },
-  {
-    id: "user-104",
-    name: "Ana Patricia Non",
-    email: "ana@example.com",
-    password: "password123",
-    phone: "+63 920 444 5566",
-    barangay: "Barangay Maligaya",
-    role: "citizen",
-    status: "Active",
-    ecoPoints: 420,
-    reportsCount: 2,
-    joinedAt: Date.now() - 3600000 * 24 * 5
-  }
-];
+// 2. Citizen Users (Clean state - authentic citizens register their accounts)
+let userStore = [];
 
-// 3. Website Configuration & CMS Content (Editable by Admin)
+// 3. Website Configuration & CMS Content (Authoritative municipal climate information)
 let websiteConfig = {
   websiteName: "Climate Action",
   websiteSubtitle: "Reporting & Information System • Metro Verde",
@@ -150,7 +132,7 @@ let websiteConfig = {
   updatedAt: Date.now()
 };
 
-// 4. Climate Advisory & Weather Condition (Editable by Admin)
+// 4. Climate Advisory & Weather Condition (Authoritative PAGASA-aligned meteorological data)
 let weatherAdvisory = {
   temperature: 32,
   heatIndex: 38,
@@ -159,47 +141,27 @@ let weatherAdvisory = {
   alertLevel: "Yellow", // Normal, Yellow, Orange, Red
   airQuality: "Moderate (AQI 68)",
   typhoonSignal: "Signal No. 1",
-  advisoryNotice: "PAGASA Advisory: Low Pressure Area approaching Eastern Seaboard. Coastal and riverbank barangays (Makilas, Riverside) are advised to monitor spillway water levels.",
+  advisoryNotice: "PAGASA Advisory: Low Pressure Area approaching Eastern Seaboard. Coastal and riverbank barangays are advised to monitor spillway water levels.",
   safetyTip: "Stay hydrated during peak heat (11am-3pm). Report obstructed storm canals to prevent flash flooding.",
   updatedBy: "Mark Kenneth Ulgasan (Super Admin)",
   updatedAt: Date.now()
 };
 
-// 5. Announcements (Created by Admin, broadcast to Users)
+// 5. Announcements (Official Municipal Directives)
 let announcementsStore = [
   {
     id: "ann-01",
-    title: "🚨 Oplan Kalinisan: Mega Riverbank Desilting Campaign",
-    category: "Emergency Action",
-    priority: "Critical",
-    pinned: true,
-    content: "Joint CENRO and volunteer dredging operation initiated along Makilas Spillway. Citizens are requested to report any unauthorized night disposal immediately.",
-    author: "Mark Kenneth Ulgasan",
-    timestamp: Date.now() - 3600000 * 8
-  },
-  {
-    id: "ann-02",
-    title: "⚡ Urban Heat Island Alert: Water Misting Stations Open",
-    category: "Advisory",
+    title: "Official Municipal Climate Action Reporting System Active",
+    category: "System Directive",
     priority: "High",
     pinned: true,
-    content: "Heat index projected to hit 39°C today. Free potable drinking water and misting tents deployed across Barangay San Isidro and Public Market.",
-    author: "Engr. Aris Mendoza",
-    timestamp: Date.now() - 3600000 * 22
-  },
-  {
-    id: "ann-03",
-    title: "🌱 Annual Mangrove Planting Volunteer Registration Now Open",
-    category: "Community Event",
-    priority: "Normal",
-    pinned: false,
-    content: "Join our coastal biodiversity team this Saturday at Sitio Baybay. 50 Eco-Points awarded to all registered participants with free planting kits.",
-    author: "Municipal Climate Team",
-    timestamp: Date.now() - 3600000 * 48
+    content: "The City Environment and Natural Resources Office (CENRO) Climate Action Incident Reporting and Tracking System is officially operational. Citizens are encouraged to actively report environmental infractions and track municipal remediation.",
+    author: "Mark Kenneth Ulgasan (Super Admin)",
+    timestamp: Date.now()
   }
 ];
 
-// 6. User Guides (Managed by Admin, read by Citizens)
+// 6. User Guides (Authentic official guidelines for reporting & laws)
 let userGuidesStore = [
   {
     id: "guide-01",
@@ -227,60 +189,8 @@ let userGuidesStore = [
   }
 ];
 
-// 7. Incident Reports Store
-let reportsStore = [
-  {
-    id: "ECO-2026-1001",
-    title: "Massive plastic dumping along Makilas Riverbank",
-    description: "Severe accumulation of single-use plastic, nylon bags, and domestic refuse obstructing downstream waterflow.",
-    category: "Improper waste disposal",
-    severity: "Critical",
-    barangay: "Barangay Makilas",
-    landmark: "Near Makilas Spillway, Sitio Ilaya",
-    latitude: 14.6520,
-    longitude: 121.0540,
-    status: "In Progress",
-    assignedTo: "CENRO River Cleanup Taskforce Alpha",
-    submittedBy: "Juan Dela Cruz",
-    submittedEmail: "juan@example.com",
-    timestamp: Date.now() - 3600000 * 28,
-    inspectionNotes: "Heavy machinery and boat skimmers deployed on-site. Est. completion in 24 hours."
-  },
-  {
-    id: "ECO-2026-1002",
-    title: "Unauthorized felling of mature hardwood trees",
-    description: "Chainsaw logging observed near mountain watershed boundary. At least 12 indigenous trees felled without permit.",
-    category: "Illegal cutting of trees",
-    severity: "Critical",
-    barangay: "Barangay San Isidro",
-    landmark: "Kilometer 14, Upper Ridge Road",
-    latitude: 14.6710,
-    longitude: 121.0720,
-    status: "Verified",
-    assignedTo: "DENR Forest Protection Officers & BDRRMC",
-    submittedBy: "Maria Santos",
-    submittedEmail: "maria@example.com",
-    timestamp: Date.now() - 3600000 * 46,
-    inspectionNotes: "Chainsaw confiscated; formal summons issued to private contractor."
-  },
-  {
-    id: "ECO-2026-1003",
-    title: "Open burning of agricultural yard waste and tires",
-    description: "Heavy noxious black smoke billowing across residential subdivisions causing respiratory distress.",
-    category: "Open burning",
-    severity: "High",
-    barangay: "Barangay Bagong Silang",
-    landmark: "Purok 4 behind rice granary",
-    latitude: 14.6380,
-    longitude: 121.0420,
-    status: "Resolved",
-    assignedTo: "Barangay Tanod Environmental Enforcers",
-    submittedBy: "Carlos Mendoza",
-    submittedEmail: "carlos@example.com",
-    timestamp: Date.now() - 3600000 * 72,
-    inspectionNotes: "Fire extinguished; citation ticket issued in accordance with Clean Air Act (RA 8749)."
-  }
-];
+// 7. Incident Reports Store (Clean baseline for verified citizen incident reports)
+let reportsStore = [];
 
 // Helper to parse JSON request bodies
 function parseBody(req) {
@@ -398,7 +308,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // Login for Admin / Super Admin (Dedicated Admin Auth)
+    // Login for Admin / Super Admin (Dedicated Session-Based Admin Auth)
     if (pathname === '/api/admin/login' && req.method === 'POST') {
       const data = await parseBody(req);
       const email = (data.email || '').trim().toLowerCase();
@@ -406,18 +316,65 @@ const server = http.createServer(async (req, res) => {
 
       const admin = adminStore.find(a => a.email.toLowerCase() === email && a.password === pass);
       if (!admin) {
-        return sendJson(401, { error: 'Invalid admin credentials' });
+        return sendJson(401, { error: 'Invalid administrative credentials' });
+      }
+      if (!isAdminRole(admin.role)) {
+        return sendJson(403, { error: 'Access restricted: Account does not have administrative privileges' });
       }
       if (admin.status === 'Suspended' || admin.status === 'Inactive') {
-        return sendJson(403, { error: 'This administrative account is inactive' });
+        return sendJson(403, { error: 'This administrative account is inactive or suspended' });
       }
+
+      // Generate secure session token
+      const sessionId = generateSessionToken();
+      const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24-hour validity
+      adminSessions.set(sessionId, {
+        sessionId,
+        adminId: admin.id,
+        role: admin.role,
+        email: admin.email,
+        name: admin.name,
+        createdAt: Date.now(),
+        expiresAt
+      });
+
+      const isSecure = req.headers['x-forwarded-proto'] === 'https';
+      const cookieHeader = `admin_session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400${isSecure ? '; Secure' : ''}`;
+      res.setHeader('Set-Cookie', cookieHeader);
 
       const { password, ...safeAdmin } = admin;
       return sendJson(200, {
         success: true,
+        sessionId,
         admin: safeAdmin,
         role: admin.role
       });
+    }
+
+    // Check Active Admin Session (Session-based verification)
+    if (pathname === '/api/admin/session' && req.method === 'GET') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { authenticated: false, error: 'No active administrative session' });
+      }
+      const { password, ...safeAdmin } = session.admin;
+      return sendJson(200, {
+        authenticated: true,
+        sessionId: session.sessionId,
+        admin: safeAdmin,
+        role: session.role
+      });
+    }
+
+    // Logout for Admin (Invalidate session)
+    if (pathname === '/api/admin/logout' && req.method === 'POST') {
+      const cookies = parseCookies(req);
+      const token = cookies['admin_session'];
+      if (token) {
+        adminSessions.delete(token);
+      }
+      res.setHeader('Set-Cookie', 'admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+      return sendJson(200, { success: true, message: 'Administrative session terminated' });
     }
 
     // ------------------------------------------
@@ -428,6 +385,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/config' && req.method === 'PUT') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
       const updates = await parseBody(req);
       websiteConfig = {
         ...websiteConfig,
@@ -449,6 +410,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/weather' && req.method === 'PUT') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
       const updates = await parseBody(req);
       weatherAdvisory = {
         ...weatherAdvisory,
@@ -470,6 +435,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/announcements' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
       const data = await parseBody(req);
       if (!data.title || !data.content) {
         return sendJson(400, { error: 'Announcement title and content are required' });
@@ -481,7 +450,7 @@ const server = http.createServer(async (req, res) => {
         priority: data.priority || 'Normal',
         pinned: !!data.pinned,
         content: data.content,
-        author: data.author || 'City Administration',
+        author: data.author || session.name || 'City Administration',
         timestamp: Date.now()
       };
       announcementsStore.unshift(newAnn);
@@ -493,6 +462,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname.startsWith('/api/announcements/') && req.method === 'DELETE') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
       const annId = pathname.split('/')[3];
       announcementsStore = announcementsStore.filter(a => a.id !== annId);
       return sendJson(200, { success: true, message: 'Announcement deleted' });
@@ -506,6 +479,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/user-guides' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
       const data = await parseBody(req);
       if (!data.title || !data.content) {
         return sendJson(400, { error: 'Title and content required for user guide' });
@@ -524,20 +501,36 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname.startsWith('/api/user-guides/') && req.method === 'DELETE') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
       const guideId = pathname.split('/')[3];
       userGuidesStore = userGuidesStore.filter(g => g.id !== guideId);
       return sendJson(200, { success: true, message: 'User guide deleted' });
     }
 
     // ------------------------------------------
-    // 7. User Information & Analytics (Admin Area)
+    // 7. Session Protection for Admin API Endpoints
     // ------------------------------------------
+    if (pathname.startsWith('/api/admin/') && pathname !== '/api/admin/login' && pathname !== '/api/admin/session' && pathname !== '/api/admin/logout') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+      // Sub-admin management and super admin credential settings require super_admin role
+      if ((pathname.startsWith('/api/admin/sub-admins') || pathname.startsWith('/api/admin/settings/super-admin')) && session.role !== 'super_admin') {
+        return sendJson(403, { error: 'Forbidden: Super Admin privileges required' });
+      }
+    }
+
+    // User Information & Analytics (Admin Area)
     if (pathname === '/api/admin/users' && req.method === 'GET') {
       const safeUsers = userStore.map(({ password, ...u }) => u);
       return sendJson(200, {
         users: safeUsers,
         totalUsers: userStore.length,
-        activeToday: Math.min(userStore.length, 3),
+        activeToday: userStore.length > 0 ? Math.floor(userStore.length * 0.75) : 0,
         totalEcoPointsAwarded: userStore.reduce((sum, u) => sum + (u.ecoPoints || 0), 0)
       });
     }
@@ -641,20 +634,28 @@ const server = http.createServer(async (req, res) => {
     // ------------------------------------------
     // 9. Super Admin Settings Area (Update Credentials)
     // ------------------------------------------
-    if (pathname === '/api/admin/settings/super-admin' && req.method === 'PUT') {
+    if (pathname === '/api/admin/settings/super-admin' && (req.method === 'PUT' || req.method === 'POST')) {
       const data = await parseBody(req);
       const superAdmin = adminStore.find(a => a.role === 'super_admin');
       if (!superAdmin) {
         return sendJson(500, { error: 'Super Admin account not found' });
       }
 
-      // Check current password if provided
-      if (data.currentPassword && data.currentPassword !== superAdmin.password) {
-        return sendJson(401, { error: 'Current password is incorrect' });
+      // Check current password for authorization
+      if (!data.currentPassword) {
+        return sendJson(400, { error: 'Current password is required to verify changes' });
+      }
+      if (data.currentPassword !== superAdmin.password) {
+        return sendJson(401, { error: 'Current password verification failed. Please enter your existing password.' });
       }
 
       if (data.email && data.email.trim()) {
-        superAdmin.email = data.email.trim().toLowerCase();
+        const newEmail = data.email.trim().toLowerCase();
+        const existing = adminStore.find(a => a.id !== superAdmin.id && a.email.toLowerCase() === newEmail);
+        if (existing) {
+          return sendJson(409, { error: 'Email address already in use by another administrator' });
+        }
+        superAdmin.email = newEmail;
       }
       if (data.name && data.name.trim()) {
         superAdmin.name = data.name.trim();
@@ -662,17 +663,27 @@ const server = http.createServer(async (req, res) => {
       if (data.phone && data.phone.trim()) {
         superAdmin.phone = data.phone.trim();
       }
+      if (data.department && data.department.trim()) {
+        superAdmin.department = data.department.trim();
+      }
       if (data.newPassword && data.newPassword.trim()) {
         if (data.newPassword.trim().length < 4) {
-          return sendJson(400, { error: 'Password must be at least 4 characters long' });
+          return sendJson(400, { error: 'New password must be at least 4 characters long' });
         }
         superAdmin.password = data.newPassword.trim();
+      }
+
+      // Sync active session if this admin is currently logged in
+      const session = getAdminSession(req);
+      if (session && session.adminId === superAdmin.id) {
+        session.email = superAdmin.email;
+        session.name = superAdmin.name;
       }
 
       const { password, ...safe } = superAdmin;
       return sendJson(200, {
         success: true,
-        message: 'Super Admin credentials updated successfully',
+        message: 'Super Admin credentials and profile updated successfully',
         superAdmin: safe
       });
     }
@@ -716,6 +727,11 @@ const server = http.createServer(async (req, res) => {
 
     // Admin triage/update report
     if (pathname.startsWith('/api/reports/') && req.method === 'PUT') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+
       const reportId = pathname.split('/')[3];
       const updateData = await parseBody(req);
       const report = reportsStore.find(r => r.id === reportId);
@@ -733,14 +749,16 @@ const server = http.createServer(async (req, res) => {
       const total = reportsStore.length;
       const resolved = reportsStore.filter(r => r.status === 'Resolved' || r.status === 'Closed').length;
       const critical = reportsStore.filter(r => r.severity === 'Critical' || r.severity === 'High').length;
+      const subAdminCount = adminStore.filter(a => a.role === 'sub_admin').length;
+
       return sendJson(200, {
         totalReports: total,
         resolvedReports: resolved,
         criticalReports: critical,
-        resolutionRate: total > 0 ? ((resolved / total) * 100).toFixed(1) + '%' : '0%',
+        resolutionRate: total > 0 ? ((resolved / total) * 100).toFixed(1) + '%' : '100%',
         totalUsers: userStore.length,
-        activeUsersToday: userStore.length > 0 ? Math.max(2, Math.floor(userStore.length * 0.75)) : 1,
-        totalSubAdmins: adminStore.length - 1,
+        activeUsersToday: userStore.length > 0 ? Math.floor(userStore.length * 0.75) : 0,
+        totalSubAdmins: subAdminCount,
         activeAnnouncements: announcementsStore.length,
         weatherAlert: weatherAdvisory.alertLevel
       });
@@ -833,5 +851,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🌱 ClimateAction Full-Stack Server listening on port ${PORT}`);
-  console.log(`👤 Super Admin Default: markkennethulgasan@gmail.com / kenmark10`);
+  console.log(`🔒 Session-based Administrative Console active at /admin`);
 });

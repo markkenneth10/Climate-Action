@@ -568,24 +568,15 @@
         <button class="auth-tab-btn" id="auth-tab-register" onclick="setAuthMode('register')">Create Account</button>
       </div>
 
-      <!-- Quick Demo Login Helpers -->
-      <div style="background: var(--surface-alt); padding: 0.75rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.78rem;">
-        <span style="font-weight: 700; color: var(--primary);">Quick Demo Accounts:</span>
-        <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem;">
-          <button type="button" onclick="quickFillCitizen('juan@example.com', 'password123')" class="btn-demo-pill">Juan Dela Cruz</button>
-          <button type="button" onclick="quickFillCitizen('maria@example.com', 'password123')" class="btn-demo-pill">Maria Santos</button>
-        </div>
-      </div>
-
       <!-- Form View: Login -->
       <form id="citizen-login-form" onsubmit="handleCitizenLogin(event)">
         <div class="form-group">
           <label class="form-label" for="citizen-login-email">Email Address</label>
-          <input type="email" id="citizen-login-email" class="form-control" placeholder="juan@example.com" required>
+          <input type="email" id="citizen-login-email" class="form-control" placeholder="citizen@example.ph" required autocomplete="username">
         </div>
         <div class="form-group">
           <label class="form-label" for="citizen-login-password">Password</label>
-          <input type="password" id="citizen-login-password" class="form-control" placeholder="••••••••" required>
+          <input type="password" id="citizen-login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
         </div>
         <div id="auth-login-error" class="auth-error-msg" style="display: none;"></div>
         <button type="submit" class="btn-primary" style="width: 100%; padding: 0.8rem;">
@@ -597,7 +588,7 @@
       <form id="citizen-register-form" onsubmit="handleCitizenRegister(event)" style="display: none;">
         <div class="form-group">
           <label class="form-label" for="reg-name">Full Name *</label>
-          <input type="text" id="reg-name" class="form-control" placeholder="e.g. Juan Dela Cruz" required>
+          <input type="text" id="reg-name" class="form-control" placeholder="Enter your full name" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="reg-email">Email Address *</label>

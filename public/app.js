@@ -227,12 +227,6 @@ function setAuthMode(mode) {
   }
 }
 
-function quickFillCitizen(email, password) {
-  setAuthMode('login');
-  document.getElementById('citizen-login-email').value = email;
-  document.getElementById('citizen-login-password').value = password;
-}
-
 async function handleCitizenLogin(e) {
   e.preventDefault();
   const email = document.getElementById('citizen-login-email').value.trim();
