@@ -151,12 +151,30 @@ let userStore = [
     name: "Mark Kenneth Ulgasan",
     phone: "+63 917 888 2468",
     barangay: "Barangay Makilas",
+    address: "124 Green St, Purok 3",
+    city: "Metro Verde City",
+    province: "Rizal",
+    zip: "1920",
+    bio: "Passionate environmental volunteer, community organizer, and certified municipal eco-warden.",
+    avatar: "",
+    emergencyContactName: "Elena Ulgasan",
+    emergencyContactPhone: "+63 917 555 9876",
     role: "citizen",
+    status: "Active",
     ecoPoints: 750,
     level: "Climate Advocate",
     badges: ["🎖️ Eco Warden", "🌳 Tree Protector", "🌊 Watershed Guardian"],
     rank: 12,
-    status: "Active",
+    kycStatus: "verified", // "unverified", "pending", "verified", "rejected"
+    kycIdType: "Philippine National ID (PhilSys)",
+    kycIdNumber: "9182-3847-1928-4820",
+    kycFrontImage: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80",
+    kycBackImage: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80",
+    kycSelfieImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+    kycSubmittedAt: Date.now() - 15 * 86400000,
+    kycReviewedAt: Date.now() - 14 * 86400000,
+    kycReviewedBy: "LGU CENRO Executive Directorate",
+    kycRejectReason: "",
     createdAt: Date.now() - 15 * 86400000
   }
 ];
@@ -452,16 +470,38 @@ const server = http.createServer(async (req, res) => {
 
       const newUser = {
         id: `user-${Date.now().toString().slice(-4)}`,
-        name: data.name,
-        email: data.email.toLowerCase(),
+        name: (data.name || '').trim(),
+        email: data.email.toLowerCase().trim(),
         password: data.password,
-        phone: data.phone || '+63 900 000 0000',
+        phone: (data.phone || '+63 900 000 0000').trim(),
         barangay: data.barangay || 'Barangay Makilas',
+        address: (data.address || '').trim(),
+        city: (data.city || 'Metro Verde City').trim(),
+        province: (data.province || 'Rizal').trim(),
+        zip: (data.zip || '1920').trim(),
+        bio: (data.bio || '').trim(),
+        avatar: '',
+        emergencyContactName: (data.emergencyContactName || '').trim(),
+        emergencyContactPhone: (data.emergencyContactPhone || '').trim(),
         role: 'citizen',
         status: 'Active',
         ecoPoints: 50, // Welcome bonus points
+        level: 'Eco Citizen',
+        badges: ['🌱 Welcome Pioneer'],
+        rank: userStore.length + 1,
+        kycStatus: 'unverified', // 'unverified', 'pending', 'verified', 'rejected'
+        kycIdType: '',
+        kycIdNumber: '',
+        kycFrontImage: '',
+        kycBackImage: '',
+        kycSelfieImage: '',
+        kycSubmittedAt: null,
+        kycReviewedAt: null,
+        kycReviewedBy: '',
+        kycRejectReason: '',
         reportsCount: 0,
-        joinedAt: Date.now()
+        joinedAt: Date.now(),
+        createdAt: Date.now()
       };
       userStore.push(newUser);
 
@@ -469,7 +509,7 @@ const server = http.createServer(async (req, res) => {
       const { password, ...safeUser } = newUser;
       return sendJson(201, {
         success: true,
-        message: 'Account registered successfully! Welcome to Climate Action.',
+        message: 'Account registered successfully! Please complete your KYC verification to enable incident reporting.',
         user: safeUser
       });
     }
@@ -493,6 +533,153 @@ const server = http.createServer(async (req, res) => {
         success: true,
         user: safeUser,
         role: 'citizen'
+      });
+    }
+
+    // Get Citizen User Profile
+    if (pathname === '/api/user/profile' && req.method === 'GET') {
+      const email = (query.email || req.headers['x-user-email'] || '').trim().toLowerCase();
+      if (!email) {
+        return sendJson(400, { error: 'User email parameter required' });
+      }
+      const user = userStore.find(u => u.email.toLowerCase() === email);
+      if (!user) {
+        return sendJson(404, { error: 'User profile not found' });
+      }
+      const { password, ...safeUser } = user;
+      return sendJson(200, { success: true, user: safeUser });
+    }
+
+    // Update Citizen User Profile (Profile settings, avatar, address, etc.)
+    if (pathname === '/api/user/profile' && (req.method === 'PUT' || req.method === 'POST')) {
+      const data = await parseBody(req);
+      const email = (data.email || query.email || req.headers['x-user-email'] || '').trim().toLowerCase();
+      if (!email) {
+        return sendJson(400, { error: 'User email required to update profile' });
+      }
+      const user = userStore.find(u => u.email.toLowerCase() === email);
+      if (!user) {
+        return sendJson(404, { error: 'User profile not found' });
+      }
+
+      if (data.name) user.name = data.name.trim();
+      if (data.phone) user.phone = data.phone.trim();
+      if (data.barangay) user.barangay = data.barangay.trim();
+      if (data.address !== undefined) user.address = data.address.trim();
+      if (data.city !== undefined) user.city = data.city.trim();
+      if (data.province !== undefined) user.province = data.province.trim();
+      if (data.zip !== undefined) user.zip = data.zip.trim();
+      if (data.bio !== undefined) user.bio = data.bio.trim();
+      if (data.avatar !== undefined) user.avatar = data.avatar;
+      if (data.emergencyContactName !== undefined) user.emergencyContactName = data.emergencyContactName.trim();
+      if (data.emergencyContactPhone !== undefined) user.emergencyContactPhone = data.emergencyContactPhone.trim();
+
+      const { password, ...safeUser } = user;
+      return sendJson(200, {
+        success: true,
+        message: 'Profile settings updated successfully',
+        user: safeUser
+      });
+    }
+
+    // Citizen KYC Identity Verification Submission
+    if (pathname === '/api/user/kyc/submit' && req.method === 'POST') {
+      const data = await parseBody(req);
+      const email = (data.email || '').trim().toLowerCase();
+      if (!email) {
+        return sendJson(400, { error: 'User email is required for KYC submission' });
+      }
+      const user = userStore.find(u => u.email.toLowerCase() === email);
+      if (!user) {
+        return sendJson(404, { error: 'User account not found' });
+      }
+
+      if (!data.idType || !data.idNumber) {
+        return sendJson(400, { error: 'Valid government ID type and ID number are required' });
+      }
+      if (!data.frontImage || !data.selfieImage) {
+        return sendJson(400, { error: 'Front ID image and Selfie holding ID are required for official verification' });
+      }
+
+      user.kycStatus = 'pending';
+      user.kycIdType = data.idType.trim();
+      user.kycIdNumber = data.idNumber.trim();
+      user.kycFrontImage = data.frontImage;
+      user.kycBackImage = data.backImage || '';
+      user.kycSelfieImage = data.selfieImage;
+      user.kycSubmittedAt = Date.now();
+      user.kycRejectReason = '';
+
+      const { password, ...safeUser } = user;
+      return sendJson(200, {
+        success: true,
+        message: 'KYC documents submitted successfully. CENRO administration is reviewing your application.',
+        user: safeUser
+      });
+    }
+
+    // Citizen Media / Document / Avatar Upload Endpoint
+    if (pathname === '/api/user/upload-media' && req.method === 'POST') {
+      const data = await parseBody(req);
+      const imagePayload = data.image || data.dataUrl || data.imageData;
+      if (!imagePayload) {
+        return sendJson(400, { error: 'No image data provided' });
+      }
+
+      let base64Data = imagePayload;
+      let detectedExt = '.png';
+      let contentType = 'image/png';
+
+      const matches = imagePayload.match(/^data:([A-Za-z0-9+/]+);base64,(.+)$/);
+      if (matches) {
+        contentType = matches[1];
+        base64Data = matches[2];
+        if (contentType.includes('jpeg') || contentType.includes('jpg')) detectedExt = '.jpg';
+        else if (contentType.includes('png')) detectedExt = '.png';
+        else if (contentType.includes('webp')) detectedExt = '.webp';
+        else if (contentType.includes('svg')) detectedExt = '.svg';
+      }
+
+      let buffer;
+      try {
+        buffer = Buffer.from(base64Data, 'base64');
+      } catch (err) {
+        return sendJson(400, { error: 'Failed to decode image data' });
+      }
+
+      if (!buffer || buffer.length === 0) {
+        return sendJson(400, { error: 'Empty file received' });
+      }
+      if (buffer.length > 10 * 1024 * 1024) {
+        return sendJson(400, { error: 'File exceeds 10MB limit' });
+      }
+
+      const prefix = (data.category || 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const uniqueId = crypto.randomBytes(6).toString('hex');
+      const filename = `${prefix}_${Date.now()}_${uniqueId}${detectedExt}`;
+      const urlPath = `/uploads/${filename}`;
+
+      uploadedFilesCache.set(urlPath, {
+        filename,
+        url: urlPath,
+        category: data.category || 'user',
+        buffer,
+        contentType,
+        size: buffer.length,
+        timestamp: Date.now()
+      });
+
+      try {
+        if (!fs.existsSync(UPLOADS_DIR)) {
+          fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+        }
+        fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
+      } catch (_) {}
+
+      return sendJson(200, {
+        success: true,
+        url: urlPath,
+        filename
       });
     }
 
@@ -737,6 +924,84 @@ const server = http.createServer(async (req, res) => {
       if (updates.ecoPoints !== undefined) user.ecoPoints = updates.ecoPoints;
       const { password, ...safeUser } = user;
       return sendJson(200, { success: true, user: safeUser });
+    }
+
+    // ------------------------------------------
+    // 7.5. Admin KYC Identity Verification Management
+    // ------------------------------------------
+    if (pathname === '/api/admin/kyc/submissions' && req.method === 'GET') {
+      const submissions = userStore.map(({ password, ...u }) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        barangay: u.barangay,
+        address: u.address || '',
+        city: u.city || '',
+        province: u.province || '',
+        avatar: u.avatar || '',
+        kycStatus: u.kycStatus || 'unverified',
+        kycIdType: u.kycIdType || '',
+        kycIdNumber: u.kycIdNumber || '',
+        kycFrontImage: u.kycFrontImage || '',
+        kycBackImage: u.kycBackImage || '',
+        kycSelfieImage: u.kycSelfieImage || '',
+        kycSubmittedAt: u.kycSubmittedAt,
+        kycReviewedAt: u.kycReviewedAt,
+        kycReviewedBy: u.kycReviewedBy || '',
+        kycRejectReason: u.kycRejectReason || '',
+        joinedAt: u.joinedAt || u.createdAt
+      }));
+
+      const pendingCount = userStore.filter(u => u.kycStatus === 'pending').length;
+      const verifiedCount = userStore.filter(u => u.kycStatus === 'verified').length;
+      const rejectedCount = userStore.filter(u => u.kycStatus === 'rejected').length;
+
+      return sendJson(200, {
+        submissions,
+        counts: {
+          pending: pendingCount,
+          verified: verifiedCount,
+          rejected: rejectedCount,
+          total: userStore.length
+        }
+      });
+    }
+
+    if (pathname === '/api/admin/kyc/review' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      const data = await parseBody(req);
+      const user = userStore.find(u => u.id === data.userId || (data.email && u.email.toLowerCase() === data.email.toLowerCase()));
+      if (!user) {
+        return sendJson(404, { error: 'Citizen user account not found' });
+      }
+
+      const action = (data.action || '').toLowerCase();
+      if (action === 'approve') {
+        user.kycStatus = 'verified';
+        user.kycReviewedAt = Date.now();
+        user.kycReviewedBy = session ? session.name : 'Municipal CENRO Admin';
+        user.kycRejectReason = '';
+        // Award verification bonus ecoPoints
+        user.ecoPoints = (user.ecoPoints || 0) + 100;
+        if (!user.badges.includes('🛡️ Verified Citizen')) {
+          user.badges.push('🛡️ Verified Citizen');
+        }
+      } else if (action === 'reject') {
+        user.kycStatus = 'rejected';
+        user.kycReviewedAt = Date.now();
+        user.kycReviewedBy = session ? session.name : 'Municipal CENRO Admin';
+        user.kycRejectReason = data.reason || 'Document copy was unclear, expired, or information did not match municipal records.';
+      } else {
+        return sendJson(400, { error: 'Invalid action. Must be approve or reject.' });
+      }
+
+      const { password, ...safeUser } = user;
+      return sendJson(200, {
+        success: true,
+        message: `Citizen verification has been ${action === 'approve' ? 'approved' : 'rejected'}.`,
+        user: safeUser
+      });
     }
 
     // ------------------------------------------
@@ -1011,11 +1276,29 @@ const server = http.createServer(async (req, res) => {
       return sendJson(200, { reports: reportsStore });
     }
 
-    // Citizen submit report (Requires user verification)
+    // Citizen submit report (Requires verified KYC account)
     if (pathname === '/api/reports' && req.method === 'POST') {
       const newReport = await parseBody(req);
       if (!newReport.title || !newReport.category || !newReport.barangay) {
         return sendJson(400, { error: 'Title, category, and barangay are required' });
+      }
+
+      const userEmail = (newReport.submittedEmail || '').trim().toLowerCase();
+      if (!userEmail) {
+        return sendJson(401, { error: 'Authentication required: You must log into a verified citizen account to submit reports.' });
+      }
+
+      const citizen = userStore.find(u => u.email.toLowerCase() === userEmail);
+      if (!citizen) {
+        return sendJson(401, { error: 'Citizen user account not found. Please sign in.' });
+      }
+
+      if (citizen.kycStatus !== 'verified') {
+        return sendJson(403, {
+          error: 'KYC Verification Required: To prevent misinformation and fake reporting, all citizens must have their government ID verified by CENRO administration before filing reports.',
+          kycStatus: citizen.kycStatus || 'unverified',
+          requiresKyc: true
+        });
       }
 
       newReport.id = newReport.id || `ECO-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -1026,13 +1309,8 @@ const server = http.createServer(async (req, res) => {
       reportsStore.unshift(newReport);
 
       // Increment submitting user's reports count & award ecoPoints
-      if (newReport.submittedEmail) {
-        const citizen = userStore.find(u => u.email.toLowerCase() === newReport.submittedEmail.toLowerCase());
-        if (citizen) {
-          citizen.reportsCount = (citizen.reportsCount || 0) + 1;
-          citizen.ecoPoints = (citizen.ecoPoints || 0) + 50;
-        }
-      }
+      citizen.reportsCount = (citizen.reportsCount || 0) + 1;
+      citizen.ecoPoints = (citizen.ecoPoints || 0) + 50;
 
       return sendJson(201, {
         success: true,

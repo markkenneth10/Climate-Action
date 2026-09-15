@@ -2303,3 +2303,281 @@ textarea.form-control {
     gap: 0.25rem;
   }
 }
+
+/* ==========================================================================
+   AUTHENTICATION BARRIER & MANDATORY CITIZEN LOGIN SCREEN
+   ========================================================================== */
+.auth-barrier-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(11, 77, 43, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.auth-barrier-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  animation: authFadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes authFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-barrier-header {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, #062b18 100%);
+  padding: 2rem 1.75rem 1.5rem;
+  color: #FFFFFF;
+  text-align: center;
+  position: relative;
+}
+
+.auth-barrier-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.auth-barrier-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.auth-barrier-subtitle {
+  font-size: 0.82rem;
+  color: #A7F3D0;
+  line-height: 1.5;
+}
+
+.auth-barrier-tabs {
+  display: flex;
+  background: var(--surface-alt);
+  padding: 0.4rem;
+  margin: 1.25rem 1.5rem 0.5rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+}
+
+.auth-barrier-tab {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.auth-barrier-tab.active {
+  background: #FFFFFF;
+  color: var(--primary-dark);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.auth-barrier-body {
+  padding: 1.25rem 1.75rem 2rem;
+}
+
+/* ==========================================================================
+   KYC IDENTITY VERIFICATION SYSTEM STYLES
+   ========================================================================== */
+.kyc-status-banner {
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid transparent;
+  flex-wrap: wrap;
+}
+
+.kyc-status-banner.unverified {
+  background: #FFFBEB;
+  border-color: #FDE68A;
+  color: #92400E;
+}
+
+.kyc-status-banner.pending {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #1E40AF;
+}
+
+.kyc-status-banner.verified {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #065F46;
+}
+
+.kyc-status-banner.rejected {
+  background: #FEF2F2;
+  border-color: #FECACA;
+  color: #991B1B;
+}
+
+.kyc-doc-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.kyc-upload-box {
+  background: var(--surface-alt);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.kyc-upload-box:hover {
+  border-color: var(--emerald);
+  background: #F0FDF4;
+}
+
+.kyc-upload-box.has-file {
+  border-style: solid;
+  border-color: var(--emerald);
+  background: #FFFFFF;
+  padding: 0.75rem;
+}
+
+.kyc-preview-img {
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.kyc-remove-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+/* PROFILE SETTINGS & AVATAR EDITOR */
+.profile-avatar-wrapper {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
+  box-shadow: 0 6px 16px rgba(11, 77, 43, 0.25);
+  cursor: pointer;
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  text-align: center;
+  padding: 0.2rem 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.profile-avatar-wrapper:hover .profile-avatar-overlay {
+  opacity: 1;
+}
+
+/* User Submissions in Dashboard */
+.my-reports-list-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  background: var(--surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+}
+
+.my-report-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  gap: 0.75rem;
+  transition: background 0.15s ease;
+}
+.my-report-row:hover {
+  background: var(--surface-alt);
+}
+.my-report-row:last-child {
+  border-bottom: none;
+}
+

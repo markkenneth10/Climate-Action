@@ -23,6 +23,89 @@
 <body>
 
   <!-- =========================================================================
+       MANDATORY CITIZEN AUTHENTICATION GATEWAY (Shown if not logged in)
+       ========================================================================= -->
+  <div id="auth-barrier-screen" class="auth-barrier-overlay" style="display: none;">
+    <div class="auth-barrier-card">
+      <div class="auth-barrier-header">
+        <div class="auth-barrier-logo">🌱</div>
+        <div class="auth-barrier-title">Climate Action Citizen Portal</div>
+        <div class="auth-barrier-subtitle">City Government of Metro Verde • Municipal Environmental Gateway</div>
+      </div>
+
+      <div class="auth-barrier-tabs">
+        <button class="auth-barrier-tab active" id="barrier-tab-login" onclick="setBarrierMode('login')">Sign In</button>
+        <button class="auth-barrier-tab" id="barrier-tab-register" onclick="setBarrierMode('register')">Create Account</button>
+      </div>
+
+      <div class="auth-barrier-body">
+        <!-- Sign In Form -->
+        <form id="barrier-login-form" onsubmit="handleBarrierLogin(event)">
+          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
+            To access the portal, monitor community environmental telemetry, and file reports, please sign in with your citizen credentials.
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-login-email">Citizen Email Address *</label>
+            <input type="email" id="barrier-login-email" class="form-control" placeholder="e.g. citizen@example.ph" required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-login-password">Password *</label>
+            <input type="password" id="barrier-login-password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+          </div>
+          <div id="barrier-login-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 1rem; border: 1px solid #FECACA;"></div>
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; justify-content: center;">
+            🔑 Sign In to Citizen Portal
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="barrier-register-form" onsubmit="handleBarrierRegister(event)" style="display: none;">
+          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
+            Create your official citizen account. After creating your account, verify your identity with a valid government ID to submit real-time environmental hazard reports.
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-reg-name">Full Legal Name *</label>
+            <input type="text" id="barrier-reg-name" class="form-control" placeholder="e.g. Juan dela Cruz" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-reg-email">Email Address *</label>
+            <input type="email" id="barrier-reg-email" class="form-control" placeholder="e.g. juan@example.ph" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-reg-phone">Mobile Phone Number *</label>
+            <input type="tel" id="barrier-reg-phone" class="form-control" placeholder="+63 917 123 4567" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-reg-barangay">Barangay Residence *</label>
+            <select id="barrier-reg-barangay" class="form-control" required>
+              <option value="Barangay Makilas">Barangay Makilas</option>
+              <option value="Poblacion">Poblacion</option>
+              <option value="Lumbia">Lumbia</option>
+              <option value="Taway">Taway</option>
+              <option value="Maasin">Maasin</option>
+              <option value="Barangay San Isidro">Barangay San Isidro</option>
+              <option value="Barangay Riverside">Barangay Riverside</option>
+              <option value="Barangay Malinis">Barangay Malinis</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-reg-address">Street Address / Purok *</label>
+            <input type="text" id="barrier-reg-address" class="form-control" placeholder="e.g. 124 Rizal St, Purok 2" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-reg-password">Password (Minimum 6 characters) *</label>
+            <input type="password" id="barrier-reg-password" class="form-control" placeholder="Create a secure password" minlength="6" required>
+          </div>
+          <div id="barrier-reg-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 1rem; border: 1px solid #FECACA;"></div>
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; justify-content: center;">
+            🌱 Register Citizen Account
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
        1. TWO-TIER STICKY HEADER
        ========================================================================= -->
   <header class="header-nav">
@@ -127,9 +210,6 @@
         <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main);">🚨 24/7 Disaster Hotlines</div>
         <div>Rescue: <strong>(02) 8888-ECO</strong></div>
         <div>DENR Protection: <strong>#911-DENR</strong></div>
-        <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
-          <a href="/admin" target="_blank" style="color: var(--primary); font-weight: 700; text-decoration: none; font-size: 0.78rem;">🔒 Municipal Admin Console →</a>
-        </div>
       </div>
     </div>
   </div>
@@ -208,37 +288,37 @@
           </div>
         </div>
 
-        <!-- Right: Environmental Reports Overview Card -->
+        <!-- Right: Citizen Account Activity & Reports (Personalized Real Data) -->
         <div class="reports-overview-card">
           <div class="overview-card-title">
-            <span>ENVIRONMENTAL REPORTS OVERVIEW</span>
-            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Real-time Telemetry</span>
+            <span>MY CITIZEN ACTIVITY & REPORTS</span>
+            <span id="dash-user-kyc-pill" class="badge-portal-pill" style="font-size: 0.7rem; background: var(--primary);">Loading Status...</span>
           </div>
 
           <div class="reports-stat-grid">
-            <!-- 1. Total Reports -->
+            <!-- 1. My Total Reports -->
             <div class="report-stat-widget">
               <div class="stat-widget-top">
                 <div class="stat-widget-icon red">🚨</div>
-                <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">METRO VERDE</span>
+                <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">FILED BY ME</span>
               </div>
               <div>
-                <div class="stat-widget-number" id="kpi-total-reports">128</div>
-                <div class="stat-widget-label">Total Reports</div>
-                <div class="stat-widget-trend">↑ 12% vs. last 7 days</div>
+                <div class="stat-widget-number" id="kpi-user-total-reports">0</div>
+                <div class="stat-widget-label">My Submissions</div>
+                <div class="stat-widget-trend" id="kpi-user-reports-trend">Real-time account log</div>
               </div>
             </div>
 
-            <!-- 2. Pending -->
+            <!-- 2. Pending Triage -->
             <div class="report-stat-widget">
               <div class="stat-widget-top">
                 <div class="stat-widget-icon amber">🕒</div>
-                <span style="font-size: 0.7rem; color: var(--amber-dark); font-weight: 700;">TRIAGE</span>
+                <span style="font-size: 0.7rem; color: var(--amber-dark); font-weight: 700;">AWAITING TRIAGE</span>
               </div>
               <div>
-                <div class="stat-widget-number" id="kpi-pending-reports">34</div>
-                <div class="stat-widget-label">Pending</div>
-                <div class="stat-widget-trend">↑ 5% vs. last 7 days</div>
+                <div class="stat-widget-number" id="kpi-user-pending-reports">0</div>
+                <div class="stat-widget-label">Pending Review</div>
+                <div class="stat-widget-trend">Under CENRO intake</div>
               </div>
             </div>
 
@@ -249,9 +329,9 @@
                 <span style="font-size: 0.7rem; color: #0284C7; font-weight: 700;">DISPATCHED</span>
               </div>
               <div>
-                <div class="stat-widget-number" id="kpi-inprogress-reports">34</div>
+                <div class="stat-widget-number" id="kpi-user-inprogress-reports">0</div>
                 <div class="stat-widget-label">In Progress</div>
-                <div class="stat-widget-trend">↑ 8% vs. last 7 days</div>
+                <div class="stat-widget-trend">Field unit deployed</div>
               </div>
             </div>
 
@@ -259,16 +339,21 @@
             <div class="report-stat-widget">
               <div class="stat-widget-top">
                 <div class="stat-widget-icon green">✅</div>
-                <span style="font-size: 0.7rem; color: var(--emerald); font-weight: 700;">AUDITED</span>
+                <span style="font-size: 0.7rem; color: var(--emerald); font-weight: 700;">REMEDIATED</span>
               </div>
               <div>
-                <div class="stat-widget-number" id="kpi-resolved-reports">87</div>
-                <div class="stat-widget-label">Resolved</div>
-                <div class="stat-widget-trend">↑ 15% vs. last 7 days</div>
+                <div class="stat-widget-number" id="kpi-user-resolved-reports">0</div>
+                <div class="stat-widget-label">Resolved Incidents</div>
+                <div class="stat-widget-trend">+50 Eco-Points each</div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- KYC Status Notification Alert Bar -->
+      <div id="dash-kyc-alert-banner" style="margin-top: 1.25rem;">
+        <!-- Rendered dynamically by JS -->
       </div>
 
       <!-- ROW 2: "REPORT AN ENVIRONMENTAL INCIDENT" CTA WIDE BANNER -->
@@ -325,13 +410,13 @@
         <!-- LEFT COLUMN: Recent Reports + Climate Info (6 Cards) -->
         <div class="middle-left-column">
           
-          <!-- Recent Environmental Reports Table -->
+          <!-- My Environmental Reports Table (Account-Specific Real Data) -->
           <div class="recent-reports-card">
             <div class="card-title-bar">
               <h3 class="card-section-heading">
-                <span>📋</span> RECENT ENVIRONMENTAL REPORTS
+                <span>📋</span> MY SUBMITTED REPORTS & STATUS
               </h3>
-              <a href="#" class="card-action-link" onclick="switchTab('tracker'); return false;">View All →</a>
+              <a href="#" class="card-action-link" onclick="switchTab('tracker'); return false;">View Tracker →</a>
             </div>
 
             <div class="reports-table-wrapper">
@@ -345,7 +430,7 @@
                   </tr>
                 </thead>
                 <tbody id="dashboard-recent-table-body">
-                  <!-- Rendered dynamically by JS with interactive modal trigger -->
+                  <!-- Rendered dynamically by JS with real account reports -->
                 </tbody>
               </table>
             </div>
@@ -578,16 +663,25 @@
         <p class="section-desc">Submit geotagged observations of flooding, illegal dumping, deforestation, open burning, or water pollution to CENRO enforcement teams.</p>
       </div>
 
-      <!-- Auth Required Gate (Shown if guest) -->
-      <div id="report-auth-gate" class="card" style="display: none; text-align: center; padding: 2.5rem 1.5rem; max-width: 580px; margin: 0 auto;">
-        <div style="font-size: 3rem; margin-bottom: 0.75rem;">🔒</div>
-        <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">Citizen Sign In Required to File Reports</h3>
-        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.5rem;">
-          To ensure auditable civic data, prevent prank submissions, and award eco-points towards verified local remediation, please sign in or register your citizen account.
+      <!-- KYC Required Gate (Shown if user KYC is not 'verified') -->
+      <div id="report-kyc-gate" class="card" style="display: none; text-align: center; padding: 2.5rem 1.5rem; max-width: 620px; margin: 0 auto; border-top: 5px solid var(--amber);">
+        <div style="font-size: 3.2rem; margin-bottom: 0.75rem;">🛡️</div>
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;" id="report-kyc-gate-title">
+          Identity Verification Required to Submit Reports
+        </h3>
+        <div id="report-kyc-gate-badge" style="margin-bottom: 1rem;">
+          <!-- Dynamically set by JS (e.g. Unverified, Pending Review, Rejected) -->
+        </div>
+        <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 1.5rem;" id="report-kyc-gate-desc">
+          To prevent misinformation, fake complaints, and malicious reporting, the City Environment & Natural Resources Office (CENRO) enforces strict identity verification under Municipal Ecological Ordinance #2026-04. Please upload your valid government ID to activate real-time incident reporting.
         </p>
         <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
-          <button class="btn-primary" onclick="openAuthModal('login')">🔑 Log In to Citizen Account</button>
-          <button class="btn-secondary" onclick="openAuthModal('register')">📝 Register Free Account</button>
+          <button class="btn-primary" id="btn-report-verify-kyc" onclick="openKycModal()" style="padding: 0.75rem 1.5rem; font-size: 0.95rem;">
+            🪪 Upload & Verify Government ID
+          </button>
+          <button class="btn-secondary" onclick="switchTab('dashboard')" style="padding: 0.75rem 1.25rem; font-size: 0.95rem;">
+            Return to Dashboard
+          </button>
         </div>
       </div>
 
@@ -1180,11 +1274,6 @@
           🏥 City Health & Heat Helpline: <strong>(02) 8999-CLIMATE</strong><br>
           📧 CENRO Inquiries: <strong>cenro@metroverde.gov.ph</strong>
         </p>
-        <div style="margin-top: 1rem;">
-          <a href="/admin" target="_blank" style="color: var(--primary); font-weight: 700; text-decoration: none; font-size: 0.82rem;">
-            🔒 Municipal Admin Console Login →
-          </a>
-        </div>
       </div>
 
       <!-- Col 4: Governance & Verification Badges -->
