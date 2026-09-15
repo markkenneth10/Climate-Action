@@ -299,6 +299,69 @@ fun HomeScreen(
             }
         }
 
+        // 2.5 Web Access Portal Card
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 6.dp)
+                    .clickable { viewModel.showWebPortalDialog.value = true }
+                    .testTag("web_portal_access_card"),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBBF7D0))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(EcoMint),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "🌐", fontSize = 22.sp)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Website Access Portal",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = EcoForestGreen
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = EcoForestGreen
+                            ) {
+                                Text(
+                                    text = "LIVE",
+                                    color = Color.White,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Access via browser on desktop & tablet or share link",
+                            fontSize = 11.sp,
+                            color = EcoTextSecondary
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Open →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+                }
+            }
+        }
+
         // 3. Emergency Climate Advisory Banner
         item {
             Card(

@@ -88,6 +88,7 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
     val showNotificationsDialog = MutableStateFlow(false)
     val showRoleSwitcherDialog = MutableStateFlow(false)
     val showThesisSummaryDialog = MutableStateFlow(false)
+    val showWebPortalDialog = MutableStateFlow(false)
     val showSuccessSnackbar = MutableStateFlow<String?>(null)
 
     // Quiz Session State

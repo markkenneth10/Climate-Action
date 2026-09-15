@@ -149,21 +149,32 @@ fun AdminDashboardScreen(
                         )
                     }
 
-                    // Export / Generate Thesis Summary Button
-                    Button(
-                        onClick = { viewModel.showThesisSummaryDialog.value = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = EcoEmerald),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        modifier = Modifier.testTag("export_thesis_summary_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Export Summary", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        OutlinedButton(
+                            onClick = { viewModel.showWebPortalDialog.value = true },
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("admin_web_portal_button"),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                        ) {
+                            Text("🌐 Web", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = { viewModel.showThesisSummaryDialog.value = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = EcoEmerald),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("export_thesis_summary_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Download,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Export", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 

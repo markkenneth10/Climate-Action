@@ -55,6 +55,7 @@ import com.example.ui.dialogs.QuizDialog
 import com.example.ui.dialogs.ReportDetailDialog
 import com.example.ui.dialogs.RoleSwitcherDialog
 import com.example.ui.dialogs.ThesisSummaryDialog
+import com.example.ui.dialogs.WebPortalDialog
 import com.example.ui.screens.AdminDashboardScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LearnScreen
@@ -97,6 +98,7 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
     val showNotificationsDialog by viewModel.showNotificationsDialog.collectAsState()
     val showRoleSwitcherDialog by viewModel.showRoleSwitcherDialog.collectAsState()
     val showThesisSummaryDialog by viewModel.showThesisSummaryDialog.collectAsState()
+    val showWebPortalDialog by viewModel.showWebPortalDialog.collectAsState()
     val snackbarMessage by viewModel.showSuccessSnackbar.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -386,6 +388,13 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
         ThesisSummaryDialog(
             viewModel = viewModel,
             onDismiss = { viewModel.showThesisSummaryDialog.value = false }
+        )
+    }
+
+    if (showWebPortalDialog) {
+        WebPortalDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.showWebPortalDialog.value = false }
         )
     }
 }
