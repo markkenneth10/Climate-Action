@@ -8,7 +8,8 @@ const path = require('path');
 const url = require('url');
 
 const PORT = process.env.WEB_PORT || 3000;
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const USER_PUBLIC_DIR = path.join(__dirname, 'public');
+const ADMIN_DIR = path.join(__dirname, 'admin');
 
 // MIME type map
 const MIME_TYPES = {
@@ -746,25 +747,67 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ------------------------------------------
-    // 12. Static File Serving
+    // 12. Separate Directory Access: Admin vs User Web Data
     // ------------------------------------------
+    const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/');
+
+    if (isAdminRoute) {
+      // ADMIN DIRECTORY ACCESS: Strictly isolated to /admin directory
+      let relativeAdminPath = pathname.replace(/^\/admin\/?/, '');
+      if (!relativeAdminPath || relativeAdminPath === '/') {
+        relativeAdminPath = 'index.html';
+      }
+
+      const filePath = path.join(ADMIN_DIR, relativeAdminPath);
+
+      // Security check: ensure filePath is strictly within ADMIN_DIR
+      if (!filePath.startsWith(ADMIN_DIR)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('Forbidden: Directory traversal denied');
+        return;
+      }
+
+      fs.stat(filePath, (err, stats) => {
+        if (err || !stats.isFile()) {
+          // If the admin file is not found, return 404
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Admin file not found');
+          return;
+        }
+
+        const ext = path.extname(filePath).toLowerCase();
+        const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+        fs.readFile(filePath, (readErr, content) => {
+          if (readErr) {
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('Internal Server Error');
+            return;
+          }
+          res.writeHead(200, { 'Content-Type': contentType });
+          res.end(content);
+        });
+      });
+      return;
+    }
+
+    // USER WEB DATA DIRECTORY ACCESS: Strictly isolated to /public directory
     let reqPath = pathname === '/' ? '/index.html' : pathname;
-    // Map /admin to /admin.html
-    if (reqPath === '/admin') reqPath = '/admin.html';
+    const filePath = path.join(USER_PUBLIC_DIR, reqPath);
 
-    let filePath = path.join(PUBLIC_DIR, reqPath);
-
-    // Security check: ensure filePath is within PUBLIC_DIR
-    if (!filePath.startsWith(PUBLIC_DIR)) {
+    // Security check: ensure filePath is strictly within USER_PUBLIC_DIR
+    if (!filePath.startsWith(USER_PUBLIC_DIR)) {
       res.writeHead(403, { 'Content-Type': 'text/plain' });
-      res.end('Forbidden');
+      res.end('Forbidden: Directory traversal denied');
       return;
     }
 
     fs.stat(filePath, (err, stats) => {
       if (err || !stats.isFile()) {
-        // Fallback to index.html for unknown client routes
-        filePath = path.join(PUBLIC_DIR, 'index.html');
+        // Unknown file in user web data directory returns 404
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not Found');
+        return;
       }
 
       const ext = path.extname(filePath).toLowerCase();
