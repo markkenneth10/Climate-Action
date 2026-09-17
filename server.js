@@ -289,6 +289,22 @@ function loadConfigFromDisk() {
   } catch (err) {
     console.warn('Could not load website config from disk:', err.message);
   }
+
+  // Auto-link any uploaded logo file if not explicitly configured
+  if (!websiteConfig.logoImageUrl || websiteConfig.logoType !== 'image') {
+    try {
+      if (fs.existsSync(UPLOADS_DIR)) {
+        const files = fs.readdirSync(UPLOADS_DIR);
+        const logoFiles = files.filter(f => f.startsWith('logo_')).sort().reverse();
+        if (logoFiles.length > 0) {
+          websiteConfig.logoType = 'image';
+          websiteConfig.logoImageUrl = `/uploads/${logoFiles[0]}`;
+          saveConfigToDisk();
+          console.log('✅ Auto-detected and linked uploaded logo:', websiteConfig.logoImageUrl);
+        }
+      }
+    } catch (_) {}
+  }
 }
 loadConfigFromDisk();
 
@@ -878,6 +894,7 @@ const server = http.createServer(async (req, res) => {
     // 3. Website Configuration & CMS
     // ------------------------------------------
     if ((pathname === '/api/config' || pathname === '/api/admin/config') && req.method === 'GET') {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       return sendJson(200, { config: websiteConfig });
     }
 
@@ -893,6 +910,7 @@ const server = http.createServer(async (req, res) => {
         updatedAt: Date.now()
       };
       saveConfigToDisk();
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       return sendJson(200, {
         success: true,
         message: 'Website configuration and content updated successfully',
@@ -1344,13 +1362,31 @@ const server = http.createServer(async (req, res) => {
         console.warn('Could not write uploaded file to disk (served from memory cache):', fsErr.message);
       }
 
+      // Auto-apply to website configuration if category matches
+      const cat = (data.category || '').toLowerCase();
+      if (cat === 'logo') {
+        websiteConfig.logoType = 'image';
+        websiteConfig.logoImageUrl = urlPath;
+        websiteConfig.updatedAt = Date.now();
+        saveConfigToDisk();
+      } else if (cat === 'hero') {
+        websiteConfig.heroImageUrl = urlPath;
+        websiteConfig.updatedAt = Date.now();
+        saveConfigToDisk();
+      } else if (cat === 'about') {
+        websiteConfig.aboutImageUrl = urlPath;
+        websiteConfig.updatedAt = Date.now();
+        saveConfigToDisk();
+      }
+
       return sendJson(200, {
         success: true,
         message: 'Image uploaded successfully',
         url: urlPath,
         filename,
         contentType,
-        size: buffer.length
+        size: buffer.length,
+        config: websiteConfig
       });
     }
 

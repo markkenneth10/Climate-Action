@@ -1019,36 +1019,77 @@ async function loadAllData() {
 
 async function fetchConfig() {
   try {
-    const res = await fetch('/api/config');
+    const res = await fetch('/api/config?_t=' + Date.now(), { cache: 'no-store' });
     const data = await res.json();
     state.config = data.config || {};
     applyConfigUI(state.config);
   } catch (e) {
-    console.warn('Using default config');
+    console.warn('Using default config', e);
+  }
+}
+
+function renderBrandLogoElement(el, c, size = 36) {
+  if (!el) return;
+  const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
+  const fallback = c.websiteLogo || '🌱';
+  if (isImage) {
+    el.classList.add('has-image');
+    el.innerHTML = `<img src="${c.logoImageUrl}" alt="Official Logo" class="brand-logo-img" style="width:100%!important; height:100%!important; max-width:${size}px!important; max-height:${size}px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.textContent='${fallback}';">`;
+  } else {
+    el.textContent = fallback;
+    el.classList.remove('has-image');
   }
 }
 
 function applyConfigUI(c) {
-  if (c.websiteName) {
-    const brandEl = document.getElementById('site-brand-name');
-    if (brandEl) brandEl.textContent = c.websiteName;
-  }
-  if (c.websiteSubtitle) {
-    const subEl = document.getElementById('site-brand-sub');
-    if (subEl) subEl.textContent = c.websiteSubtitle;
-  }
-  // Site Logo Rendering (Emoji or Image)
-  const siteLogoEl = document.getElementById('site-logo-icon');
-  if (siteLogoEl) {
-    if (c.logoType === 'image' && c.logoImageUrl) {
-      const fallback = c.websiteLogo || '🌱';
-      siteLogoEl.innerHTML = `<img src="${c.logoImageUrl}" alt="Logo" class="site-logo-img" style="width:100%!important; height:100%!important; max-width:36px!important; max-height:36px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.textContent='${fallback}';">`;
-      siteLogoEl.classList.add('has-image');
+  if (!c) return;
+
+  // Website Name & Subtitle across all views
+  const siteName = c.websiteName || 'Climate Action';
+  const siteSub = c.websiteSubtitle || 'Reporting & Information System • Metro Verde';
+
+  const brandEl = document.getElementById('site-brand-name');
+  if (brandEl) brandEl.textContent = siteName;
+
+  const subEl = document.getElementById('site-brand-sub');
+  if (subEl) subEl.textContent = siteSub;
+
+  const drawerBrandEl = document.getElementById('drawer-brand-name');
+  if (drawerBrandEl) drawerBrandEl.textContent = siteName;
+
+  const drawerSubEl = document.getElementById('drawer-brand-sub');
+  if (drawerSubEl) drawerSubEl.textContent = siteSub;
+
+  const footerBrandEl = document.getElementById('footer-brand-name');
+  if (footerBrandEl) footerBrandEl.textContent = siteName;
+
+  // Render Brand Logo across Header, Mobile Drawer, and Footer
+  renderBrandLogoElement(document.getElementById('site-logo-icon'), c, 36);
+  renderBrandLogoElement(document.getElementById('drawer-logo-icon'), c, 30);
+  renderBrandLogoElement(document.getElementById('footer-logo-icon'), c, 26);
+
+  // Update browser tab Favicon dynamically
+  const faviconEl = document.getElementById('site-favicon');
+  if (faviconEl) {
+    const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
+    if (isImage) {
+      faviconEl.href = c.logoImageUrl;
+      faviconEl.type = 'image/png';
     } else {
-      siteLogoEl.textContent = c.websiteLogo || '🌱';
-      siteLogoEl.classList.remove('has-image');
+      const emoji = c.websiteLogo || '🌱';
+      faviconEl.type = 'image/svg+xml';
+      faviconEl.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`;
     }
   }
+
+  // Update Page Title
+  if (c.websiteName) {
+    const pageTitle = document.getElementById('page-title');
+    if (pageTitle) {
+      pageTitle.textContent = `${c.websiteName} | Mobile & Web Climate Action Reporting and Information System`;
+    }
+  }
+
   if (c.climateChangeInfo) {
     const el = document.getElementById('cms-display-climate-change');
     if (el) el.textContent = c.climateChangeInfo;
@@ -2019,3 +2060,30 @@ function escapeHtml(str) {
     tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
   );
 }
+
+// Real-time synchronization of website configuration and logo across tabs
+if (window.BroadcastChannel) {
+  try {
+    const bc = new BroadcastChannel('climate_config_channel');
+    bc.onmessage = (event) => {
+      if (event.data) {
+        fetchConfig();
+      }
+    };
+  } catch (_) {}
+}
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'climate_brand_logo_updated' || e.key === 'climate_config_updated') {
+    fetchConfig();
+  }
+});
+
+// Refresh branding when user refocuses or un-hides citizen portal tab
+window.addEventListener('focus', () => { fetchConfig(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) fetchConfig();
+});
+
+// Periodic polling (every 5 seconds) to ensure changes reflect without manual refresh
+setInterval(fetchConfig, 5000);

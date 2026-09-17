@@ -7,7 +7,7 @@
   <meta name="description" content="Official Civic Climate Dashboard and Reporting Portal for Metro Verde. Report environmental hazards, inspect real-time resolution lifecycles, access verified climate intelligence, and participate in community restoration.">
 
   <!-- Favicon / Brand Icon -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+  <link id="site-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -183,10 +183,10 @@
       <div class="drawer-header">
         <button class="drawer-close-btn" onclick="closeMobileDrawer()">&times;</button>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div class="brand-icon-box" style="width: 36px; height: 36px; font-size: 1.2rem;">🌱</div>
+          <div class="brand-icon-box" id="drawer-logo-icon" style="width: 36px; height: 36px; min-width: 36px; min-height: 36px; font-size: 1.2rem;">🌱</div>
           <div>
-            <div style="font-weight: 800; font-size: 1.05rem;">Climate Action</div>
-            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.8);">Metro Verde Citizen Portal</div>
+            <div style="font-weight: 800; font-size: 1.05rem;" id="drawer-brand-name">Climate Action</div>
+            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.8);" id="drawer-brand-sub">Metro Verde Citizen Portal</div>
           </div>
         </div>
         <div id="drawer-user-card" style="background: rgba(255,255,255,0.15); padding: 0.65rem 0.85rem; border-radius: 12px; margin-top: 0.25rem;">
@@ -1431,8 +1431,9 @@
     <div class="footer-grid">
       <!-- Col 1: System Brand & Description -->
       <div>
-        <div class="footer-brand-title">
-          <span>🌱</span> Climate Action
+        <div class="footer-brand-title" style="display: flex; align-items: center; gap: 0.5rem;">
+          <div class="brand-icon-box" id="footer-logo-icon" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; font-size: 1.1rem; border-radius: 8px;">🌱</div>
+          <span id="footer-brand-name">Climate Action</span>
         </div>
         <p style="line-height: 1.6; margin-bottom: 1rem;">
           Mobile and Web Climate Action Reporting and Information System. An integrated municipal platform empowering citizen-driven environmental governance and rapid hazard remediation across Metro Verde.

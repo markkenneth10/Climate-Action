@@ -164,11 +164,14 @@ button, input, select, textarea, a {
 
 .brand-icon-box img,
 .site-logo-img,
-#site-logo-icon img {
+.brand-logo-img,
+#site-logo-icon img,
+#drawer-logo-icon img,
+#footer-logo-icon img {
   width: 100% !important;
   height: 100% !important;
-  max-width: 36px !important;
-  max-height: 36px !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
   object-fit: contain !important;
   display: block !important;
   border-radius: calc(var(--radius-md) - 3px);

@@ -587,6 +587,20 @@ async function handleLogoFileSelect(event) {
       });
     } catch (_) {}
 
+    // Instant cross-tab broadcast so website updates without refreshing
+    try {
+      localStorage.setItem('climate_brand_logo_updated', JSON.stringify({
+        logoType: 'image',
+        logoImageUrl: logoUrl,
+        timestamp: Date.now()
+      }));
+      if (window.BroadcastChannel) {
+        const bc = new BroadcastChannel('climate_config_channel');
+        bc.postMessage({ type: 'LOGO_UPDATED', logoImageUrl: logoUrl, logoType: 'image', timestamp: Date.now() });
+        bc.close();
+      }
+    } catch (_) {}
+
     if (statusEl) statusEl.textContent = `✅ Uploaded "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`;
     loadMediaGallery();
   } catch (err) {
@@ -625,6 +639,21 @@ function handleRemoveLogoImage() {
         websiteLogo: currentEmoji
       })
     });
+  } catch (_) {}
+
+  // Broadcast removal to citizen portal
+  try {
+    localStorage.setItem('climate_brand_logo_updated', JSON.stringify({
+      logoType: 'emoji',
+      logoImageUrl: '',
+      websiteLogo: currentEmoji,
+      timestamp: Date.now()
+    }));
+    if (window.BroadcastChannel) {
+      const bc = new BroadcastChannel('climate_config_channel');
+      bc.postMessage({ type: 'LOGO_UPDATED', logoImageUrl: '', logoType: 'emoji', websiteLogo: currentEmoji, timestamp: Date.now() });
+      bc.close();
+    }
   } catch (_) {}
 
   const statusEl = document.getElementById('cms-logo-status');
@@ -897,6 +926,22 @@ async function handleSaveCMS(e) {
     if (res.ok) {
       document.getElementById('admin-header-title').textContent = updates.websiteName;
       updateAdminHeaderLogo(updates);
+
+      // Broadcast changes across browser tabs immediately
+      try {
+        localStorage.setItem('climate_brand_logo_updated', JSON.stringify({
+          logoType: updates.logoType,
+          logoImageUrl: updates.logoImageUrl,
+          websiteName: updates.websiteName,
+          timestamp: Date.now()
+        }));
+        if (window.BroadcastChannel) {
+          const bc = new BroadcastChannel('climate_config_channel');
+          bc.postMessage({ type: 'CONFIG_UPDATED', config: updates, timestamp: Date.now() });
+          bc.close();
+        }
+      } catch (_) {}
+
       alert('✅ All Website Information, Logo & Media Branding updated successfully! These changes are immediately active on the citizen website.');
     } else {
       alert('Failed to save website configuration.');
