@@ -117,12 +117,18 @@ fun HomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(42.dp)
+                                .size(44.dp)
                                 .clip(CircleShape)
-                                .background(EcoMint),
+                                .background(Color.White)
+                                .padding(4.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = "🌱", fontSize = 22.sp)
+                            Image(
+                                painter = painterResource(id = R.drawable.app_logo),
+                                contentDescription = "Official Brand Logo",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Fit
+                            )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
