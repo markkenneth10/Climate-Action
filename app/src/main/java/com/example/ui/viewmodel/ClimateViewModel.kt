@@ -86,7 +86,6 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
     val showNewReportDialog = MutableStateFlow(false)
     val showQuizDialog = MutableStateFlow(false)
     val showNotificationsDialog = MutableStateFlow(false)
-    val showRoleSwitcherDialog = MutableStateFlow(false)
     val showThesisSummaryDialog = MutableStateFlow(false)
     val showWebPortalDialog = MutableStateFlow(false)
     val showSuccessSnackbar = MutableStateFlow<String?>(null)
@@ -102,11 +101,6 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.seedDatabaseIfEmpty()
         }
-    }
-
-    fun switchUser(userId: Int) {
-        _currentUserId.value = userId
-        showRoleSwitcherDialog.value = false
     }
 
     fun openReportDetail(report: ReportEntity) {

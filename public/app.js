@@ -251,25 +251,44 @@ document.addEventListener('DOMContentLoaded', () => {
   setupGlobalClickHandlers();
 });
 
-// 1. Citizen Session Handling
-function initCitizenSession() {
+// 1. Citizen Session Handling & Authentication
+async function initCitizenSession() {
   const saved = localStorage.getItem(CITIZEN_STORAGE_KEY);
   if (saved) {
     try {
       state.currentUser = JSON.parse(saved);
+      // Fetch fresh profile from server to stay up-to-date with KYC status & edits
+      if (state.currentUser && state.currentUser.email) {
+        try {
+          const res = await fetch(`/api/user/profile?email=${encodeURIComponent(state.currentUser.email)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.user) {
+              state.currentUser = { ...state.currentUser, ...data.user };
+              localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+            }
+          }
+        } catch (err) {
+          console.warn('Profile background refresh fallback:', err);
+        }
+      }
     } catch (e) {
-      state.currentUser = { ...DEFAULT_CITIZEN };
-      localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+      state.currentUser = null;
+      localStorage.removeItem(CITIZEN_STORAGE_KEY);
     }
   } else {
-    // Default to Mark Kenneth Ulgasan for thesis demonstration
-    state.currentUser = { ...DEFAULT_CITIZEN };
-    localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+    state.currentUser = null;
   }
   updateAuthUI();
 }
 
 function updateAuthUI() {
+  // 1. Mandatory Citizen Authentication Barrier
+  const barrier = document.getElementById('auth-barrier-screen');
+  if (barrier) {
+    barrier.style.display = state.currentUser ? 'none' : 'flex';
+  }
+
   const authContainer = document.getElementById('citizen-auth-container');
   const drawerUserCard = document.getElementById('drawer-user-card');
   const gateCard = document.getElementById('report-auth-gate');
@@ -277,22 +296,26 @@ function updateAuthUI() {
   const dashPoints = document.getElementById('dash-user-eco-points');
 
   if (dashPoints && state.currentUser) {
-    dashPoints.textContent = state.currentUser.ecoPoints || 750;
+    dashPoints.textContent = state.currentUser.ecoPoints || 50;
   }
 
   if (state.currentUser) {
-    // Top Header Dropdown Menu for Citizen
+    const avatarHtml = state.currentUser.avatar
+      ? `<img src="${state.currentUser.avatar}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+      : `<span>${getInitials(state.currentUser.fullName || state.currentUser.name)}</span>`;
+
+    // Top Header User Profile Pill
     if (authContainer) {
       authContainer.innerHTML = `
         <div class="citizen-profile-menu-wrapper">
           <div class="user-profile-trigger" onclick="toggleUserDropdown(event)" role="button" aria-expanded="false">
             <div class="user-avatar-circle">
-              <span>${getInitials(state.currentUser.name)}</span>
+              ${avatarHtml}
             </div>
             <div class="user-text-info">
-              <div class="user-name-title">${escapeHtml(state.currentUser.name)}</div>
+              <div class="user-name-title">${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</div>
               <div class="user-role-subtitle">
-                <span>Citizen Account</span>
+                <span>${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified Citizen' : 'Citizen Account'}</span>
                 <span style="font-size:0.6rem;">▼</span>
               </div>
             </div>
@@ -305,29 +328,26 @@ function updateAuthUI() {
               <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(state.currentUser.email)}</div>
               <div class="user-dropdown-stat-row">
                 <span>🌱 Eco-Points:</span>
-                <strong style="color: var(--primary-light); font-size: 0.9rem;">${state.currentUser.ecoPoints || 750} pts</strong>
+                <strong style="color: var(--primary-light); font-size: 0.9rem;">${state.currentUser.ecoPoints || 50} pts</strong>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem;">
-                <span>Rank: <strong>#12 in LGU</strong></span>
-                <span>Level: <strong>Climate Advocate</strong></span>
+                <span>Rank: <strong>#${state.currentUser.rank || 1} in LGU</strong></span>
+                <span>KYC: <strong>${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified' : '⏳ ' + (state.currentUser.kycStatus || 'Unverified')}</strong></span>
               </div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
               <button class="dropdown-item-link" onclick="switchTab('profile'); closeAllDropdowns();">
-                <span>👤</span> View Citizen Profile & Eco-Points
+                <span>👤</span> View Citizen Profile & KYC
               </button>
               <button class="dropdown-item-link" onclick="switchTab('tracker'); closeAllDropdowns();">
-                <span>📋</span> My Reported Incidents (5)
+                <span>📋</span> My Incident Reports
               </button>
               <button class="dropdown-item-link" onclick="switchTab('quiz'); closeAllDropdowns();">
                 <span>🏆</span> Climate Challenge & Badges
               </button>
               <button class="dropdown-item-link" onclick="switchTab('activities'); closeAllDropdowns();">
-                <span>🌿</span> Joined Activities (2)
-              </button>
-              <button class="dropdown-item-link" onclick="openAuthModal('login'); closeAllDropdowns();">
-                <span>🔄</span> Switch Citizen Account
+                <span>🌿</span> Joined Activities
               </button>
               <button class="dropdown-item-link text-danger" onclick="handleCitizenLogout(); closeAllDropdowns();">
                 <span>🚪</span> Sign Out
@@ -343,28 +363,38 @@ function updateAuthUI() {
       drawerUserCard.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-weight: 800; font-size: 0.9rem; color: #fff;">${escapeHtml(state.currentUser.name)}</div>
-            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.85);">${state.currentUser.ecoPoints || 750} Eco-Points • Rank #12</div>
+            <div style="font-weight: 800; font-size: 0.9rem; color: #fff;">${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</div>
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.85);">${state.currentUser.ecoPoints || 50} Eco-Points • ${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified' : '⏳ Action Needed'}</div>
           </div>
           <button onclick="handleCitizenLogout()" style="background: rgba(255,255,255,0.2); border:none; color:#fff; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius: 999px; cursor:pointer;">Logout</button>
         </div>
       `;
     }
 
-    // Enable reporting form
-    if (gateCard) gateCard.style.display = 'none';
-    if (reportForm) reportForm.style.display = 'grid';
+    // Incident Reporting Gating based on KYC
+    const isKycVerified = state.currentUser.kycStatus === 'verified';
+    if (isKycVerified) {
+      if (gateCard) gateCard.style.display = 'none';
+      if (reportForm) reportForm.style.display = 'grid';
+      const reporterName = document.getElementById('reporter-display-name');
+      const reporterEmail = document.getElementById('reporter-display-email');
+      if (reporterName) reporterName.textContent = state.currentUser.fullName || state.currentUser.name;
+      if (reporterEmail) reporterEmail.textContent = `(${state.currentUser.email})`;
+    } else {
+      if (reportForm) reportForm.style.display = 'none';
+      if (gateCard) {
+        gateCard.style.display = 'block';
+        updateReportingKycGateCard();
+      }
+    }
 
-    const reporterName = document.getElementById('reporter-display-name');
-    const reporterEmail = document.getElementById('reporter-display-email');
-    if (reporterName) reporterName.textContent = state.currentUser.fullName || state.currentUser.name;
-    if (reporterEmail) reporterEmail.textContent = `(${state.currentUser.email})`;
+    renderProfileUI();
 
   } else {
     // User is logged out / Guest
     if (authContainer) {
       authContainer.innerHTML = `
-        <button class="btn-citizen-signin" onclick="openAuthModal('login')">
+        <button class="btn-citizen-signin" onclick="setBarrierMode('login'); document.getElementById('auth-barrier-screen').style.display = 'flex';">
           Citizen Sign In
         </button>
       `;
@@ -373,97 +403,267 @@ function updateAuthUI() {
     if (drawerUserCard) {
       drawerUserCard.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 0.8rem; color: #fff;">Guest Visitor</span>
-          <button onclick="openAuthModal('login'); closeMobileDrawer();" style="background: var(--emerald); border:none; color:#fff; font-size:0.75rem; padding:0.3rem 0.75rem; border-radius: 999px; cursor:pointer; font-weight:700;">Sign In</button>
+          <span style="font-size: 0.8rem; color: #fff;">Guest Citizen</span>
+          <button onclick="setBarrierMode('login'); document.getElementById('auth-barrier-screen').style.display = 'flex'; closeMobileDrawer();" style="background: var(--emerald); border:none; color:#fff; font-size:0.75rem; padding:0.3rem 0.75rem; border-radius: 999px; cursor:pointer; font-weight:700;">Sign In</button>
         </div>
       `;
     }
 
-    // Show gate on report tab
     if (gateCard) gateCard.style.display = 'block';
     if (reportForm) reportForm.style.display = 'none';
   }
 }
 
-function getInitials(name) {
-  if (!name) return 'MK';
-  const parts = name.trim().split(' ');
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
+function updateReportingKycGateCard() {
+  const gateCard = document.getElementById('report-auth-gate');
+  if (!gateCard) return;
+
+  const status = state.currentUser ? (state.currentUser.kycStatus || 'unverified') : 'unverified';
+  if (status === 'pending') {
+    gateCard.innerHTML = `
+      <div style="font-size: 3rem; margin-bottom: 0.75rem;">⏳</div>
+      <div style="display: inline-block; background: var(--amber-dark); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
+        Verification Pending CENRO Review
+      </div>
+      <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">
+        Your Identity Documents Are Under Administrative Review
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 540px; margin: 0 auto 1.25rem; line-height: 1.6;">
+        Thank you for submitting your government ID for verification. Under City Environmental Ordinance #2026-04, CENRO compliance officers verify applicant records to ensure zero misinformation and fraudulent submissions. You will be authorized to submit live reports once verified.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+        <button class="btn-primary" onclick="openKycModal()" style="padding: 0.75rem 1.5rem;">
+          🪪 View / Re-upload Submitted Documents
+        </button>
+        <button class="btn-secondary" onclick="switchTab('tracker')" style="padding: 0.75rem 1.5rem;">
+          📋 View Community Incident Tracker
+        </button>
+      </div>
+    `;
+  } else if (status === 'rejected') {
+    gateCard.innerHTML = `
+      <div style="font-size: 3rem; margin-bottom: 0.75rem;">❌</div>
+      <div style="display: inline-block; background: var(--red); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
+        Verification Rejected / Incomplete
+      </div>
+      <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">
+        Document Verification Could Not Be Completed
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 540px; margin: 0 auto 0.75rem; line-height: 1.6;">
+        ${escapeHtml(state.currentUser.kycRejectReason || 'The uploaded document was unclear, expired, or information did not match municipal records.')}
+      </p>
+      <p style="font-size: 0.85rem; color: var(--text-main); font-weight: 600; margin-bottom: 1.25rem;">
+        Please re-upload clear photos of a valid Philippine government-issued ID to activate incident reporting.
+      </p>
+      <button class="btn-primary" onclick="openKycModal()" style="padding: 0.75rem 1.5rem;">
+        🪪 Upload Valid Government ID
+      </button>
+    `;
+  } else {
+    // Unverified
+    gateCard.innerHTML = `
+      <div style="font-size: 3rem; margin-bottom: 0.75rem;">🛡️</div>
+      <div style="display: inline-block; background: var(--amber-dark); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
+        Identity Verification Required
+      </div>
+      <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">
+        Verify Your Identity to Submit Environmental Reports
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 540px; margin: 0 auto 1.25rem; line-height: 1.6;">
+        To prevent misinformation, spam, and unverified hazards, all citizens are required to verify their account through KYC verification using a valid government ID before filing reports.
+      </p>
+      <button class="btn-primary" onclick="openKycModal()" style="padding: 0.75rem 1.5rem;">
+        🪪 Upload & Verify Government ID
+      </button>
+    `;
   }
-  return name.slice(0, 2).toUpperCase();
 }
 
-function toggleUserDropdown(e) {
-  e.stopPropagation();
-  const menu = document.getElementById('user-dropdown-menu');
-  if (menu) menu.classList.toggle('active');
-  const notifMenu = document.getElementById('notif-dropdown-menu');
-  if (notifMenu) notifMenu.classList.remove('active');
+function renderProfileUI() {
+  if (!state.currentUser) return;
+  const u = state.currentUser;
+
+  const nameEl = document.getElementById('profile-user-name');
+  const bgyEl = document.getElementById('profile-user-barangay');
+  const contEl = document.getElementById('profile-user-contacts');
+  const pointsEl = document.getElementById('profile-eco-points');
+  const levelEl = document.getElementById('profile-citizen-level');
+  const rankEl = document.getElementById('profile-citizen-rank');
+  const authStatusEl = document.getElementById('profile-report-auth-status');
+  const badgeEl = document.getElementById('profile-kyc-badge');
+  const avatarImg = document.getElementById('profile-avatar-img');
+  const initialsSpan = document.getElementById('profile-avatar-initials');
+
+  if (nameEl) nameEl.textContent = u.fullName || u.name;
+  if (bgyEl) bgyEl.textContent = `📍 ${u.barangay || 'Metro Verde City'}`;
+  if (contEl) contEl.textContent = `📧 ${u.email} • 📱 ${u.phone || 'No phone set'}`;
+  if (pointsEl) pointsEl.innerHTML = `${u.ecoPoints || 50} <span style="font-size: 0.9rem;">pts</span>`;
+  if (levelEl) levelEl.textContent = u.level || 'Eco Citizen';
+  if (rankEl) rankEl.innerHTML = `Rank: <strong>#${u.rank || 1} in LGU</strong> • Status: <strong>${u.status || 'Active'}</strong>`;
+
+  if (avatarImg && initialsSpan) {
+    if (u.avatar) {
+      avatarImg.src = u.avatar;
+      avatarImg.style.display = 'block';
+      initialsSpan.style.display = 'none';
+    } else {
+      avatarImg.style.display = 'none';
+      initialsSpan.style.display = 'inline';
+      initialsSpan.textContent = getInitials(u.fullName || u.name);
+    }
+  }
+
+  // KYC Badge & Card
+  const kycStatus = u.kycStatus || 'unverified';
+  const kycCard = document.getElementById('profile-kyc-card');
+  const kycChip = document.getElementById('profile-kyc-status-chip');
+  const kycDesc = document.getElementById('profile-kyc-desc');
+  const kycDetails = document.getElementById('profile-kyc-details');
+  const kycActionBtn = document.getElementById('btn-profile-kyc-action');
+
+  if (kycStatus === 'verified') {
+    if (badgeEl) {
+      badgeEl.textContent = '🛡️ Verified Citizen';
+      badgeEl.style.background = 'var(--primary-light)';
+    }
+    if (authStatusEl) {
+      authStatusEl.textContent = '✅ Authorized';
+      authStatusEl.style.color = 'var(--primary-light)';
+    }
+    if (kycCard) kycCard.style.borderLeftColor = 'var(--primary-light)';
+    if (kycChip) {
+      kycChip.textContent = 'Verified Citizen';
+      kycChip.style.background = 'var(--primary-light)';
+    }
+    if (kycDesc) {
+      kycDesc.textContent = 'Your government ID has been verified by CENRO administration. Real-time incident reporting is fully authorized.';
+    }
+    if (kycDetails) {
+      kycDetails.style.display = 'block';
+      kycDetails.textContent = `📄 ${u.kycIdType || 'Government ID'} • Number: ${maskIdNumber(u.kycIdNumber || '')}`;
+    }
+    if (kycActionBtn) {
+      kycActionBtn.textContent = '🪪 Update / Replace ID';
+    }
+  } else if (kycStatus === 'pending') {
+    if (badgeEl) {
+      badgeEl.textContent = '⏳ Verification Pending';
+      badgeEl.style.background = 'var(--amber-dark)';
+    }
+    if (authStatusEl) {
+      authStatusEl.textContent = '⏳ Pending Review';
+      authStatusEl.style.color = 'var(--amber-dark)';
+    }
+    if (kycCard) kycCard.style.borderLeftColor = 'var(--amber)';
+    if (kycChip) {
+      kycChip.textContent = 'Pending Admin Review';
+      kycChip.style.background = 'var(--amber-dark)';
+    }
+    if (kycDesc) {
+      kycDesc.textContent = 'Your uploaded ID documents are currently in the CENRO administrative review queue. Verification typically completes within 24 hours.';
+    }
+    if (kycDetails) {
+      kycDetails.style.display = 'block';
+      kycDetails.textContent = `Submitted: ${u.kycIdType || 'Government ID'} (${maskIdNumber(u.kycIdNumber || '')})`;
+    }
+    if (kycActionBtn) {
+      kycActionBtn.textContent = '🪪 Re-upload / Update Documents';
+    }
+  } else if (kycStatus === 'rejected') {
+    if (badgeEl) {
+      badgeEl.textContent = '❌ Verification Rejected';
+      badgeEl.style.background = 'var(--red)';
+    }
+    if (authStatusEl) {
+      authStatusEl.textContent = '❌ Not Authorized';
+      authStatusEl.style.color = 'var(--red)';
+    }
+    if (kycCard) kycCard.style.borderLeftColor = 'var(--red)';
+    if (kycChip) {
+      kycChip.textContent = 'Submission Rejected';
+      kycChip.style.background = 'var(--red)';
+    }
+    if (kycDesc) {
+      kycDesc.textContent = `Verification issue: ${u.kycRejectReason || 'Document copy was unclear or invalid'}. Please re-upload a clear copy of a valid government ID.`;
+    }
+    if (kycDetails) kycDetails.style.display = 'none';
+    if (kycActionBtn) {
+      kycActionBtn.textContent = '🪪 Re-upload Valid ID';
+    }
+  } else {
+    // Unverified
+    if (badgeEl) {
+      badgeEl.textContent = '⚠️ Unverified';
+      badgeEl.style.background = 'var(--text-muted)';
+    }
+    if (authStatusEl) {
+      authStatusEl.textContent = 'KYC Required';
+      authStatusEl.style.color = 'var(--amber-dark)';
+    }
+    if (kycCard) kycCard.style.borderLeftColor = 'var(--amber)';
+    if (kycChip) {
+      kycChip.textContent = 'Action Needed';
+      kycChip.style.background = 'var(--amber-dark)';
+    }
+    if (kycDesc) {
+      kycDesc.textContent = 'To submit real-time environmental hazard reports and prevent false alerts, verify your identity with a valid government ID.';
+    }
+    if (kycDetails) kycDetails.style.display = 'none';
+    if (kycActionBtn) {
+      kycActionBtn.textContent = '🪪 Upload & Verify Government ID';
+    }
+  }
+
+  // Pre-fill profile settings form
+  const editName = document.getElementById('edit-profile-name');
+  const editPhone = document.getElementById('edit-profile-phone');
+  const editBgy = document.getElementById('edit-profile-barangay');
+  const editAddr = document.getElementById('edit-profile-address');
+  const editBio = document.getElementById('edit-profile-bio');
+  const editEmgName = document.getElementById('edit-profile-emg-name');
+  const editEmgPhone = document.getElementById('edit-profile-emg-phone');
+
+  if (editName) editName.value = u.fullName || u.name || '';
+  if (editPhone) editPhone.value = u.phone || '';
+  if (editBgy && u.barangay) editBgy.value = u.barangay;
+  if (editAddr) editAddr.value = u.address || '';
+  if (editBio) editBio.value = u.bio || '';
+  if (editEmgName) editEmgName.value = u.emergencyContactName || '';
+  if (editEmgPhone) editEmgPhone.value = u.emergencyContactPhone || '';
 }
 
-function toggleNotificationsMenu() {
-  const menu = document.getElementById('notif-dropdown-menu');
-  if (menu) menu.classList.toggle('active');
-  const userMenu = document.getElementById('user-dropdown-menu');
-  if (userMenu) userMenu.classList.remove('active');
+function maskIdNumber(idStr) {
+  if (!idStr) return '••••';
+  if (idStr.length <= 4) return idStr;
+  return '••••-••••-' + idStr.slice(-4);
 }
 
-function closeAllDropdowns() {
-  const userMenu = document.getElementById('user-dropdown-menu');
-  if (userMenu) userMenu.classList.remove('active');
-  const notifMenu = document.getElementById('notif-dropdown-menu');
-  if (notifMenu) notifMenu.classList.remove('active');
-}
-
-// Drawer Controls
-function openMobileDrawer() {
-  const drawer = document.getElementById('mobile-drawer');
-  if (drawer) drawer.classList.add('active');
-}
-
-function closeMobileDrawer(e) {
-  const drawer = document.getElementById('mobile-drawer');
-  if (drawer) drawer.classList.remove('active');
-}
-
-// Auth Modal
-function openAuthModal(mode = 'login') {
-  setAuthMode(mode);
-  const modal = document.getElementById('auth-modal');
-  if (modal) modal.style.display = 'flex';
-}
-
-function closeAuthModal() {
-  const modal = document.getElementById('auth-modal');
-  if (modal) modal.style.display = 'none';
-}
-
-function setAuthMode(mode) {
-  const tabLogin = document.getElementById('auth-tab-login');
-  const tabReg = document.getElementById('auth-tab-register');
-  const formLogin = document.getElementById('citizen-login-form');
-  const formReg = document.getElementById('citizen-register-form');
+// Barrier Auth Modal Handling
+function setBarrierMode(mode) {
+  const tabLogin = document.getElementById('barrier-tab-login');
+  const tabReg = document.getElementById('barrier-tab-register');
+  const formLogin = document.getElementById('barrier-login-form');
+  const formReg = document.getElementById('barrier-register-form');
 
   if (mode === 'login') {
-    tabLogin.className = 'btn-primary';
-    tabReg.className = 'btn-secondary';
-    formLogin.style.display = 'block';
-    formReg.style.display = 'none';
+    if (tabLogin) tabLogin.className = 'auth-barrier-tab active';
+    if (tabReg) tabReg.className = 'auth-barrier-tab';
+    if (formLogin) formLogin.style.display = 'block';
+    if (formReg) formReg.style.display = 'none';
   } else {
-    tabLogin.className = 'btn-secondary';
-    tabReg.className = 'btn-primary';
-    formLogin.style.display = 'none';
-    formReg.style.display = 'block';
+    if (tabLogin) tabLogin.className = 'auth-barrier-tab';
+    if (tabReg) tabReg.className = 'auth-barrier-tab active';
+    if (formLogin) formLogin.style.display = 'none';
+    if (formReg) formReg.style.display = 'block';
   }
 }
 
-async function handleCitizenLogin(e) {
+async function handleBarrierLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('citizen-login-email').value.trim();
-  const password = document.getElementById('citizen-login-password').value.trim();
-  const errBox = document.getElementById('auth-login-error');
-  errBox.style.display = 'none';
+  const email = document.getElementById('barrier-login-email').value.trim();
+  const password = document.getElementById('barrier-login-password').value.trim();
+  const errBox = document.getElementById('barrier-login-error');
+  if (errBox) errBox.style.display = 'none';
 
   try {
     const res = await fetch('/api/auth/login', {
@@ -472,64 +672,331 @@ async function handleCitizenLogin(e) {
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-
     if (!res.ok) {
-      errBox.textContent = data.error || 'Login failed. Please check your credentials.';
-      errBox.style.display = 'block';
+      if (errBox) {
+        errBox.textContent = data.error || 'Invalid citizen email or password.';
+        errBox.style.display = 'block';
+      }
       return;
     }
 
     state.currentUser = data.user;
     localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
     updateAuthUI();
-    closeAuthModal();
-    showToast(`👋 Welcome back, ${state.currentUser.name}!`);
+    showToast(`👋 Welcome back, ${state.currentUser.fullName || state.currentUser.name}!`);
+    await fetchReports();
   } catch (err) {
-    // Offline fallback for demo if needed
-    state.currentUser = { ...DEFAULT_CITIZEN, email, name: email.split('@')[0] };
-    localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
-    updateAuthUI();
-    closeAuthModal();
-    showToast(`👋 Signed in as ${state.currentUser.name}!`);
+    if (errBox) {
+      errBox.textContent = 'Network communication error. Please try again.';
+      errBox.style.display = 'block';
+    }
   }
 }
 
-async function handleCitizenRegister(e) {
+async function handleBarrierRegister(e) {
   e.preventDefault();
-  const name = document.getElementById('reg-name').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const phone = document.getElementById('reg-phone').value.trim();
-  const barangay = document.getElementById('reg-barangay').value;
-  const password = document.getElementById('reg-password').value.trim();
-  const errBox = document.getElementById('auth-reg-error');
-  errBox.style.display = 'none';
+  const name = document.getElementById('barrier-reg-name').value.trim();
+  const email = document.getElementById('barrier-reg-email').value.trim();
+  const phone = document.getElementById('barrier-reg-phone').value.trim();
+  const barangay = document.getElementById('barrier-reg-barangay').value;
+  const address = document.getElementById('barrier-reg-address').value.trim();
+  const password = document.getElementById('barrier-reg-password').value.trim();
+  const errBox = document.getElementById('barrier-reg-error');
+  if (errBox) errBox.style.display = 'none';
 
   try {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, barangay, password })
+      body: JSON.stringify({ name, email, phone, barangay, address, password })
     });
     const data = await res.json();
-
     if (!res.ok) {
-      errBox.textContent = data.error || 'Registration failed.';
-      errBox.style.display = 'block';
+      if (errBox) {
+        errBox.textContent = data.error || 'Registration failed. Please check your information.';
+        errBox.style.display = 'block';
+      }
       return;
     }
 
     state.currentUser = data.user;
     localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
     updateAuthUI();
-    closeAuthModal();
-    showToast(`🎉 Account created! Welcome, ${state.currentUser.name} (+50 Eco-Points)!`);
+    showToast(`🎉 Citizen account created! Welcome, ${name}!`);
+    await fetchReports();
+
+    // Automatically prompt KYC modal for newly registered citizen
+    setTimeout(() => {
+      openKycModal();
+    }, 600);
   } catch (err) {
-    state.currentUser = { ...DEFAULT_CITIZEN, name, fullName: name, email, barangay, ecoPoints: 100 };
-    localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
-    updateAuthUI();
-    closeAuthModal();
-    showToast(`🎉 Welcome, ${state.currentUser.name}!`);
+    if (errBox) {
+      errBox.textContent = 'Network error during registration.';
+      errBox.style.display = 'block';
+    }
   }
+}
+
+// Profile Settings & Photo Upload Handlers
+async function handleAvatarFileChange(event) {
+  const file = event.target.files[0];
+  if (!file || !state.currentUser) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const dataUrl = e.target.result;
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: state.currentUser.email,
+          avatar: dataUrl
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        state.currentUser.avatar = dataUrl;
+        localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+        updateAuthUI();
+        showToast('📷 Profile photo updated successfully!');
+      } else {
+        alert(data.error || 'Failed to update avatar.');
+      }
+    } catch (err) {
+      alert('Network error updating profile photo.');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function handleSaveProfileSettings(event) {
+  event.preventDefault();
+  if (!state.currentUser) return;
+
+  const name = document.getElementById('edit-profile-name').value.trim();
+  const phone = document.getElementById('edit-profile-phone').value.trim();
+  const barangay = document.getElementById('edit-profile-barangay').value;
+  const address = document.getElementById('edit-profile-address').value.trim();
+  const bio = document.getElementById('edit-profile-bio').value.trim();
+  const emergencyContactName = document.getElementById('edit-profile-emg-name').value.trim();
+  const emergencyContactPhone = document.getElementById('edit-profile-emg-phone').value.trim();
+
+  const statusEl = document.getElementById('profile-save-status');
+
+  try {
+    const res = await fetch('/api/user/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: state.currentUser.email,
+        name,
+        phone,
+        barangay,
+        address,
+        bio,
+        emergencyContactName,
+        emergencyContactPhone
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      state.currentUser = { ...state.currentUser, ...data.user };
+      localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+      updateAuthUI();
+
+      if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.background = '#ECFDF5';
+        statusEl.style.color = '#065F46';
+        statusEl.style.border = '1px solid #A7F3D0';
+        statusEl.textContent = '✅ Profile details and address saved successfully!';
+        setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+      }
+      showToast('✅ Profile information updated!');
+    } else {
+      if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.background = '#FEF2F2';
+        statusEl.style.color = '#991B1B';
+        statusEl.style.border = '1px solid #FECACA';
+        statusEl.textContent = data.error || 'Failed to save changes.';
+      }
+    }
+  } catch (err) {
+    alert('Network error saving profile settings.');
+  }
+}
+
+// KYC Verification Handling
+let kycUploadState = { front: null, back: null, selfie: null };
+
+function openKycModal() {
+  if (!state.currentUser) {
+    setBarrierMode('login');
+    const barrier = document.getElementById('auth-barrier-screen');
+    if (barrier) barrier.style.display = 'flex';
+    return;
+  }
+  const modal = document.getElementById('kyc-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    if (state.currentUser.kycIdType) {
+      const typeSelect = document.getElementById('kyc-doc-type');
+      if (typeSelect) typeSelect.value = state.currentUser.kycIdType;
+    }
+    if (state.currentUser.kycIdNumber) {
+      const numInput = document.getElementById('kyc-doc-number');
+      if (numInput) numInput.value = state.currentUser.kycIdNumber;
+    }
+    const errBox = document.getElementById('kyc-submit-error');
+    if (errBox) errBox.style.display = 'none';
+  }
+}
+
+function closeKycModal() {
+  const modal = document.getElementById('kyc-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function handleKycFileUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    kycUploadState[type] = dataUrl;
+
+    const preview = document.getElementById(`kyc-img-${type}`);
+    const placeholder = document.getElementById(`kyc-preview-${type}-placeholder`);
+    const removeBtn = document.getElementById(`kyc-btn-remove-${type}`);
+
+    if (preview) {
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+    }
+    if (placeholder) placeholder.style.display = 'none';
+    if (removeBtn) removeBtn.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeKycFile(event, type) {
+  event.stopPropagation();
+  kycUploadState[type] = null;
+
+  const fileInput = document.getElementById(`kyc-file-${type}`);
+  if (fileInput) fileInput.value = '';
+
+  const preview = document.getElementById(`kyc-img-${type}`);
+  const placeholder = document.getElementById(`kyc-preview-${type}-placeholder`);
+  const removeBtn = document.getElementById(`kyc-btn-remove-${type}`);
+
+  if (preview) preview.style.display = 'none';
+  if (placeholder) placeholder.style.display = 'block';
+  if (removeBtn) removeBtn.style.display = 'none';
+}
+
+async function handleKycSubmit(event) {
+  event.preventDefault();
+  if (!state.currentUser) return;
+
+  const docType = document.getElementById('kyc-doc-type').value.trim();
+  const docNumber = document.getElementById('kyc-doc-number').value.trim();
+  const errBox = document.getElementById('kyc-submit-error');
+  const submitBtn = document.getElementById('btn-submit-kyc');
+
+  if (errBox) errBox.style.display = 'none';
+
+  if (!kycUploadState.front) {
+    if (errBox) {
+      errBox.textContent = 'Please upload the front photo of your government ID.';
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+  if (!kycUploadState.selfie) {
+    if (errBox) {
+      errBox.textContent = 'Please upload a selfie of you holding your government ID.';
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Encrypting & Submitting...';
+  }
+
+  try {
+    const res = await fetch('/api/user/kyc/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: state.currentUser.email,
+        idType: docType,
+        idNumber: docNumber,
+        frontImage: kycUploadState.front,
+        backImage: kycUploadState.back || '',
+        selfieImage: kycUploadState.selfie
+      })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (errBox) {
+        errBox.textContent = data.error || 'Failed to submit KYC documents.';
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+
+    state.currentUser.kycStatus = 'pending';
+    state.currentUser.kycIdType = docType;
+    state.currentUser.kycIdNumber = docNumber;
+    state.currentUser.kycSubmittedAt = Date.now();
+    localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+
+    closeKycModal();
+    updateAuthUI();
+    showToast('🎉 KYC documents submitted! CENRO administration is reviewing your application.');
+
+  } catch (err) {
+    if (errBox) {
+      errBox.textContent = 'Network error submitting verification documents.';
+      errBox.style.display = 'block';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '📤 Submit Documents for Admin Review';
+    }
+  }
+}
+
+// Generic Auth Modal (for backwards compatibility)
+function openAuthModal(mode = 'login') {
+  setBarrierMode(mode);
+  const barrier = document.getElementById('auth-barrier-screen');
+  if (barrier) barrier.style.display = 'flex';
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('auth-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function setAuthMode(mode) {
+  setBarrierMode(mode);
+}
+
+async function handleCitizenLogin(e) {
+  await handleBarrierLogin(e);
+}
+
+async function handleCitizenRegister(e) {
+  await handleBarrierRegister(e);
 }
 
 function handleCitizenLogout() {
@@ -778,11 +1245,16 @@ async function fetchReports() {
 }
 
 function renderDashboardData() {
-  // Update 4 Overview Stat Widgets
-  const total = state.reports.length || 128;
-  const pending = state.reports.filter(r => r.status === 'Pending' || r.status === 'Submitted').length || 34;
-  const inProgress = state.reports.filter(r => r.status === 'In Progress' || r.status === 'Investigating' || r.status === 'Under Review').length || 34;
-  const resolved = state.reports.filter(r => r.status === 'Resolved' || r.status === 'Closed').length || 87;
+  if (!state.currentUser) return;
+
+  const userEmail = (state.currentUser.email || '').toLowerCase();
+  const userReports = (state.reports || []).filter(r => (r.submittedEmail || '').toLowerCase() === userEmail);
+
+  // Update 4 Personalized KPI Stat Widgets based on citizen's real reports
+  const total = userReports.length;
+  const pending = userReports.filter(r => r.status === 'Pending' || r.status === 'Submitted').length;
+  const inProgress = userReports.filter(r => r.status === 'In Progress' || r.status === 'Investigating' || r.status === 'Under Review').length;
+  const resolved = userReports.filter(r => r.status === 'Resolved' || r.status === 'Closed').length;
 
   const totalEl = document.getElementById('kpi-total-reports');
   const pendEl = document.getElementById('kpi-pending-reports');
@@ -794,31 +1266,49 @@ function renderDashboardData() {
   if (inProgEl) inProgEl.textContent = inProgress;
   if (resEl) resEl.textContent = resolved;
 
-  // Render Homepage Recent Reports Table exactly matching design mockup
+  // Render My Citizen Activity & Reports Table showing real user reports only
   const tableBody = document.getElementById('dashboard-recent-table-body');
   if (tableBody) {
-    const tableData = [
-      { id: "CAR-2026-00128", type: "🌊 Flooding", location: "Barangay Makilas", status: "Investigating", date: "Sep 15, 2026", statusClass: "investigating" },
-      { id: "CAR-2026-00129", type: "🗑️ Illegal Dumping", location: "Poblacion", status: "In Progress", date: "Sep 14, 2026", statusClass: "in-progress" },
-      { id: "CAR-2026-00130", type: "💧 Water Pollution", location: "Lumbia", status: "Resolved", date: "Sep 13, 2026", statusClass: "resolved" },
-      { id: "CAR-2026-00131", type: "🌳 Tree Cutting", location: "Taway", status: "Pending", date: "Sep 12, 2026", statusClass: "pending" },
-      { id: "CAR-2026-00132", type: "💨 Air Pollution", location: "Maasin", status: "Investigating", date: "Sep 11, 2026", statusClass: "investigating" }
-    ];
+    if (userReports.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📋</div>
+            <div style="font-weight: 800; color: var(--text-main); font-size: 1.05rem;">No Incident Reports Filed Yet</div>
+            <div style="font-size: 0.85rem; margin-top: 0.35rem; line-height: 1.5; max-width: 480px; margin-left: auto; margin-right: auto;">
+              ${state.currentUser.kycStatus === 'verified'
+                ? 'Your citizen account is verified and fully authorized to report local environmental hazards, flooding, or waste violations.'
+                : 'Under City Ordinance #2026-04, please complete one-time government ID verification to begin filing real-time hazard reports.'}
+            </div>
+            ${state.currentUser.kycStatus === 'verified'
+              ? '<button class="btn-primary" onclick="switchTab(\'report\')" style="margin-top: 1.25rem; font-size: 0.88rem; padding: 0.65rem 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;">🚨 Submit Your First Incident Report</button>'
+              : '<button class="btn-primary" onclick="openKycModal()" style="margin-top: 1.25rem; font-size: 0.88rem; padding: 0.65rem 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;">🪪 Complete KYC Verification (+100 pts)</button>'}
+          </td>
+        </tr>
+      `;
+    } else {
+      tableBody.innerHTML = userReports.map(r => {
+        const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+        const st = (r.status || 'Submitted');
+        const stClass = st.toLowerCase().replace(' ', '-');
+        const icon = st === 'Resolved' ? '🟢' : st === 'In Progress' ? '🔵' : st === 'Investigating' ? '🟡' : '🟠';
 
-    tableBody.innerHTML = tableData.map(row => `
-      <tr class="interactive-row" onclick="openReportTimelineModal('${row.id}', '${row.type}', '${row.location}', '${row.status}')">
-        <td>
-          <div class="report-type-cell">${row.type}</div>
-        </td>
-        <td>${row.location}</td>
-        <td>
-          <span class="status-badge ${row.statusClass}">
-            ${row.status === 'Resolved' ? '🟢' : row.status === 'In Progress' ? '🔵' : row.status === 'Investigating' ? '🟡' : '🟠'} ${row.status}
-          </span>
-        </td>
-        <td style="color: var(--text-muted); font-size: 0.78rem;">${row.date}</td>
-      </tr>
-    `).join('');
+        return `
+          <tr class="interactive-row" onclick="openReportTimelineModal('${r.id}', '${escapeHtml(r.category || r.title)}', '${escapeHtml(r.barangay || '')}', '${st}')">
+            <td>
+              <div class="report-type-cell">${escapeHtml(r.title || r.category)}</div>
+            </td>
+            <td>${escapeHtml(r.barangay || 'Metro Verde')}</td>
+            <td>
+              <span class="status-badge ${stClass}">
+                ${icon} ${st}
+              </span>
+            </td>
+            <td style="color: var(--text-muted); font-size: 0.78rem;">${dateStr}</td>
+          </tr>
+        `;
+      }).join('');
+    }
   }
 
   // Render Dashboard Activities List
@@ -1179,13 +1669,21 @@ function filterTrackerByStatus(status) {
   renderIncidentTracker(status, search);
 }
 
-// 8. Form Submission (Requires Citizen Authentication)
+// 8. Form Submission (Strictly Requires Verified Citizen KYC)
 async function handleFormSubmit(e) {
   e.preventDefault();
 
   if (!state.currentUser) {
-    openAuthModal('login');
+    setBarrierMode('login');
+    const barrier = document.getElementById('auth-barrier-screen');
+    if (barrier) barrier.style.display = 'flex';
     showToast('⚠️ You must log in or register before submitting an incident report.');
+    return;
+  }
+
+  if (state.currentUser.kycStatus !== 'verified') {
+    alert('Identity Verification Required: Under City Ecological Ordinance #2026-04, citizens must verify their government ID before submitting environmental incident reports.');
+    openKycModal();
     return;
   }
 
@@ -1230,22 +1728,31 @@ async function handleFormSubmit(e) {
     });
     const data = await res.json();
 
+    if (res.status === 403 || data.requiresKyc) {
+      alert(data.error || 'Identity Verification Required: Please verify your government ID with CENRO before submitting reports.');
+      openKycModal();
+      return;
+    }
+
     if (res.ok) {
-      state.currentUser.ecoPoints = (state.currentUser.ecoPoints || 750) + 50;
-      state.currentUser.reportsCount = (state.currentUser.reportsCount || 5) + 1;
+      state.currentUser.ecoPoints = (state.currentUser.ecoPoints || 50) + 50;
+      state.currentUser.reportsCount = (state.currentUser.reportsCount || 0) + 1;
       localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
       updateAuthUI();
 
       document.getElementById('incident-report-form').reset();
-      document.getElementById('photo-preview-img').style.display = 'none';
-      document.getElementById('photo-upload-placeholder').style.display = 'block';
+      const preview = document.getElementById('photo-preview-img');
+      const placeholder = document.getElementById('photo-upload-placeholder');
+      if (preview) preview.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'block';
       state.uploadedPhotoData = null;
 
       showToast(`🎉 Incident logged as Ticket ${data.report.id}! +50 Eco-Points awarded.`);
       await fetchReports();
+      renderDashboardData();
       switchTab('tracker');
     } else {
-      alert('Failed to submit report. Please check required fields.');
+      alert(data.error || 'Failed to submit report. Please check required fields.');
     }
   } catch (err) {
     alert('Network error submitting incident report.');

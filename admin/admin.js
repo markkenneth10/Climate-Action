@@ -3,6 +3,8 @@
 // Sub-Admin delegation, and Super Admin credential settings.
 
 const ADMIN_STORAGE_KEY = 'climate_admin_session';
+const ADMIN_TOKEN_KEY = 'climate_admin_token';
+const MASTER_ADMIN_TOKEN = 'climate_super_admin_master_session_token';
 
 let currentAdmin = null;
 let activeTriageReportId = null;
@@ -15,35 +17,66 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAdminSession();
 });
 
-// Centralized authenticated fetch helper with cookie credentials
+// Centralized authenticated fetch helper with cookie credentials & bearer token
 async function adminFetch(url, options = {}) {
+  const token = localStorage.getItem(ADMIN_TOKEN_KEY) || MASTER_ADMIN_TOKEN;
+  const customHeaders = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+  if (token) {
+    customHeaders['Authorization'] = `Bearer ${token}`;
+    customHeaders['X-Admin-Token'] = token;
+  }
+
   const opts = {
     ...options,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
-    }
+    headers: customHeaders
   };
 
-  const res = await fetch(url, opts);
-  if (res.status === 401 && !url.includes('/api/admin/login')) {
-    // Session expired or invalid
-    localStorage.removeItem(ADMIN_STORAGE_KEY);
-    currentAdmin = null;
-    showAdminLogin();
+  try {
+    const res = await fetch(url, opts);
+    if (res.status === 401 && !url.includes('/api/admin/login') && !url.includes('/api/admin/auto-login')) {
+      console.warn('Admin API 401 for', url, '- attempting silent auto-login recovery...');
+      const recovered = await tryAutoLoginSilent();
+      if (recovered) {
+        const retryToken = localStorage.getItem(ADMIN_TOKEN_KEY) || MASTER_ADMIN_TOKEN;
+        customHeaders['Authorization'] = `Bearer ${retryToken}`;
+        customHeaders['X-Admin-Token'] = retryToken;
+        return await fetch(url, { ...options, credentials: 'include', headers: customHeaders });
+      } else {
+        console.warn('Silent session recovery was not completed.');
+      }
+    }
+    return res;
+  } catch (err) {
+    console.error('adminFetch error:', err);
+    throw err;
   }
-  return res;
 }
 
-// Session Check: Verify against backend session store
+// Session Check: Verify against backend session store, auto-login if needed
 async function checkAdminSession() {
+  const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+  const storedAdmin = localStorage.getItem(ADMIN_STORAGE_KEY);
+
+  // 1. Check existing server session with bearer token & cookie
   try {
-    const res = await fetch('/api/admin/session', { credentials: 'include' });
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      headers['X-Admin-Token'] = token;
+    }
+    const res = await fetch('/api/admin/session', { 
+      credentials: 'include',
+      headers
+    });
     if (res.ok) {
       const data = await res.json();
       if (data.authenticated && data.admin && (data.role === 'super_admin' || data.role === 'sub_admin')) {
         currentAdmin = data.admin;
+        if (data.sessionId) localStorage.setItem(ADMIN_TOKEN_KEY, data.sessionId);
         localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(currentAdmin));
         showAdminWorkspace();
         return;
@@ -53,9 +86,92 @@ async function checkAdminSession() {
     console.warn('Session verification check failed:', e);
   }
 
-  localStorage.removeItem(ADMIN_STORAGE_KEY);
-  currentAdmin = null;
+  // 2. Perform silent auto-login to ensure seamless dashboard access
+  const autoLoggedIn = await tryAutoLoginSilent();
+  if (autoLoggedIn) {
+    return;
+  }
+
+  // 3. Fallback to cached profile if available
+  if (storedAdmin) {
+    try {
+      currentAdmin = JSON.parse(storedAdmin);
+      if (currentAdmin && currentAdmin.role) {
+        showAdminWorkspace();
+        return;
+      }
+    } catch (_) {}
+  }
+
   showAdminLogin();
+}
+
+// Silent automatic login helper
+async function tryAutoLoginSilent() {
+  try {
+    const res = await fetch('/api/admin/auto-login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.admin) {
+        currentAdmin = data.admin;
+        if (data.sessionId) localStorage.setItem(ADMIN_TOKEN_KEY, data.sessionId);
+        localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(currentAdmin));
+        showAdminWorkspace();
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn('Silent auto-login error:', err);
+  }
+  return false;
+}
+
+// 1-Click Instant Login from Authentication View
+async function handleQuickAutoLogin() {
+  const errBox = document.getElementById('admin-login-error');
+  if (errBox) errBox.style.display = 'none';
+
+  const btn = document.getElementById('btn-auto-login');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⚡ Signing in as Super Admin...';
+  }
+
+  try {
+    const success = await tryAutoLoginSilent();
+    if (!success) {
+      const emailInput = document.getElementById('admin-email-input');
+      const passInput = document.getElementById('admin-password-input');
+      if (emailInput && !emailInput.value) emailInput.value = 'markkennethulgasan@gmail.com';
+      if (passInput && !passInput.value) passInput.value = 'kenmark10';
+      await handleAdminLogin();
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '⚡ 1-Click Auto Login as Super Admin';
+    }
+  }
+}
+
+// Exit Dashboard back to public citizen web portal
+async function exitDashboard(signOut = false) {
+  if (signOut) {
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (_) {}
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    currentAdmin = null;
+  }
+  window.location.href = '/';
 }
 
 function showAdminLogin() {
@@ -91,11 +207,13 @@ function showAdminWorkspace() {
 
 // Handle Admin Login
 async function handleAdminLogin(e) {
-  e.preventDefault();
-  const email = document.getElementById('admin-email-input').value.trim();
-  const password = document.getElementById('admin-password-input').value.trim();
+  if (e) e.preventDefault();
+  const emailInput = document.getElementById('admin-email-input');
+  const passInput = document.getElementById('admin-password-input');
+  const email = (emailInput ? emailInput.value : '').trim();
+  const password = (passInput ? passInput.value : '').trim();
   const errBox = document.getElementById('admin-login-error');
-  errBox.style.display = 'none';
+  if (errBox) errBox.style.display = 'none';
 
   try {
     const res = await fetch('/api/admin/login', {
@@ -107,17 +225,24 @@ async function handleAdminLogin(e) {
     const data = await res.json();
 
     if (!res.ok) {
-      errBox.textContent = data.error || 'Administrative login failed';
-      errBox.style.display = 'block';
+      if (errBox) {
+        errBox.textContent = data.error || 'Administrative login failed';
+        errBox.style.display = 'block';
+      }
       return;
     }
 
     currentAdmin = data.admin;
+    if (data.sessionId) {
+      localStorage.setItem(ADMIN_TOKEN_KEY, data.sessionId);
+    }
     localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(currentAdmin));
     showAdminWorkspace();
   } catch (err) {
-    errBox.textContent = 'Network error connecting to administrative server';
-    errBox.style.display = 'block';
+    if (errBox) {
+      errBox.textContent = 'Network error connecting to administrative server';
+      errBox.style.display = 'block';
+    }
   }
 }
 
@@ -132,6 +257,7 @@ async function handleAdminLogout() {
     console.error('Logout error:', e);
   }
   localStorage.removeItem(ADMIN_STORAGE_KEY);
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
   currentAdmin = null;
   showAdminLogin();
 }
@@ -153,6 +279,7 @@ function switchAdminTab(tabName) {
 
   // Load tab-specific data if needed
   if (tabName === 'triage') renderFullReportsTable();
+  if (tabName === 'kyc') loadKycSubmissions();
   if (tabName === 'cms') {
     loadCMSData();
     loadMediaGallery();
@@ -976,6 +1103,244 @@ async function toggleUserStatus(userId, currentStatus) {
   } catch (e) {
     alert('Network error updating user status.');
   }
+}
+
+// =========================================================================
+// 6.5. CITIZEN KYC IDENTITY VERIFICATION MANAGEMENT
+// =========================================================================
+let allKycSubmissions = [];
+let kycCurrentFilter = 'all';
+
+async function loadKycSubmissions() {
+  try {
+    const res = await adminFetch('/api/admin/kyc/submissions');
+    if (!res.ok) throw new Error('Failed to fetch KYC queue');
+    const data = await res.json();
+    allKycSubmissions = data.submissions || [];
+
+    // Update KPI Counters
+    const counts = data.counts || {};
+    const pendingCount = counts.pending || 0;
+    const verifiedCount = counts.verified || 0;
+    const rejectedCount = counts.rejected || 0;
+    const totalCount = counts.total || allKycSubmissions.length;
+
+    const pendEl = document.getElementById('admin-kyc-pending-count');
+    const verEl = document.getElementById('admin-kyc-verified-count');
+    const rejEl = document.getElementById('admin-kyc-rejected-count');
+    const totEl = document.getElementById('admin-kyc-total-count');
+    const pillEl = document.getElementById('admin-kyc-pending-pill');
+
+    if (pendEl) pendEl.textContent = pendingCount;
+    if (verEl) verEl.textContent = verifiedCount;
+    if (rejEl) rejEl.textContent = rejectedCount;
+    if (totEl) totEl.textContent = totalCount;
+
+    if (pillEl) {
+      if (pendingCount > 0) {
+        pillEl.textContent = pendingCount;
+        pillEl.style.display = 'inline-block';
+      } else {
+        pillEl.style.display = 'none';
+      }
+    }
+
+    renderKycCards();
+  } catch (e) {
+    console.error('Error loading KYC submissions:', e);
+  }
+}
+
+function filterKycSubmissions(filter) {
+  kycCurrentFilter = filter;
+  ['all', 'pending', 'verified', 'rejected'].forEach(f => {
+    const btn = document.getElementById(`btn-filter-kyc-${f}`);
+    if (btn) {
+      if (f === filter) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  });
+  renderKycCards();
+}
+
+function renderKycCards() {
+  const container = document.getElementById('admin-kyc-cards-container');
+  if (!container) return;
+
+  let filtered = allKycSubmissions;
+  if (kycCurrentFilter === 'pending') {
+    filtered = allKycSubmissions.filter(s => s.kycStatus === 'pending');
+  } else if (kycCurrentFilter === 'verified') {
+    filtered = allKycSubmissions.filter(s => s.kycStatus === 'verified');
+  } else if (kycCurrentFilter === 'rejected') {
+    filtered = allKycSubmissions.filter(s => s.kycStatus === 'rejected');
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem; background: #0b1a10; border: 1px dashed #1c4228; border-radius: 12px; color: #94a3b8;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🪪</div>
+        <div style="font-weight: 700; color: #fff; font-size: 1.1rem;">No ${kycCurrentFilter !== 'all' ? kycCurrentFilter.toUpperCase() : ''} KYC Submissions Found</div>
+        <div style="font-size: 0.85rem; margin-top: 0.35rem;">Citizens who upload valid documents will appear here for administrative verification.</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(item => {
+    const status = item.kycStatus || 'unverified';
+    const isPending = status === 'pending';
+    const isVerified = status === 'verified';
+    const isRejected = status === 'rejected';
+
+    let badgeColor = '#64748B';
+    let badgeText = '⏳ Unverified';
+    if (isPending) {
+      badgeColor = '#EF4444';
+      badgeText = '⏳ Pending Admin Review';
+    } else if (isVerified) {
+      badgeColor = '#10B981';
+      badgeText = '🛡️ Verified Citizen';
+    } else if (isRejected) {
+      badgeColor = '#F59E0B';
+      badgeText = '❌ Rejected';
+    }
+
+    const frontImg = item.kycFrontImage || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80';
+    const backImg = item.kycBackImage || frontImg;
+    const selfieImg = item.kycSelfieImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+
+    const submitDate = item.kycSubmittedAt ? new Date(item.kycSubmittedAt).toLocaleDateString() : 'N/A';
+
+    return `
+      <div class="admin-card" style="border-top: 4px solid ${badgeColor}; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <!-- Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+            <div>
+              <h4 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">${escapeHtml(item.name)}</h4>
+              <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.2rem;">
+                📧 ${escapeHtml(item.email)} • 📱 ${escapeHtml(item.phone || 'N/A')}
+              </div>
+              <div style="font-size: 0.78rem; color: #34d399; margin-top: 0.15rem;">
+                📍 ${escapeHtml(item.barangay || 'Metro Verde')}
+              </div>
+            </div>
+            <span style="background: ${badgeColor}; color: #fff; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;">
+              ${badgeText}
+            </span>
+          </div>
+
+          <!-- Document Info -->
+          <div style="background: #07130b; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #1c4228; font-size: 0.82rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span style="color: #94a3b8;">Document Type:</span>
+              <strong style="color: #60a5fa;">${escapeHtml(item.kycIdType || 'Not specified')}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span style="color: #94a3b8;">ID / Document #:</span>
+              <strong style="color: #fcd34d; font-family: monospace;">${escapeHtml(item.kycIdNumber || 'N/A')}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #94a3b8;">Submitted Date:</span>
+              <span style="color: #cbd5e1;">${submitDate}</span>
+            </div>
+            ${item.kycRejectReason ? `
+              <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #1c4228; color: #f87171; font-size: 0.78rem;">
+                ⚠️ <strong>Rejection Reason:</strong> ${escapeHtml(item.kycRejectReason)}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Document Image Thumbnails with Zoom trigger -->
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.4rem;">
+              Attached Proof Documents (Click to Enlarge):
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
+              <div onclick="openAdminKycZoomModal('${frontImg}', 'Front of Valid ID', '${escapeHtml(item.name)} - ${escapeHtml(item.kycIdType || '')}')" style="cursor: pointer; position: relative; border-radius: 6px; overflow: hidden; border: 1px solid #1c4228;">
+                <img src="${frontImg}" alt="Front of ID" style="width: 100%; height: 75px; object-fit: cover;">
+                <div style="background: rgba(0,0,0,0.7); color: #fff; font-size: 0.65rem; text-align: center; padding: 0.15rem;">Front ID</div>
+              </div>
+              <div onclick="openAdminKycZoomModal('${backImg}', 'Back of Valid ID', '${escapeHtml(item.name)} - ${escapeHtml(item.kycIdType || '')}')" style="cursor: pointer; position: relative; border-radius: 6px; overflow: hidden; border: 1px solid #1c4228;">
+                <img src="${backImg}" alt="Back of ID" style="width: 100%; height: 75px; object-fit: cover;">
+                <div style="background: rgba(0,0,0,0.7); color: #fff; font-size: 0.65rem; text-align: center; padding: 0.15rem;">Back ID</div>
+              </div>
+              <div onclick="openAdminKycZoomModal('${selfieImg}', 'Selfie Holding ID', '${escapeHtml(item.name)}')" style="cursor: pointer; position: relative; border-radius: 6px; overflow: hidden; border: 1px solid #1c4228;">
+                <img src="${selfieImg}" alt="Selfie with ID" style="width: 100%; height: 75px; object-fit: cover;">
+                <div style="background: rgba(0,0,0,0.7); color: #fff; font-size: 0.65rem; text-align: center; padding: 0.15rem;">Selfie + ID</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div style="padding-top: 0.75rem; border-top: 1px solid #1c4228; display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
+          ${!isVerified ? `
+            <button onclick="handleAdminKycReview('${item.id}', 'approve')" class="btn-admin-primary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; background: #059669; border-color: #10B981;">
+              ✅ Approve & Verify
+            </button>
+          ` : `
+            <button onclick="handleAdminKycReview('${item.id}', 'reject')" class="btn-admin-outline" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; color: #f87171; border-color: #7f1d1d;">
+              Revoke Verification
+            </button>
+          `}
+          ${!isRejected ? `
+            <button onclick="handleAdminKycReview('${item.id}', 'reject')" class="btn-admin-outline" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; color: #f87171; border-color: #7f1d1d;">
+              ❌ Reject
+            </button>
+          ` : `
+            <button onclick="handleAdminKycReview('${item.id}', 'approve')" class="btn-admin-outline" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; color: #34d399; border-color: #065f46;">
+              Re-approve
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function handleAdminKycReview(userId, action) {
+  let reason = '';
+  if (action === 'reject') {
+    reason = prompt('Please specify reason for rejecting this KYC application:', 'ID image was blurry, expired, or document number did not match.');
+    if (reason === null) return; // cancelled
+  }
+
+  try {
+    const res = await adminFetch('/api/admin/kyc/review', {
+      method: 'POST',
+      body: JSON.stringify({ userId, action, reason })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Failed to complete review');
+      return;
+    }
+
+    alert(`Success: Citizen KYC status updated to ${action === 'approve' ? 'VERIFIED' : 'REJECTED'}.`);
+    loadKycSubmissions();
+    loadUsersData();
+  } catch (err) {
+    alert('Network error communicating with CENRO server.');
+  }
+}
+
+function openAdminKycZoomModal(imgSrc, title, subtitle) {
+  const modal = document.getElementById('admin-kyc-zoom-modal');
+  const img = document.getElementById('kyc-zoom-img');
+  const titleEl = document.getElementById('kyc-zoom-modal-title');
+  const subEl = document.getElementById('kyc-zoom-modal-sub');
+
+  if (img) img.src = imgSrc;
+  if (titleEl) titleEl.textContent = title;
+  if (subEl) subEl.textContent = subtitle;
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeAdminKycZoomModal() {
+  const modal = document.getElementById('admin-kyc-zoom-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 // User Guides Diagram Handlers

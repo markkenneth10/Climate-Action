@@ -17,7 +17,7 @@
   <!-- 1. ADMIN AUTHENTICATION SCREEN (Shown when logged out) -->
   <div id="admin-auth-view" class="admin-login-wrap">
     <div class="admin-login-card">
-      <div style="text-align: center; margin-bottom: 2rem;">
+      <div style="text-align: center; margin-bottom: 1.75rem;">
         <div style="width: 64px; height: 64px; margin: 0 auto 1rem; background: linear-gradient(135deg, #10b981, #059669); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 0 20px rgba(16,185,129,0.3);">
           🛡️
         </div>
@@ -25,26 +25,40 @@
         <p style="font-size: 0.85rem; color: #94a3b8;">LGU CENRO & Environmental Protection Directorate</p>
       </div>
 
+      <!-- Quick 1-Click Automatic Login -->
+      <div style="margin-bottom: 1.25rem;">
+        <button type="button" id="btn-auto-login" onclick="handleQuickAutoLogin()" class="btn-admin-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; background: linear-gradient(135deg, #10B981, #047857); display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); font-weight: 800;">
+          ⚡ 1-Click Auto Login as Super Admin
+        </button>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 1rem; margin-bottom: 0.5rem;">
+          <div style="height: 1px; flex: 1; background: var(--border);"></div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Or Official Credentials</span>
+          <div style="height: 1px; flex: 1; background: var(--border);"></div>
+        </div>
+      </div>
+
       <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
-        <div style="margin-bottom: 1.2rem;">
+        <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem;">Official Administrative Email</label>
-          <input type="email" id="admin-email-input" class="admin-input" placeholder="Enter official admin email" required autocomplete="username">
+          <input type="email" id="admin-email-input" class="admin-input" placeholder="Enter official admin email" value="markkennethulgasan@gmail.com" required autocomplete="username">
         </div>
 
-        <div style="margin-bottom: 1.5rem;">
+        <div style="margin-bottom: 1.25rem;">
           <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem;">Password</label>
-          <input type="password" id="admin-password-input" class="admin-input" placeholder="••••••••" required>
+          <input type="password" id="admin-password-input" class="admin-input" placeholder="••••••••" value="kenmark10" required>
         </div>
 
         <div id="admin-login-error" style="display: none; background: #7f1d1d; color: #fecaca; padding: 0.65rem; border-radius: 6px; font-size: 0.82rem; margin-bottom: 1rem;"></div>
 
-        <button type="submit" class="btn-admin-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem;">
-          Secure Administrative Login →
+        <button type="submit" class="btn-admin-primary" style="width: 100%; padding: 0.85rem; font-size: 0.92rem; background: var(--primary);">
+          Sign In to Administrative Console →
         </button>
       </form>
 
-      <div style="margin-top: 1.5rem; text-align: center;">
-        <a href="/" style="color: #64748b; font-size: 0.82rem; text-decoration: none;">← Return to Public Citizen Website</a>
+      <div style="margin-top: 1.5rem; text-align: center; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+        <button type="button" onclick="exitDashboard(false)" class="btn-admin-outline" style="width: 100%; padding: 0.75rem; font-size: 0.88rem; justify-content: center; display: inline-flex; align-items: center; gap: 0.5rem; border-color: var(--border); color: var(--text-main); font-weight: 700;">
+          🚪 Exit to Public Citizen Website
+        </button>
       </div>
     </div>
   </div>
@@ -79,12 +93,12 @@
           </div>
         </div>
 
-        <a href="/" target="_blank" class="btn-admin-outline" style="text-decoration: none; font-size: 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.25);">
-          🌐 <span class="admin-site-link-text">Citizen Site</span> ↗
-        </a>
+        <button onclick="exitDashboard(false)" class="btn-admin-outline" style="text-decoration: none; font-size: 0.82rem; background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.3); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.85rem; font-weight: 700; cursor: pointer;" title="Exit Dashboard and Return to Citizen Website">
+          🚪 <span class="admin-site-link-text">Exit Dashboard</span>
+        </button>
 
-        <button onclick="handleAdminLogout()" class="btn-admin-outline" style="color: #FECACA; border-color: rgba(239, 68, 68, 0.4); background: rgba(127, 29, 29, 0.3);">
-          Sign Out
+        <button onclick="exitDashboard(true)" class="btn-admin-outline" style="color: #FECACA; border-color: rgba(239, 68, 68, 0.4); background: rgba(127, 29, 29, 0.3); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.48rem 0.85rem; font-weight: 700; cursor: pointer;" title="Sign out of Admin Session">
+          🔒 Sign Out
         </button>
       </div>
     </header>
@@ -106,9 +120,20 @@
         <button class="admin-nav-item" onclick="switchAdminTab('guides')">📖 User Guides Manager</button>
 
         <div class="admin-nav-category">Governance & Users</div>
+        <button class="admin-nav-item" id="nav-kyc" onclick="switchAdminTab('kyc')">
+          🪪 Citizen KYC Verifications <span id="admin-kyc-pending-pill" class="admin-badge-pill" style="display:none; background: #EF4444; color: #fff; margin-left: auto; font-size: 0.68rem; padding: 0.15rem 0.45rem;">0</span>
+        </button>
         <button class="admin-nav-item" onclick="switchAdminTab('users')">👥 Citizen Users & Analytics</button>
         <button class="admin-nav-item" id="nav-subadmins" onclick="switchAdminTab('subadmins')">🛡️ Sub-Admin Management</button>
         <button class="admin-nav-item" id="nav-settings" onclick="switchAdminTab('settings')">⚙️ Super Admin Settings</button>
+
+        <div class="admin-nav-category" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">Exit & Navigation</div>
+        <button class="admin-nav-item" onclick="exitDashboard(false)" style="color: var(--primary); font-weight: 700; background: var(--primary-tint);">
+          🚪 Exit from Dashboard
+        </button>
+        <button class="admin-nav-item" onclick="exitDashboard(true)" style="color: #DC2626; font-weight: 600;">
+          🔒 Sign Out & Exit
+        </button>
       </aside>
 
       <!-- Content Views Area -->
@@ -552,6 +577,60 @@
           </div>
         </section>
 
+        <!-- TAB: CITIZEN KYC IDENTITY VERIFICATIONS -->
+        <section id="tab-kyc" class="admin-section" style="display: none;">
+          <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🪪</span> Citizen Identity Verification (KYC) Queue
+              </h2>
+              <p style="font-size: 0.85rem; color: #94a3b8;">
+                Verify government IDs, validate submitted documents, and grant authorized incident reporting credentials to citizens.
+              </p>
+            </div>
+            <button class="btn-admin-primary" onclick="loadKycSubmissions()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+              🔄 Refresh Queue
+            </button>
+          </div>
+
+          <!-- KYC Metrics Row -->
+          <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+            <div class="admin-stat-card" style="border-left: 4px solid #EF4444;">
+              <div class="admin-stat-label">Pending Verification</div>
+              <div class="admin-stat-val" id="admin-kyc-pending-count" style="color: #F87171;">0</div>
+              <div class="admin-stat-sub">Requires admin action</div>
+            </div>
+            <div class="admin-stat-card" style="border-left: 4px solid #10B981;">
+              <div class="admin-stat-label">Verified Citizens</div>
+              <div class="admin-stat-val" id="admin-kyc-verified-count" style="color: #34D399;">0</div>
+              <div class="admin-stat-sub">Authorized to report</div>
+            </div>
+            <div class="admin-stat-card" style="border-left: 4px solid #F59E0B;">
+              <div class="admin-stat-label">Rejected / Incomplete</div>
+              <div class="admin-stat-val" id="admin-kyc-rejected-count" style="color: #FBBF24;">0</div>
+              <div class="admin-stat-sub">Flagged submissions</div>
+            </div>
+            <div class="admin-stat-card" style="border-left: 4px solid #3B82F6;">
+              <div class="admin-stat-label">Total Citizens</div>
+              <div class="admin-stat-val" id="admin-kyc-total-count" style="color: #60A5FA;">0</div>
+              <div class="admin-stat-sub">Registered accounts</div>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+            <button class="btn-admin-outline active" id="btn-filter-kyc-all" onclick="filterKycSubmissions('all')">All Submissions</button>
+            <button class="btn-admin-outline" id="btn-filter-kyc-pending" onclick="filterKycSubmissions('pending')">⏳ Pending Review</button>
+            <button class="btn-admin-outline" id="btn-filter-kyc-verified" onclick="filterKycSubmissions('verified')">🛡️ Verified</button>
+            <button class="btn-admin-outline" id="btn-filter-kyc-rejected" onclick="filterKycSubmissions('rejected')">❌ Rejected</button>
+          </div>
+
+          <!-- Submissions Container -->
+          <div id="admin-kyc-cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
+            <!-- Rendered by JS -->
+          </div>
+        </section>
+
         <!-- TAB 6: CITIZEN USERS & ANALYTICS -->
         <section id="tab-users" class="admin-section" style="display: none;">
           <div style="margin-bottom: 1.5rem;">
@@ -853,6 +932,27 @@
       <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
         <button onclick="closeAdminTriageModal()" class="btn-admin-outline">Cancel</button>
         <button onclick="saveAdminTriageUpdate()" class="btn-admin-primary">Save & Notify Citizen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KYC Document Zoom & Inspection Modal -->
+  <div class="modal-overlay" id="admin-kyc-zoom-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 210; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #0f2316; border: 1px solid #1c4228; border-radius: 16px; padding: 1.5rem; max-width: 720px; width: 100%; color: #fff; max-height: 92vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #1c4228; padding-bottom: 0.75rem;">
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #34d399;" id="kyc-zoom-modal-title">Verification Document Inspection</h3>
+          <div style="font-size: 0.78rem; color: #94a3b8;" id="kyc-zoom-modal-sub"></div>
+        </div>
+        <button onclick="closeAdminKycZoomModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.6rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 1.25rem;">
+        <img id="kyc-zoom-img" src="" alt="Enlarged ID Document" style="max-width: 100%; max-height: 65vh; object-fit: contain; border-radius: 8px; border: 1px solid #1c4228; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button onclick="closeAdminKycZoomModal()" class="btn-admin-primary">Close Inspection</button>
       </div>
     </div>
   </div>

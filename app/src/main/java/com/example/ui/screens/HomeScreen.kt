@@ -142,26 +142,22 @@ fun HomeScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Role badge button to switch roles
+                        // Static Verified Citizen Badge (No role switching permitted)
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = Color.White.copy(alpha = 0.2f),
-                            modifier = Modifier
-                                .clickable { viewModel.showRoleSwitcherDialog.value = true }
-                                .testTag("role_switcher_button")
+                            modifier = Modifier.testTag("citizen_badge")
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = currentUser?.role ?: "Citizen",
+                                    text = "🛡️ Verified Citizen",
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "🔄", fontSize = 10.sp)
                             }
                         }
 
@@ -258,11 +254,13 @@ fun HomeScreen(
             }
         }
 
-        // 2. Summary KPI Metric Cards (As shown in thesis design)
+        // 2. Summary KPI Metric Cards (Personalized Citizen Data)
         item {
+            val myReports = reports.filter { it.userId == currentUser?.id }
+            val myResolved = myReports.count { it.status == "Resolved" }
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                 Text(
-                    text = "System Overview",
+                    text = "My Environmental Impact",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = EcoTextPrimary
@@ -273,19 +271,19 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     StatCard(
-                        title = "Total Reports",
-                        value = "$totalReportsCount",
+                        title = "My Reports",
+                        value = "${myReports.size}",
                         iconEmoji = "📋",
                         modifier = Modifier.weight(1f),
-                        subtitle = "${reports.count { it.status == "In Progress" }} active cases"
+                        subtitle = "${myReports.count { it.status == "In Progress" || it.status == "Submitted" }} active cases"
                     )
                     StatCard(
                         title = "Resolved",
-                        value = "$resolvedCount",
+                        value = "$myResolved",
                         iconEmoji = "✅",
                         modifier = Modifier.weight(1f),
                         accentColor = EcoEmerald,
-                        subtitle = "Community solutions"
+                        subtitle = "Verified solved"
                     )
                     StatCard(
                         title = "Eco Points",
@@ -295,69 +293,6 @@ fun HomeScreen(
                         accentColor = EcoSkyBlue,
                         subtitle = "Rank #1"
                     )
-                }
-            }
-        }
-
-        // 2.5 Web Access Portal Card
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp)
-                    .clickable { viewModel.showWebPortalDialog.value = true }
-                    .testTag("web_portal_access_card"),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBBF7D0))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(EcoMint),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "🌐", fontSize = 22.sp)
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Website Access Portal",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = EcoForestGreen
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = EcoForestGreen
-                            ) {
-                                Text(
-                                    text = "LIVE",
-                                    color = Color.White,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Access via browser on desktop & tablet or share link",
-                            fontSize = 11.sp,
-                            color = EcoTextSecondary
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Open →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
                 }
             }
         }

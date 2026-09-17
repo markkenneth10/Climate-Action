@@ -829,4 +829,57 @@ button, input, select, textarea, a {
   .admin-login-card {
     padding: 1.75rem 1.25rem;
   }
+
+  .admin-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .admin-stat-card {
+    padding: 1rem 0.75rem !important;
+  }
+
+  .admin-stat-val {
+    font-size: 1.5rem !important;
+  }
+
+  #admin-kyc-cards-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Tablet Layout Optimization (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  #admin-kyc-cards-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Responsive Table Container & Touch Enhancements */
+.admin-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.admin-table-container .admin-table {
+  min-width: 600px;
+}
+
+/* Ensure buttons have at least 44-48px touch targets on mobile */
+@media (max-width: 768px) {
+  .btn-admin-primary,
+  .btn-admin-outline,
+  .btn-admin-danger,
+  .btn-admin-secondary {
+    min-height: 44px;
+    padding: 0.65rem 1rem;
+  }
 }

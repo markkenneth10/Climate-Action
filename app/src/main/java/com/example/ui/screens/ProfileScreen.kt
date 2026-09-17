@@ -174,69 +174,6 @@ fun ProfileScreen(
                                 )
                             }
                         }
-
-                        // Switch role button
-                        OutlinedButton(
-                            onClick = { viewModel.showRoleSwitcherDialog.value = true },
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                            modifier = Modifier.testTag("profile_role_switch_btn")
-                        ) {
-                            Text(text = "Switch", fontSize = 11.sp)
-                        }
-                    }
-                }
-            }
-        }
-
-        // Admin Portal Shortcut if Admin / Officer
-        if (currentUser?.role == "Administrator" || currentUser?.role == "Environmental Officer") {
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable { viewModel.setActiveTab("Admin") }
-                        .testTag("shortcut_admin_dashboard_card"),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF3E8FF)),
-                    shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD8B4FE))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF9333EA)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AdminPanelSettings,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Admin & Officer Dashboard",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF581C87)
-                            )
-                            Text(
-                                text = "Verify reports, view charts, assign officers, and generate thesis reports.",
-                                fontSize = 11.sp,
-                                color = Color(0xFF6B21A8)
-                            )
-                        }
-                        Text(text = "Go →", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF7E22CE))
                     }
                 }
             }

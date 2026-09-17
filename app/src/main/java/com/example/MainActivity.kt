@@ -53,10 +53,7 @@ import com.example.ui.dialogs.ArticleDetailDialog
 import com.example.ui.dialogs.NotificationsDialog
 import com.example.ui.dialogs.QuizDialog
 import com.example.ui.dialogs.ReportDetailDialog
-import com.example.ui.dialogs.RoleSwitcherDialog
 import com.example.ui.dialogs.ThesisSummaryDialog
-import com.example.ui.dialogs.WebPortalDialog
-import com.example.ui.screens.AdminDashboardScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LearnScreen
 import com.example.ui.screens.MapScreen
@@ -96,9 +93,7 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
     val selectedActivity by viewModel.selectedActivity.collectAsState()
     val showQuizDialog by viewModel.showQuizDialog.collectAsState()
     val showNotificationsDialog by viewModel.showNotificationsDialog.collectAsState()
-    val showRoleSwitcherDialog by viewModel.showRoleSwitcherDialog.collectAsState()
     val showThesisSummaryDialog by viewModel.showThesisSummaryDialog.collectAsState()
-    val showWebPortalDialog by viewModel.showWebPortalDialog.collectAsState()
     val snackbarMessage by viewModel.showSuccessSnackbar.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -112,8 +107,6 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
             viewModel.showSuccessSnackbar.value = null
         }
     }
-
-    val isAdminOrOfficer = currentUser?.role == "Administrator" || currentUser?.role == "Environmental Officer"
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -257,62 +250,33 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
                     modifier = Modifier.testTag("nav_item_learn")
                 )
 
-                // Profile or Admin
-                if (isAdminOrOfficer) {
-                    NavigationBarItem(
-                        selected = activeTab == "Admin",
-                        onClick = { viewModel.setActiveTab("Admin") },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.AdminPanelSettings,
-                                contentDescription = "Admin",
-                                modifier = Modifier.size(22.dp)
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = "Admin",
-                                fontSize = 11.sp,
-                                fontWeight = if (activeTab == "Admin") FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = EcoForestGreen,
-                            selectedTextColor = EcoForestGreen,
-                            indicatorColor = EcoMint,
-                            unselectedIconColor = EcoTextMuted,
-                            unselectedTextColor = EcoTextMuted
-                        ),
-                        modifier = Modifier.testTag("nav_item_admin")
-                    )
-                } else {
-                    NavigationBarItem(
-                        selected = activeTab == "Profile",
-                        onClick = { viewModel.setActiveTab("Profile") },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile",
-                                modifier = Modifier.size(22.dp)
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = "Profile",
-                                fontSize = 11.sp,
-                                fontWeight = if (activeTab == "Profile") FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = EcoForestGreen,
-                            selectedTextColor = EcoForestGreen,
-                            indicatorColor = EcoMint,
-                            unselectedIconColor = EcoTextMuted,
-                            unselectedTextColor = EcoTextMuted
-                        ),
-                        modifier = Modifier.testTag("nav_item_profile")
-                    )
-                }
+                // Profile Navigation Item
+                NavigationBarItem(
+                    selected = activeTab == "Profile",
+                    onClick = { viewModel.setActiveTab("Profile") },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = "Profile",
+                            fontSize = 11.sp,
+                            fontWeight = if (activeTab == "Profile") FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = EcoForestGreen,
+                        selectedTextColor = EcoForestGreen,
+                        indicatorColor = EcoMint,
+                        unselectedIconColor = EcoTextMuted,
+                        unselectedTextColor = EcoTextMuted
+                    ),
+                    modifier = Modifier.testTag("nav_item_profile")
+                )
             }
         }
     ) { innerPadding ->
@@ -332,7 +296,6 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
                     "Map" -> MapScreen(viewModel = viewModel)
                     "Learn" -> LearnScreen(viewModel = viewModel)
                     "Profile" -> ProfileScreen(viewModel = viewModel)
-                    "Admin" -> AdminDashboardScreen(viewModel = viewModel)
                     else -> HomeScreen(viewModel = viewModel)
                 }
             }
@@ -377,24 +340,10 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
         )
     }
 
-    if (showRoleSwitcherDialog) {
-        RoleSwitcherDialog(
-            viewModel = viewModel,
-            onDismiss = { viewModel.showRoleSwitcherDialog.value = false }
-        )
-    }
-
     if (showThesisSummaryDialog) {
         ThesisSummaryDialog(
             viewModel = viewModel,
             onDismiss = { viewModel.showThesisSummaryDialog.value = false }
-        )
-    }
-
-    if (showWebPortalDialog) {
-        WebPortalDialog(
-            viewModel = viewModel,
-            onDismiss = { viewModel.showWebPortalDialog.value = false }
         )
     }
 }
