@@ -1028,16 +1028,36 @@ async function fetchConfig() {
   }
 }
 
-function renderBrandLogoElement(el, c, size = 36) {
+function renderBrandLogoElement(el, c, size = 44) {
   if (!el) return;
   const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
   const fallback = c.websiteLogo || '🌱';
   if (isImage) {
     el.classList.add('has-image');
-    el.innerHTML = `<img src="${c.logoImageUrl}" alt="Official Logo" class="brand-logo-img" style="width:100%!important; height:100%!important; max-width:${size}px!important; max-height:${size}px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.textContent='${fallback}';">`;
+    el.style.background = 'transparent';
+    el.style.backgroundImage = 'none';
+    el.style.boxShadow = 'none';
+    el.style.border = 'none';
+    el.style.padding = '0';
+    el.style.borderRadius = '0';
+    el.style.overflow = 'visible';
+    el.style.width = 'auto';
+    el.style.maxWidth = '200px';
+    el.style.height = `${size}px`;
+    el.innerHTML = `<img src="${c.logoImageUrl}" alt="Official Logo" class="brand-logo-img" style="height:100%!important; max-height:${size}px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.style.background=''; this.parentElement.style.backgroundImage=''; this.parentElement.style.boxShadow=''; this.parentElement.style.border=''; this.parentElement.style.padding=''; this.parentElement.style.borderRadius=''; this.parentElement.style.overflow=''; this.parentElement.style.width=''; this.parentElement.style.maxWidth=''; this.parentElement.style.height=''; this.parentElement.textContent='${fallback}';">`;
   } else {
     el.textContent = fallback;
     el.classList.remove('has-image');
+    el.style.background = '';
+    el.style.backgroundImage = '';
+    el.style.boxShadow = '';
+    el.style.border = '';
+    el.style.padding = '';
+    el.style.borderRadius = '';
+    el.style.overflow = '';
+    el.style.width = '';
+    el.style.maxWidth = '';
+    el.style.height = '';
   }
 }
 
@@ -1090,9 +1110,9 @@ function applyConfigUI(c) {
   if (footerBrandEl) footerBrandEl.textContent = siteName;
 
   // Render Brand Logo across Header, Mobile Drawer, and Footer
-  renderBrandLogoElement(document.getElementById('site-logo-icon'), c, 36);
-  renderBrandLogoElement(document.getElementById('drawer-logo-icon'), c, 30);
-  renderBrandLogoElement(document.getElementById('footer-logo-icon'), c, 26);
+  renderBrandLogoElement(document.getElementById('site-logo-icon'), c, 44);
+  renderBrandLogoElement(document.getElementById('drawer-logo-icon'), c, 38);
+  renderBrandLogoElement(document.getElementById('footer-logo-icon'), c, 34);
 
   // Update browser tab Favicon dynamically
   updateSiteFavicon(c);

@@ -158,24 +158,43 @@ button, input, select, textarea, a {
 }
 
 .brand-icon-box.has-image {
-  background: #FFFFFF;
-  padding: 3px;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  width: auto !important;
+  min-width: 44px !important;
+  max-width: 200px !important;
+  height: 44px !important;
+  max-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
+.brand-icon-box.has-image img,
 .brand-icon-box img,
 .site-logo-img,
 .brand-logo-img,
 #site-logo-icon img,
 #drawer-logo-icon img,
 #footer-logo-icon img {
-  width: 100% !important;
   height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
+  max-height: 44px !important;
+  width: auto !important;
+  max-width: 200px !important;
   object-fit: contain !important;
   display: block !important;
-  border-radius: calc(var(--radius-md) - 3px);
-  margin: auto;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 auto !important;
 }
 
 .brand-text-block {

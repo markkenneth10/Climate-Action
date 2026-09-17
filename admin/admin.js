@@ -546,10 +546,24 @@ function updateAdminAuthCardLogo(config) {
   if (!authLogoEl) return;
   const isImageMode = Boolean(config.logoImageUrl && (config.logoType === 'image' || !config.logoType || config.logoType !== 'emoji'));
   if (isImageMode) {
-    authLogoEl.style.background = '#FFFFFF';
-    authLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" style="width:100%!important; height:100%!important; max-width:54px!important; max-height:54px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='🛡️';">`;
+    authLogoEl.style.background = 'transparent';
+    authLogoEl.style.boxShadow = 'none';
+    authLogoEl.style.border = 'none';
+    authLogoEl.style.borderRadius = '0';
+    authLogoEl.style.width = 'auto';
+    authLogoEl.style.maxWidth = '220px';
+    authLogoEl.style.height = '72px';
+    authLogoEl.style.overflow = 'visible';
+    authLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" style="width:auto!important; height:100%!important; max-width:220px!important; max-height:72px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; box-shadow:none!important; border:none!important; border-radius:0!important;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #10b981, #059669)'; this.parentElement.style.boxShadow='0 0 20px rgba(16,185,129,0.3)'; this.parentElement.style.width='64px'; this.parentElement.style.height='64px'; this.parentElement.style.borderRadius='16px'; this.parentElement.textContent='🛡️';">`;
   } else {
     authLogoEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+    authLogoEl.style.boxShadow = '0 0 20px rgba(16,185,129,0.3)';
+    authLogoEl.style.border = '';
+    authLogoEl.style.borderRadius = '16px';
+    authLogoEl.style.width = '64px';
+    authLogoEl.style.height = '64px';
+    authLogoEl.style.maxWidth = '';
+    authLogoEl.style.overflow = 'hidden';
     authLogoEl.textContent = '🛡️';
   }
 }
@@ -583,11 +597,31 @@ function updateAdminHeaderLogo(config) {
   const isImageMode = Boolean(config.logoImageUrl && (config.logoType === 'image' || !config.logoType || config.logoType !== 'emoji'));
   if (isImageMode) {
     const fallbackEmoji = config.websiteLogo || '🌱';
-    headerLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" class="admin-logo-img" style="width:100%!important; height:100%!important; max-width:36px!important; max-height:36px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.textContent='${fallbackEmoji}';">`;
     headerLogoEl.classList.add('has-image');
+    headerLogoEl.style.background = 'transparent';
+    headerLogoEl.style.backgroundImage = 'none';
+    headerLogoEl.style.boxShadow = 'none';
+    headerLogoEl.style.border = 'none';
+    headerLogoEl.style.padding = '0';
+    headerLogoEl.style.borderRadius = '0';
+    headerLogoEl.style.overflow = 'visible';
+    headerLogoEl.style.width = 'auto';
+    headerLogoEl.style.maxWidth = '200px';
+    headerLogoEl.style.height = '44px';
+    headerLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" class="admin-logo-img" style="height:100%!important; max-height:44px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.style.background=''; this.parentElement.style.backgroundImage=''; this.parentElement.style.boxShadow=''; this.parentElement.style.border=''; this.parentElement.style.padding=''; this.parentElement.style.borderRadius=''; this.parentElement.style.overflow=''; this.parentElement.style.width=''; this.parentElement.style.maxWidth=''; this.parentElement.style.height=''; this.parentElement.textContent='${fallbackEmoji}';">`;
   } else {
     headerLogoEl.textContent = config.websiteLogo || '🌱';
     headerLogoEl.classList.remove('has-image');
+    headerLogoEl.style.background = '';
+    headerLogoEl.style.backgroundImage = '';
+    headerLogoEl.style.boxShadow = '';
+    headerLogoEl.style.border = '';
+    headerLogoEl.style.padding = '';
+    headerLogoEl.style.borderRadius = '';
+    headerLogoEl.style.overflow = '';
+    headerLogoEl.style.width = '';
+    headerLogoEl.style.maxWidth = '';
+    headerLogoEl.style.height = '';
   }
 }
 

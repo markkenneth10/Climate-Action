@@ -116,11 +116,7 @@ fun HomeScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(Color.White)
-                                .padding(4.dp),
+                            modifier = Modifier.size(46.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
