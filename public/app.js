@@ -1041,6 +1041,32 @@ function renderBrandLogoElement(el, c, size = 36) {
   }
 }
 
+// Updates browser tab favicon dynamically for user website
+function updateSiteFavicon(c) {
+  if (!c) return;
+  const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
+
+  // Remove existing icon links to force browser tab refresh
+  const existingLinks = document.querySelectorAll("link[rel*='icon']");
+  existingLinks.forEach(el => el.remove());
+
+  const newLink = document.createElement('link');
+  newLink.id = 'site-favicon';
+  newLink.rel = 'icon';
+
+  if (isImage) {
+    newLink.type = 'image/png';
+    const cacheBuster = (c.logoImageUrl.includes('?') ? '&' : '?') + 'fav=' + (c.updatedAt || Date.now());
+    newLink.href = c.logoImageUrl + cacheBuster;
+  } else {
+    const emoji = c.websiteLogo || '🌱';
+    newLink.type = 'image/svg+xml';
+    newLink.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`;
+  }
+
+  document.head.appendChild(newLink);
+}
+
 function applyConfigUI(c) {
   if (!c) return;
 
@@ -1069,18 +1095,7 @@ function applyConfigUI(c) {
   renderBrandLogoElement(document.getElementById('footer-logo-icon'), c, 26);
 
   // Update browser tab Favicon dynamically
-  const faviconEl = document.getElementById('site-favicon');
-  if (faviconEl) {
-    const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
-    if (isImage) {
-      faviconEl.href = c.logoImageUrl;
-      faviconEl.type = 'image/png';
-    } else {
-      const emoji = c.websiteLogo || '🌱';
-      faviconEl.type = 'image/svg+xml';
-      faviconEl.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`;
-    }
-  }
+  updateSiteFavicon(c);
 
   // Update Page Title
   if (c.websiteName) {

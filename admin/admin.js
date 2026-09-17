@@ -14,7 +14,31 @@ let allSubAdmins = [];
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+  loadAdminBrandingAndFavicon();
   checkAdminSession();
+});
+
+// Real-time synchronization of website configuration and logo across tabs
+if (window.BroadcastChannel) {
+  try {
+    const bc = new BroadcastChannel('climate_config_channel');
+    bc.onmessage = (event) => {
+      if (event.data) {
+        loadAdminBrandingAndFavicon();
+      }
+    };
+  } catch (_) {}
+}
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'climate_brand_logo_updated' || e.key === 'climate_config_updated') {
+    loadAdminBrandingAndFavicon();
+  }
+});
+
+window.addEventListener('focus', () => { loadAdminBrandingAndFavicon(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) loadAdminBrandingAndFavicon();
 });
 
 // Centralized authenticated fetch helper with cookie credentials & bearer token
@@ -490,12 +514,73 @@ async function uploadImageFile(file, category = 'media') {
   return await res.json();
 }
 
+// Updates the dynamic browser tab favicon for the admin console
+function updateAdminFavicon(config) {
+  if (!config) return;
+  const isImageMode = Boolean(config.logoImageUrl && (config.logoType === 'image' || !config.logoType || config.logoType !== 'emoji'));
+
+  // Remove existing icon links to force browser tab refresh
+  const existingLinks = document.querySelectorAll("link[rel*='icon']");
+  existingLinks.forEach(el => el.remove());
+
+  const newLink = document.createElement('link');
+  newLink.id = 'admin-favicon';
+  newLink.rel = 'icon';
+
+  if (isImageMode) {
+    newLink.type = 'image/png';
+    const cacheBuster = (config.logoImageUrl.includes('?') ? '&' : '?') + 'fav=' + (config.updatedAt || Date.now());
+    newLink.href = config.logoImageUrl + cacheBuster;
+  } else {
+    const fallbackEmoji = config.websiteLogo || '🌱';
+    newLink.type = 'image/svg+xml';
+    newLink.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${fallbackEmoji}</text></svg>`;
+  }
+
+  document.head.appendChild(newLink);
+}
+
+// Updates the administrative login card brand icon
+function updateAdminAuthCardLogo(config) {
+  const authLogoEl = document.getElementById('admin-auth-logo');
+  if (!authLogoEl) return;
+  const isImageMode = Boolean(config.logoImageUrl && (config.logoType === 'image' || !config.logoType || config.logoType !== 'emoji'));
+  if (isImageMode) {
+    authLogoEl.style.background = '#FFFFFF';
+    authLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" style="width:100%!important; height:100%!important; max-width:54px!important; max-height:54px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='🛡️';">`;
+  } else {
+    authLogoEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+    authLogoEl.textContent = '🛡️';
+  }
+}
+
+// Pre-load website configuration for immediate branding & favicon rendering
+async function loadAdminBrandingAndFavicon() {
+  try {
+    const res = await fetch('/api/config?_t=' + Date.now(), { cache: 'no-store' });
+    const data = await res.json();
+    const config = data.config || {};
+    updateAdminFavicon(config);
+    updateAdminHeaderLogo(config);
+    updateAdminAuthCardLogo(config);
+    if (config.websiteName) {
+      document.title = `${config.websiteName} | Administrative Command Console`;
+    }
+  } catch (e) {
+    console.warn('Could not pre-load admin branding:', e);
+  }
+}
+
 // Updates the admin top header logo based on configuration
 function updateAdminHeaderLogo(config) {
+  if (!config) return;
+  updateAdminFavicon(config);
+  updateAdminAuthCardLogo(config);
+
   const headerLogoEl = document.getElementById('admin-header-logo');
   if (!headerLogoEl) return;
 
-  const isImageMode = config.logoType === 'image' && config.logoImageUrl;
+  const isImageMode = Boolean(config.logoImageUrl && (config.logoType === 'image' || !config.logoType || config.logoType !== 'emoji'));
   if (isImageMode) {
     const fallbackEmoji = config.websiteLogo || '🌱';
     headerLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" class="admin-logo-img" style="width:100%!important; height:100%!important; max-width:36px!important; max-height:36px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.textContent='${fallbackEmoji}';">`;

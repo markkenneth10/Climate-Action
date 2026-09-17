@@ -542,6 +542,44 @@ const server = http.createServer(async (req, res) => {
 
   try {
     // ------------------------------------------
+    // 0. Favicon Endpoint (Dynamic Website & Admin Logo)
+    // ------------------------------------------
+    if (pathname === '/favicon.ico' || pathname === '/favicon.png') {
+      if (websiteConfig.logoImageUrl) {
+        if (uploadedFilesCache.has(websiteConfig.logoImageUrl)) {
+          const cached = uploadedFilesCache.get(websiteConfig.logoImageUrl);
+          res.writeHead(200, {
+            'Content-Type': cached.contentType || 'image/png',
+            'Content-Length': cached.buffer.length,
+            'Cache-Control': 'no-cache, must-revalidate'
+          });
+          return res.end(cached.buffer);
+        }
+        const diskPath = path.join(USER_PUBLIC_DIR, websiteConfig.logoImageUrl);
+        if (fs.existsSync(diskPath)) {
+          const ext = path.extname(diskPath).toLowerCase();
+          const contentType = MIME_TYPES[ext] || 'image/png';
+          const fileBuf = fs.readFileSync(diskPath);
+          res.writeHead(200, {
+            'Content-Type': contentType,
+            'Content-Length': fileBuf.length,
+            'Cache-Control': 'no-cache, must-revalidate'
+          });
+          return res.end(fileBuf);
+        }
+      }
+
+      // Default fallback SVG icon
+      const emoji = websiteConfig.websiteLogo || '🌱';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${emoji}</text></svg>`;
+      res.writeHead(200, {
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'no-cache, must-revalidate'
+      });
+      return res.end(svg);
+    }
+
+    // ------------------------------------------
     // 1. Health & Status
     // ------------------------------------------
     if (pathname === '/api/health') {
@@ -1567,6 +1605,17 @@ const server = http.createServer(async (req, res) => {
             res.end('Internal Server Error');
             return;
           }
+          if (ext === '.html' && websiteConfig.logoImageUrl) {
+            let htmlStr = content.toString('utf8');
+            htmlStr = htmlStr.replace(/href="\/favicon\.ico"/g, `href="${websiteConfig.logoImageUrl}"`);
+            const htmlBuf = Buffer.from(htmlStr, 'utf8');
+            res.writeHead(200, {
+              'Content-Type': contentType,
+              'Content-Length': htmlBuf.length,
+              'Cache-Control': 'no-cache, must-revalidate'
+            });
+            return res.end(htmlBuf);
+          }
           res.writeHead(200, { 'Content-Type': contentType });
           res.end(content);
         });
@@ -1601,6 +1650,17 @@ const server = http.createServer(async (req, res) => {
           res.writeHead(500, { 'Content-Type': 'text/plain' });
           res.end('Internal Server Error');
           return;
+        }
+        if (ext === '.html' && websiteConfig.logoImageUrl) {
+          let htmlStr = content.toString('utf8');
+          htmlStr = htmlStr.replace(/href="\/favicon\.ico"/g, `href="${websiteConfig.logoImageUrl}"`);
+          const htmlBuf = Buffer.from(htmlStr, 'utf8');
+          res.writeHead(200, {
+            'Content-Type': contentType,
+            'Content-Length': htmlBuf.length,
+            'Cache-Control': 'no-cache, must-revalidate'
+          });
+          return res.end(htmlBuf);
         }
         res.writeHead(200, { 'Content-Type': contentType });
         res.end(content);
