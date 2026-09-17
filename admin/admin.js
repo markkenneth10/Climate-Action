@@ -497,7 +497,8 @@ function updateAdminHeaderLogo(config) {
 
   const isImageMode = config.logoType === 'image' && config.logoImageUrl;
   if (isImageMode) {
-    headerLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" class="admin-logo-img">`;
+    const fallbackEmoji = config.websiteLogo || '🌱';
+    headerLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" class="admin-logo-img" style="width:100%!important; height:100%!important; max-width:36px!important; max-height:36px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.textContent='${fallbackEmoji}';">`;
     headerLogoEl.classList.add('has-image');
   } else {
     headerLogoEl.textContent = config.websiteLogo || '🌱';
@@ -544,6 +545,7 @@ function setLogoEmoji(emoji) {
   const logoInput = document.getElementById('cms-website-logo');
   if (logoInput) logoInput.value = emoji;
   setLogoMode('emoji');
+  updateAdminHeaderLogo({ logoType: 'emoji', websiteLogo: emoji });
 }
 
 // Handle Logo File Upload
@@ -573,6 +575,18 @@ async function handleLogoFileSelect(event) {
     setLogoMode('image');
     updateAdminHeaderLogo({ logoType: 'image', logoImageUrl: logoUrl });
 
+    // Auto-persist logo settings to backend
+    try {
+      await adminFetch('/api/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          logoType: 'image',
+          logoImageUrl: logoUrl
+        })
+      });
+    } catch (_) {}
+
     if (statusEl) statusEl.textContent = `✅ Uploaded "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`;
     loadMediaGallery();
   } catch (err) {
@@ -597,7 +611,21 @@ function handleRemoveLogoImage() {
   if (removeBtn) removeBtn.style.display = 'none';
 
   setLogoMode('emoji');
-  updateAdminHeaderLogo({ logoType: 'emoji', websiteLogo: document.getElementById('cms-website-logo').value });
+  const currentEmoji = document.getElementById('cms-website-logo').value || '🌱';
+  updateAdminHeaderLogo({ logoType: 'emoji', websiteLogo: currentEmoji });
+
+  // Auto-sync removal to backend
+  try {
+    adminFetch('/api/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        logoType: 'emoji',
+        logoImageUrl: '',
+        websiteLogo: currentEmoji
+      })
+    });
+  } catch (_) {}
 
   const statusEl = document.getElementById('cms-logo-status');
   if (statusEl) statusEl.textContent = 'Image logo removed. Switched to symbol mode.';

@@ -139,6 +139,10 @@ button, input, select, textarea, a {
 .brand-icon-box {
   width: 42px;
   height: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  min-height: 42px;
+  max-height: 42px;
   background: linear-gradient(135deg, #16A765, #0D5C34);
   border-radius: var(--radius-md);
   display: flex;
@@ -148,6 +152,27 @@ button, input, select, textarea, a {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.brand-icon-box.has-image {
+  background: #FFFFFF;
+  padding: 3px;
+}
+
+.brand-icon-box img,
+.site-logo-img,
+#site-logo-icon img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+  object-fit: contain !important;
+  display: block !important;
+  border-radius: calc(var(--radius-md) - 3px);
+  margin: auto;
 }
 
 .brand-text-block {

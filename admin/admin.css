@@ -150,6 +150,10 @@ button, input, select, textarea, a {
 .admin-logo-box {
   width: 42px;
   height: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  min-height: 42px;
+  max-height: 42px;
   background: linear-gradient(135deg, #16A765, #0D5C34);
   border-radius: var(--radius-md);
   display: flex;
@@ -160,6 +164,27 @@ button, input, select, textarea, a {
   border: 1px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
   color: #FFFFFF;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.admin-logo-box.has-image {
+  background: #FFFFFF;
+  padding: 3px;
+}
+
+.admin-logo-box img,
+.admin-logo-img,
+#admin-header-logo img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+  object-fit: contain !important;
+  display: block !important;
+  border-radius: calc(var(--radius-md) - 3px);
+  margin: auto;
 }
 
 .admin-brand-title {

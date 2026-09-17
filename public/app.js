@@ -1037,6 +1037,18 @@ function applyConfigUI(c) {
     const subEl = document.getElementById('site-brand-sub');
     if (subEl) subEl.textContent = c.websiteSubtitle;
   }
+  // Site Logo Rendering (Emoji or Image)
+  const siteLogoEl = document.getElementById('site-logo-icon');
+  if (siteLogoEl) {
+    if (c.logoType === 'image' && c.logoImageUrl) {
+      const fallback = c.websiteLogo || '🌱';
+      siteLogoEl.innerHTML = `<img src="${c.logoImageUrl}" alt="Logo" class="site-logo-img" style="width:100%!important; height:100%!important; max-width:36px!important; max-height:36px!important; object-fit:contain!important; display:block!important; margin:auto;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.textContent='${fallback}';">`;
+      siteLogoEl.classList.add('has-image');
+    } else {
+      siteLogoEl.textContent = c.websiteLogo || '🌱';
+      siteLogoEl.classList.remove('has-image');
+    }
+  }
   if (c.climateChangeInfo) {
     const el = document.getElementById('cms-display-climate-change');
     if (el) el.textContent = c.climateChangeInfo;

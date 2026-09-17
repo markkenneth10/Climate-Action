@@ -268,6 +268,30 @@ let websiteConfig = {
   updatedAt: Date.now()
 };
 
+const CONFIG_FILE = path.join(__dirname, 'website_config.json');
+
+function saveConfigToDisk() {
+  try {
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(websiteConfig, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('Could not save website config to disk:', err.message);
+  }
+}
+
+function loadConfigFromDisk() {
+  try {
+    if (fs.existsSync(CONFIG_FILE)) {
+      const saved = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+      if (saved && typeof saved === 'object') {
+        websiteConfig = { ...websiteConfig, ...saved };
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load website config from disk:', err.message);
+  }
+}
+loadConfigFromDisk();
+
 // 4. Climate Advisory & Weather Condition (Authoritative PAGASA-aligned meteorological data)
 let weatherAdvisory = {
   temperature: 32,
@@ -868,6 +892,7 @@ const server = http.createServer(async (req, res) => {
         ...updates,
         updatedAt: Date.now()
       };
+      saveConfigToDisk();
       return sendJson(200, {
         success: true,
         message: 'Website configuration and content updated successfully',
