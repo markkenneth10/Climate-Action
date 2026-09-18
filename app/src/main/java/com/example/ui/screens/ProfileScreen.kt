@@ -26,10 +26,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -108,69 +111,243 @@ fun ProfileScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
+                    if (currentUser == null) {
+                        // GUEST STATE
+                        Column(
                             modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(EcoMint),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                text = currentUser?.name?.take(2)?.uppercase() ?: "MK",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = EcoForestGreen
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(14.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = currentUser?.name ?: "Mark Kenneth",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = EcoTextPrimary
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Verified,
-                                    contentDescription = "Verified Citizen",
-                                    tint = EcoSkyBlue,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                            Text(
-                                text = currentUser?.email ?: "mark.citizen@climateaction.org",
-                                fontSize = 11.sp,
-                                color = EcoTextSecondary
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = EcoForestGreen.copy(alpha = 0.1f)
+                                    shape = CircleShape,
+                                    color = EcoMint,
+                                    modifier = Modifier.size(54.dp)
                                 ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(text = "🌱", fontSize = 24.sp)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
                                     Text(
-                                        text = currentUser?.role ?: "Citizen",
-                                        fontSize = 10.sp,
+                                        text = "Guest Citizen",
+                                        fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = EcoForestGreen,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        color = EcoTextPrimary
+                                    )
+                                    Text(
+                                        text = "Browsing public advisories & map",
+                                        fontSize = 11.sp,
+                                        color = EcoTextSecondary
                                     )
                                 }
-                                Spacer(modifier = Modifier.width(6.dp))
+                            }
+
+                            Text(
+                                text = "Create a verified citizen account to report environmental violations, earn climate points, and participate in community cleanups.",
+                                fontSize = 11.sp,
+                                color = EcoTextSecondary,
+                                lineHeight = 16.sp
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { viewModel.openAuthDialog("register") },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(42.dp)
+                                        .testTag("btn_profile_create_account"),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
+                                ) {
+                                    Text("🌱 Create Account", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                OutlinedButton(
+                                    onClick = { viewModel.openAuthDialog("login") },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(42.dp)
+                                        .testTag("btn_profile_sign_in"),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text("🔑 Sign In", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+                                }
+                            }
+                        }
+                    } else {
+                        // LOGGED IN CITIZEN
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(CircleShape)
+                                        .background(EcoMint),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = currentUser?.name?.take(2)?.uppercase() ?: "CZ",
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = EcoForestGreen
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(14.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = currentUser?.name ?: "Citizen",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = EcoTextPrimary
+                                        )
+                                        if (currentUser?.isVerified == true && currentUser?.kycStatus == "verified") {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Icon(
+                                                imageVector = Icons.Default.Verified,
+                                                contentDescription = "Verified Citizen",
+                                                tint = EcoSkyBlue,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = currentUser?.email ?: "",
+                                        fontSize = 11.sp,
+                                        color = EcoTextSecondary
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = EcoForestGreen.copy(alpha = 0.1f)
+                                        ) {
+                                            Text(
+                                                text = currentUser?.role ?: "Citizen",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = EcoForestGreen,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = currentUser?.barangay ?: "Metro Verde",
+                                            fontSize = 10.sp,
+                                            color = EcoTextMuted
+                                        )
+                                    }
+                                }
+                            }
+
+                            // KYC Status Banner
+                            if (currentUser?.isVerified == true && currentUser?.kycStatus == "verified") {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFFF0FDF4),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBBF7D0)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Shield,
+                                            contentDescription = null,
+                                            tint = EcoForestGreen,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "ID Verified: ${currentUser?.kycIdType?.ifBlank { "Government ID" }} • Reporting Active",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = EcoForestGreen
+                                        )
+                                    }
+                                }
+                            } else {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFFFEF3C7),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Warning,
+                                                contentDescription = null,
+                                                tint = Color(0xFFD97706),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "KYC Unverified",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF92400E)
+                                            )
+                                        }
+
+                                        Button(
+                                            onClick = { viewModel.openKycDialog() },
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                                            shape = RoundedCornerShape(8.dp),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                            modifier = Modifier.height(30.dp)
+                                        ) {
+                                            Text("Verify ID (+25 pts)", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Sign Out Link
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.logout() }
+                                    .padding(vertical = 4.dp)
+                                    .testTag("btn_profile_logout"),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ExitToApp,
+                                    contentDescription = "Sign Out",
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = currentUser?.barangay ?: "Barangay Makilas",
-                                    fontSize = 10.sp,
-                                    color = EcoTextMuted
+                                    text = "Sign Out",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFDC2626)
                                 )
                             }
                         }
@@ -204,7 +381,7 @@ fun ProfileScreen(
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                text = "${currentUser?.points ?: 350} PTS",
+                                text = "${currentUser?.points ?: 0} PTS",
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = EcoForestGreen
@@ -231,6 +408,8 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     val pointsRules = listOf(
+                        "Register Official Citizen Account" to "+50 pts",
+                        "Verify Government ID (KYC)" to "+25 pts",
                         "Tree Planting Activity" to "+30 pts",
                         "Join Coastal / Community Cleanup" to "+20 pts",
                         "Submit Activity Participation Proof" to "+15 pts",

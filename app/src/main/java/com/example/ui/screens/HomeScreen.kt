@@ -89,7 +89,7 @@ fun HomeScreen(
 
     val totalReportsCount = reports.size
     val resolvedCount = reports.count { it.status == "Resolved" || it.status == "Closed" }
-    val userPoints = currentUser?.points ?: 350
+    val userPoints = currentUser?.points ?: 0
 
     LazyColumn(
         modifier = modifier
@@ -135,7 +135,7 @@ fun HomeScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Hello, ${currentUser?.name ?: "Citizen"}!",
+                                text = if (currentUser == null) "Hello, Guest Citizen!" else "Hello, ${currentUser?.name}!",
                                 color = Color.White,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
@@ -144,18 +144,30 @@ fun HomeScreen(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Static Verified Citizen Badge (No role switching permitted)
+                        // Citizen / KYC Status Badge
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = Color.White.copy(alpha = 0.2f),
-                            modifier = Modifier.testTag("citizen_badge")
+                            modifier = Modifier
+                                .clickable {
+                                    if (currentUser == null) {
+                                        viewModel.openAuthDialog("register")
+                                    } else if (!currentUser!!.isVerified || currentUser!!.kycStatus != "verified") {
+                                        viewModel.openKycDialog()
+                                    }
+                                }
+                                .testTag("citizen_badge")
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "🛡️ Verified Citizen",
+                                    text = when {
+                                        currentUser == null -> "🌱 Join / Sign In"
+                                        !currentUser!!.isVerified || currentUser!!.kycStatus != "verified" -> "⚠️ Verify ID"
+                                        else -> "🛡️ Verified Citizen"
+                                    },
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
@@ -232,7 +244,15 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(
-                                onClick = { viewModel.showNewReportDialog.value = true },
+                                onClick = {
+                                    if (currentUser == null) {
+                                        viewModel.openAuthDialog("register")
+                                    } else if (!currentUser!!.isVerified || currentUser!!.kycStatus != "verified") {
+                                        viewModel.openKycDialog()
+                                    } else {
+                                        viewModel.setActiveTab("Report")
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.testTag("report_issue_hero_button")
@@ -251,6 +271,83 @@ fun HomeScreen(
                                 .clip(RoundedCornerShape(12.dp)),
                             contentScale = ContentScale.Crop
                         )
+                    }
+                }
+
+                // Auth / KYC Banner for Guest & Unverified users
+                if (currentUser == null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.openAuthDialog("register") },
+                        color = Color(0xFF1E3A2F),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, EcoMint.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "🌱", fontSize = 20.sp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Guest Mode Active",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EcoMint
+                                )
+                                Text(
+                                    text = "Create account & verify ID to submit hazard reports and earn 50 welcome points.",
+                                    fontSize = 10.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                            Text(
+                                text = "Join →",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                } else if (!currentUser!!.isVerified || currentUser!!.kycStatus != "verified") {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.openKycDialog() },
+                        color = Color(0xFF451A03),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "🛡️", fontSize = 20.sp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "KYC Verification Required",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFBBF24)
+                                )
+                                Text(
+                                    text = "Upload government ID to unlock reporting and earn +25 points.",
+                                    fontSize = 10.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                            Text(
+                                text = "Verify →",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }

@@ -32,7 +32,7 @@ import com.example.data.model.UserEntity
         PointsLogEntity::class,
         NotificationEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const crypto = require('crypto');
+const supabaseClient = require('./supabaseClient');
 
 const PORT = (process.env.PORT && process.env.PORT !== '8080') ? process.env.PORT : (process.env.APP_PORT || 3000);
 const USER_PUBLIC_DIR = path.join(__dirname, 'public');
@@ -145,9 +146,29 @@ function getAdminSession(req) {
   }
   if (!token) return null;
 
-  // Master persistent token or master_admin session fallback for default Super Admin
-  if (token === MASTER_ADMIN_TOKEN || token.startsWith('master_admin_')) {
-    const admin = adminStore[0];
+  // Master persistent token or master_admin session fallback
+  if (token === MASTER_ADMIN_TOKEN) {
+    const admin = adminStore.find(a => a.role === 'super_admin' && a.status === 'Active') || adminStore[0];
+    if (admin && admin.status === 'Active') {
+      const session = {
+        sessionId: token,
+        adminId: admin.id,
+        role: admin.role,
+        email: admin.email,
+        name: admin.name,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + (365 * 24 * 60 * 60 * 1000)
+      };
+      adminSessions.set(token, session);
+      return { ...session, admin };
+    }
+  }
+
+  if (token.startsWith('master_admin_')) {
+    const targetId = token.replace('master_admin_', '');
+    const admin = adminStore.find(a => a.id === targetId && a.status === 'Active') || 
+                  adminStore.find(a => a.role === 'super_admin' && a.status === 'Active') || 
+                  adminStore[0];
     if (admin && admin.status === 'Active') {
       const session = {
         sessionId: token,
@@ -203,42 +224,8 @@ let adminStore = [
   }
 ];
 
-// 2. Citizen Users (Pre-configured active citizen and registration pool)
-let userStore = [
-  {
-    id: "citizen-mk-01",
-    email: "markkennethulgasan@gmail.com",
-    password: "password123",
-    name: "Mark Kenneth Ulgasan",
-    phone: "+63 917 888 2468",
-    barangay: "Barangay Makilas",
-    address: "124 Green St, Purok 3",
-    city: "Metro Verde City",
-    province: "Rizal",
-    zip: "1920",
-    bio: "Passionate environmental volunteer, community organizer, and certified municipal eco-warden.",
-    avatar: "",
-    emergencyContactName: "Elena Ulgasan",
-    emergencyContactPhone: "+63 917 555 9876",
-    role: "citizen",
-    status: "Active",
-    ecoPoints: 750,
-    level: "Climate Advocate",
-    badges: ["🎖️ Eco Warden", "🌳 Tree Protector", "🌊 Watershed Guardian"],
-    rank: 12,
-    kycStatus: "verified", // "unverified", "pending", "verified", "rejected"
-    kycIdType: "Philippine National ID (PhilSys)",
-    kycIdNumber: "9182-3847-1928-4820",
-    kycFrontImage: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80",
-    kycBackImage: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80",
-    kycSelfieImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-    kycSubmittedAt: Date.now() - 15 * 86400000,
-    kycReviewedAt: Date.now() - 14 * 86400000,
-    kycReviewedBy: "LGU CENRO Executive Directorate",
-    kycRejectReason: "",
-    createdAt: Date.now() - 15 * 86400000
-  }
-];
+// 2. Citizen Users (Registration pool - users register their own accounts)
+let userStore = [];
 
 // 3. Website Configuration & CMS Content (Authoritative municipal climate information)
 let websiteConfig = {
@@ -516,6 +503,42 @@ function parseBody(req) {
 }
 
 // ==========================================
+// SUPABASE DATABASE TWO-WAY SYNCHRONIZATION
+// ==========================================
+async function syncWithSupabase() {
+  try {
+    const status = await supabaseClient.testConnection();
+    if (status.connected) {
+      console.log('🟢 Supabase Database connected successfully.');
+      
+      // 1. Sync Configuration
+      const remoteConfig = await supabaseClient.fetchConfigFromSupabase();
+      if (remoteConfig && typeof remoteConfig === 'object' && Object.keys(remoteConfig).length > 0) {
+        websiteConfig = { ...websiteConfig, ...remoteConfig };
+        saveConfigToDisk();
+      } else {
+        await supabaseClient.syncConfigToSupabase(websiteConfig);
+      }
+
+      // 2. Sync Citizen Incident Reports
+      const remoteReports = await supabaseClient.fetchReportsFromSupabase();
+      if (remoteReports && Array.isArray(remoteReports) && remoteReports.length > 0) {
+        reportsStore = remoteReports;
+      } else if (reportsStore.length > 0) {
+        for (const r of reportsStore) {
+          await supabaseClient.saveReportToSupabase(r);
+        }
+      }
+    } else {
+      console.log('ℹ️ Supabase not yet connected:', status.error || 'Awaiting project credentials');
+    }
+  } catch (err) {
+    console.warn('Supabase sync background warning:', err.message);
+  }
+}
+setTimeout(syncWithSupabase, 800);
+
+// ==========================================
 // HTTP SERVER & ROUTING
 // ==========================================
 const server = http.createServer(async (req, res) => {
@@ -602,9 +625,8 @@ const server = http.createServer(async (req, res) => {
         return sendJson(400, { error: 'Name, email, and password are required' });
       }
       const existingUser = userStore.find(u => u.email.toLowerCase() === data.email.toLowerCase());
-      const existingAdmin = adminStore.find(a => a.email.toLowerCase() === data.email.toLowerCase());
-      if (existingUser || existingAdmin) {
-        return sendJson(409, { error: 'An account with this email address already exists' });
+      if (existingUser) {
+        return sendJson(409, { error: 'A citizen account with this email address already exists. Please sign in.' });
       }
 
       const newUser = {
@@ -948,6 +970,7 @@ const server = http.createServer(async (req, res) => {
         updatedAt: Date.now()
       };
       saveConfigToDisk();
+      supabaseClient.syncConfigToSupabase(websiteConfig).catch(() => {});
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       return sendJson(200, {
         success: true,
@@ -1504,6 +1527,7 @@ const server = http.createServer(async (req, res) => {
       newReport.assignedTo = 'Pending CENRO Dispatch';
 
       reportsStore.unshift(newReport);
+      supabaseClient.saveReportToSupabase(newReport).catch(() => {});
 
       // Increment submitting user's reports count & award ecoPoints
       citizen.reportsCount = (citizen.reportsCount || 0) + 1;
@@ -1530,6 +1554,7 @@ const server = http.createServer(async (req, res) => {
         return sendJson(404, { error: 'Report not found' });
       }
       Object.assign(report, updateData);
+      supabaseClient.updateReportInSupabase(reportId, updateData).catch(() => {});
       return sendJson(200, { success: true, report });
     }
 
@@ -1552,6 +1577,67 @@ const server = http.createServer(async (req, res) => {
         totalSubAdmins: subAdminCount,
         activeAnnouncements: announcementsStore.length,
         weatherAlert: weatherAdvisory.alertLevel
+      });
+    }
+
+    // ------------------------------------------
+    // Supabase Cloud Database Management API
+    // ------------------------------------------
+    if (pathname === '/api/admin/supabase-status' && req.method === 'GET') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+      const status = supabaseClient.getStatus();
+      return sendJson(200, {
+        status,
+        sqlSchema: supabaseClient.SQL_SCHEMA_SCRIPT
+      });
+    }
+
+    if (pathname === '/api/admin/supabase-test' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+      const result = await supabaseClient.testConnection();
+      return sendJson(200, result);
+    }
+
+    if (pathname === '/api/admin/supabase-config' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+      const body = await parseBody(req);
+      if (!body.supabaseUrl || !body.supabaseKey) {
+        return sendJson(400, { error: 'Both Supabase Project URL and API Key are required' });
+      }
+      const resSave = supabaseClient.saveCredentials(body.supabaseUrl, body.supabaseKey, Boolean(body.isServiceRole));
+      if (!resSave.success) {
+        return sendJson(500, { error: resSave.error || 'Failed to save credentials' });
+      }
+      const testRes = await supabaseClient.testConnection();
+      if (testRes.connected) {
+        syncWithSupabase().catch(() => {});
+      }
+      return sendJson(200, {
+        success: true,
+        message: testRes.connected ? 'Credentials saved and successfully connected to Supabase!' : 'Credentials saved, but connection test failed: ' + (testRes.error || ''),
+        test: testRes
+      });
+    }
+
+    if (pathname === '/api/admin/supabase-sync' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+      await syncWithSupabase();
+      return sendJson(200, {
+        success: true,
+        message: 'Data synchronized with Supabase database successfully',
+        reportsCount: reportsStore.length
       });
     }
 

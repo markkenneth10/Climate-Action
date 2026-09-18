@@ -23,9 +23,9 @@
 <body>
 
   <!-- =========================================================================
-       MANDATORY CITIZEN AUTHENTICATION GATEWAY (Shown if not logged in)
+       MANDATORY CITIZEN AUTHENTICATION GATEWAY (Shown when opening website)
        ========================================================================= -->
-  <div id="auth-barrier-screen" class="auth-barrier-overlay" style="display: none;">
+  <div id="auth-barrier-screen" class="auth-barrier-overlay" style="display: flex;">
     <div class="auth-barrier-card">
       <div class="auth-barrier-header">
         <div class="auth-barrier-logo">🌱</div>
@@ -34,46 +34,27 @@
       </div>
 
       <div class="auth-barrier-tabs">
-        <button class="auth-barrier-tab active" id="barrier-tab-login" onclick="setBarrierMode('login')">Sign In</button>
-        <button class="auth-barrier-tab" id="barrier-tab-register" onclick="setBarrierMode('register')">Create Account</button>
+        <button class="auth-barrier-tab active" id="barrier-tab-register" onclick="setBarrierMode('register')">Create Account</button>
+        <button class="auth-barrier-tab" id="barrier-tab-login" onclick="setBarrierMode('login')">Sign In</button>
       </div>
 
       <div class="auth-barrier-body">
-        <!-- Sign In Form -->
-        <form id="barrier-login-form" onsubmit="handleBarrierLogin(event)">
-          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
-            To access the portal, monitor community environmental telemetry, and file reports, please sign in with your citizen credentials.
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="barrier-login-email">Citizen Email Address *</label>
-            <input type="email" id="barrier-login-email" class="form-control" placeholder="e.g. citizen@example.ph" required autocomplete="username">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="barrier-login-password">Password *</label>
-            <input type="password" id="barrier-login-password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
-          </div>
-          <div id="barrier-login-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 1rem; border: 1px solid #FECACA;"></div>
-          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; justify-content: center;">
-            🔑 Sign In to Citizen Portal
-          </button>
-        </form>
-
-        <!-- Register Form -->
-        <form id="barrier-register-form" onsubmit="handleBarrierRegister(event)" style="display: none;">
-          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
-            Create your official citizen account. After creating your account, verify your identity with a valid government ID to submit real-time environmental hazard reports.
+        <!-- Register Form (Default) -->
+        <form id="barrier-register-form" onsubmit="handleBarrierRegister(event)">
+          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; background: #F0FDF4; border: 1px solid #BBF7D0; padding: 0.65rem 0.85rem; border-radius: var(--radius-md);">
+            🌱 <strong>New Citizen Registration:</strong> Create your account to access municipal climate telemetry. <em>Note: Government ID verification (KYC) is strictly required to file environmental incident reports.</em>
           </div>
           <div class="form-group">
             <label class="form-label" for="barrier-reg-name">Full Legal Name *</label>
-            <input type="text" id="barrier-reg-name" class="form-control" placeholder="e.g. Juan dela Cruz" required>
+            <input type="text" id="barrier-reg-name" class="form-control" placeholder="e.g. Juan dela Cruz" required autocomplete="name">
           </div>
           <div class="form-group">
             <label class="form-label" for="barrier-reg-email">Email Address *</label>
-            <input type="email" id="barrier-reg-email" class="form-control" placeholder="e.g. juan@example.ph" required>
+            <input type="email" id="barrier-reg-email" class="form-control" placeholder="e.g. citizen@example.ph" required autocomplete="email">
           </div>
           <div class="form-group">
             <label class="form-label" for="barrier-reg-phone">Mobile Phone Number *</label>
-            <input type="tel" id="barrier-reg-phone" class="form-control" placeholder="+63 917 123 4567" required>
+            <input type="tel" id="barrier-reg-phone" class="form-control" placeholder="+63 917 123 4567" required autocomplete="tel">
           </div>
           <div class="form-group">
             <label class="form-label" for="barrier-reg-barangay">Barangay Residence *</label>
@@ -90,17 +71,52 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="barrier-reg-address">Street Address / Purok *</label>
-            <input type="text" id="barrier-reg-address" class="form-control" placeholder="e.g. 124 Rizal St, Purok 2" required>
+            <input type="text" id="barrier-reg-address" class="form-control" placeholder="e.g. 124 Rizal St, Purok 2" required autocomplete="street-address">
           </div>
           <div class="form-group">
             <label class="form-label" for="barrier-reg-password">Password (Minimum 6 characters) *</label>
-            <input type="password" id="barrier-reg-password" class="form-control" placeholder="Create a secure password" minlength="6" required>
+            <input type="password" id="barrier-reg-password" class="form-control" placeholder="Create a secure password" minlength="6" required autocomplete="new-password">
           </div>
           <div id="barrier-reg-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 1rem; border: 1px solid #FECACA;"></div>
           <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; justify-content: center;">
-            🌱 Register Citizen Account
+            🌱 Create Account & Proceed
           </button>
+          <div style="text-align: center; margin-top: 0.9rem; font-size: 0.83rem; color: var(--text-muted);">
+            Already have an account? <button type="button" onclick="setBarrierMode('login')" style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Sign In here</button>
+          </div>
         </form>
+
+        <!-- Sign In Form -->
+        <form id="barrier-login-form" onsubmit="handleBarrierLogin(event)" style="display: none;">
+          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.65rem 0.85rem; border-radius: var(--radius-md);">
+            🔑 Sign in with your registered citizen email and password to access community services and report hazards.
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-login-email">Citizen Email Address *</label>
+            <input type="email" id="barrier-login-email" class="form-control" placeholder="e.g. citizen@example.ph" required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="barrier-login-password">Password *</label>
+            <input type="password" id="barrier-login-password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+          </div>
+          <div id="barrier-login-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 1rem; border: 1px solid #FECACA;"></div>
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; justify-content: center;">
+            🔑 Sign In to Citizen Portal
+          </button>
+          <div style="text-align: center; margin-top: 0.9rem; font-size: 0.83rem; color: var(--text-muted);">
+            Don't have an account yet? <button type="button" onclick="setBarrierMode('register')" style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Create an account</button>
+          </div>
+        </form>
+
+        <!-- Guest Exploration Option -->
+        <div style="margin-top: 1.25rem; pt: 1rem; border-top: 1px solid var(--border); text-align: center; padding-top: 0.85rem;">
+          <button type="button" onclick="dismissBarrierToGuest()" style="background: none; border: none; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; text-decoration: underline; font-weight: 600;">
+            Explore Public Advisories as Guest ➔
+          </button>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.4;">
+            * Guest users can view weather & advisories. Incident reporting requires a registered & verified citizen account.
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -663,8 +679,8 @@
         <p class="section-desc">Submit geotagged observations of flooding, illegal dumping, deforestation, open burning, or water pollution to CENRO enforcement teams.</p>
       </div>
 
-      <!-- KYC Required Gate (Shown if user KYC is not 'verified') -->
-      <div id="report-kyc-gate" class="card" style="display: none; text-align: center; padding: 2.5rem 1.5rem; max-width: 620px; margin: 0 auto; border-top: 5px solid var(--amber);">
+      <!-- KYC Required Gate (Shown if user is guest or KYC is not 'verified') -->
+      <div id="report-kyc-gate" class="card" style="display: block; text-align: center; padding: 2.5rem 1.5rem; max-width: 620px; margin: 0 auto; border-top: 5px solid var(--amber);">
         <div style="font-size: 3.2rem; margin-bottom: 0.75rem;">🛡️</div>
         <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;" id="report-kyc-gate-title">
           Identity Verification Required to Submit Reports
@@ -685,17 +701,17 @@
         </div>
       </div>
 
-      <!-- Form Grid -->
-      <div id="report-form-container" class="grid-2">
+      <!-- Form Grid (Hidden until user is logged in AND KYC verified) -->
+      <div id="report-form-container" class="grid-2" style="display: none;">
         <!-- Form Left Card -->
         <div class="card">
           <div style="margin-bottom: 1.25rem; background: var(--primary-tint); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-focus); display: flex; justify-content: space-between; align-items: center;">
             <div>
               <span style="font-size: 0.78rem; color: var(--text-muted);">Filing as:</span>
-              <strong style="color: var(--primary-dark); margin-left: 4px;" id="reporter-display-name">Mark Kenneth Ulgasan</strong>
-              <span style="font-size: 0.74rem; color: var(--text-muted);" id="reporter-display-email">(markkennethulgasan@gmail.com)</span>
+              <strong style="color: var(--primary-dark); margin-left: 4px;" id="reporter-display-name">—</strong>
+              <span style="font-size: 0.74rem; color: var(--text-muted);" id="reporter-display-email"></span>
             </div>
-            <span class="status-badge resolved" style="font-size: 0.7rem;">Verified Citizen</span>
+            <span class="status-badge resolved" style="font-size: 0.7rem;" id="reporter-display-badge">🛡️ Verified Citizen</span>
           </div>
 
           <form id="incident-report-form" onsubmit="handleFormSubmit(event)">

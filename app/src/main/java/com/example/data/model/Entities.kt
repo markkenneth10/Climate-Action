@@ -5,14 +5,20 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "users")
 data class UserEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 1,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val email: String,
-    val role: String, // "Citizen", "Administrator", "Environmental Officer"
-    val points: Int = 0,
+    val password: String = "password123",
+    val phone: String = "",
+    val role: String = "Citizen", // "Citizen", "Administrator", "Environmental Officer"
+    val points: Int = 50,
     val barangay: String = "Barangay Makilas",
     val municipality: String = "Metro Verde",
-    val isVerified: Boolean = true,
+    val address: String = "",
+    val isVerified: Boolean = false,
+    val kycStatus: String = "unverified", // "unverified", "pending", "verified", "rejected"
+    val kycIdType: String = "",
+    val kycIdNumber: String = "",
     val avatarColorHex: String = "#10B981"
 )
 

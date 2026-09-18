@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.dialogs.ActivityDetailDialog
 import com.example.ui.dialogs.ArticleDetailDialog
+import com.example.ui.dialogs.AuthDialog
+import com.example.ui.dialogs.KycVerificationDialog
 import com.example.ui.dialogs.NotificationsDialog
 import com.example.ui.dialogs.QuizDialog
 import com.example.ui.dialogs.ReportDetailDialog
@@ -86,6 +88,14 @@ class MainActivity : ComponentActivity() {
 fun MainAppScreen(viewModel: ClimateViewModel) {
     val activeTab by viewModel.activeTab.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
+
+    // When user opens the app, automatically show create and login form to proceed
+    LaunchedEffect(Unit) {
+        if (currentUserId == null) {
+            viewModel.openAuthDialog("register")
+        }
+    }
 
     // Dialog state collectors
     val selectedReport by viewModel.selectedReport.collectAsState()
@@ -94,6 +104,9 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
     val showQuizDialog by viewModel.showQuizDialog.collectAsState()
     val showNotificationsDialog by viewModel.showNotificationsDialog.collectAsState()
     val showThesisSummaryDialog by viewModel.showThesisSummaryDialog.collectAsState()
+    val showAuthDialog by viewModel.showAuthDialog.collectAsState()
+    val authDialogInitialMode by viewModel.authDialogInitialMode.collectAsState()
+    val showKycDialog by viewModel.showKycDialog.collectAsState()
     val snackbarMessage by viewModel.showSuccessSnackbar.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -116,7 +129,14 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
             if (activeTab != "Report") {
                 FloatingActionButton(
                     onClick = {
-                        viewModel.setActiveTab("Report")
+                        if (currentUser == null) {
+                            viewModel.openAuthDialog("login")
+                        } else if (!currentUser!!.isVerified || currentUser!!.kycStatus != "verified") {
+                            viewModel.setActiveTab("Report")
+                            viewModel.openKycDialog()
+                        } else {
+                            viewModel.setActiveTab("Report")
+                        }
                     },
                     containerColor = EcoForestGreen,
                     contentColor = Color.White,
@@ -344,6 +364,21 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
         ThesisSummaryDialog(
             viewModel = viewModel,
             onDismiss = { viewModel.showThesisSummaryDialog.value = false }
+        )
+    }
+
+    if (showAuthDialog) {
+        AuthDialog(
+            viewModel = viewModel,
+            initialMode = authDialogInitialMode,
+            onDismiss = { viewModel.closeAuthDialog() }
+        )
+    }
+
+    if (showKycDialog) {
+        KycVerificationDialog(
+            viewModel = viewModel,
+            onDismiss = { viewModel.closeKycDialog() }
         )
     }
 }

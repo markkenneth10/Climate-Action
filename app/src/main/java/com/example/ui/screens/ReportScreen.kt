@@ -31,7 +31,11 @@ import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Verified
+import com.example.data.model.UserEntity
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,9 +54,11 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.ui.components.IncidentLocationPickerMiniMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -127,6 +133,8 @@ fun ReportScreen(
     var selectedCategoryPair by remember { mutableStateOf(ClimateCategories[1]) }
     var description by remember { mutableStateOf("") }
     var selectedBarangayPair by remember { mutableStateOf(MetroVerdeBarangays[0]) }
+    var pinnedLatitude by remember { mutableDoubleStateOf(MetroVerdeBarangays[0].second.first) }
+    var pinnedLongitude by remember { mutableDoubleStateOf(MetroVerdeBarangays[0].second.second) }
     var selectedSeverity by remember { mutableStateOf("High") }
     var photoUriString by remember { mutableStateOf<String?>(null) }
     var barangayDropdownExpanded by remember { mutableStateOf(false) }
@@ -236,37 +244,47 @@ fun ReportScreen(
 
         // Content Area
         if (selectedSubTab == 0) {
-            // SUBMIT NEW REPORT FORM
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                // Step Guidance Banner
-                item {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = EcoMint,
-                        shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, EcoBorder)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+            if (currentUser == null) {
+                CitizenAccountRequiredGate(viewModel = viewModel)
+            } else if (!currentUser!!.isVerified || currentUser!!.kycStatus != "verified") {
+                CitizenKycRequiredGate(currentUser = currentUser!!, viewModel = viewModel)
+            } else {
+                // SUBMIT NEW REPORT FORM
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Verified Citizen Reporter Banner
+                    item {
+                        VerifiedCitizenBanner(currentUser = currentUser!!)
+                    }
+
+                    // Step Guidance Banner
+                    item {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = EcoMint,
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, EcoBorder)
                         ) {
-                            Text(text = "📌", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Take Photo → Select Location → Describe Problem → Submit Report (+10 Points)",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = EcoForestGreen
-                            )
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(text = "📌", fontSize = 20.sp)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Take Photo → Select Location → Describe Problem → Submit Report (+10 Points)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = EcoForestGreen
+                                )
+                            }
                         }
                     }
-                }
 
                 // 1. Report Title
                 item {
@@ -491,7 +509,7 @@ fun ReportScreen(
                     }
                 }
 
-                // 5. Location Tagging (GPS + Barangay)
+                // 5. Location Tagging (Interactive Mini Map + GPS + Barangay)
                 item {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = EcoSurface),
@@ -504,12 +522,19 @@ fun ReportScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "5. Incident Location",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
-                                    color = EcoTextPrimary
-                                )
+                                Column {
+                                    Text(
+                                        text = "5. Pin Incident Location",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = EcoTextPrimary
+                                    )
+                                    Text(
+                                        text = "Interactive Mini Map • Tap or drag to mark exact violation site",
+                                        fontSize = 11.sp,
+                                        color = EcoTextSecondary
+                                    )
+                                }
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.clickable { gpsLocked = !gpsLocked }
@@ -530,7 +555,22 @@ fun ReportScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Interactive Mini Map with Pin Placement
+                            IncidentLocationPickerMiniMap(
+                                currentLatitude = pinnedLatitude,
+                                currentLongitude = pinnedLongitude,
+                                selectedBarangay = selectedBarangayPair.first,
+                                onLocationPinned = { lat, lon, nearestBgy ->
+                                    pinnedLatitude = lat
+                                    pinnedLongitude = lon
+                                    val matched = MetroVerdeBarangays.find { it.first == nearestBgy } ?: MetroVerdeBarangays.first()
+                                    selectedBarangayPair = matched
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             ExposedDropdownMenuBox(
                                 expanded = barangayDropdownExpanded,
@@ -540,7 +580,7 @@ fun ReportScreen(
                                     value = selectedBarangayPair.first,
                                     onValueChange = {},
                                     readOnly = true,
-                                    label = { Text("Barangay") },
+                                    label = { Text("Detected / Assigned Barangay") },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = barangayDropdownExpanded) },
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -556,6 +596,8 @@ fun ReportScreen(
                                             text = { Text(bgy.first) },
                                             onClick = {
                                                 selectedBarangayPair = bgy
+                                                pinnedLatitude = bgy.second.first
+                                                pinnedLongitude = bgy.second.second
                                                 barangayDropdownExpanded = false
                                             }
                                         )
@@ -565,7 +607,7 @@ fun ReportScreen(
 
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "City: Metro Verde • Province: Eco Province • Lat: ${selectedBarangayPair.second.first}, Lon: ${selectedBarangayPair.second.second}",
+                                text = "City: Metro Verde • Pinned GPS: ${"%.4f".format(pinnedLatitude)}° N, ${"%.4f".format(pinnedLongitude)}° E",
                                 fontSize = 10.sp,
                                 color = EcoTextSecondary
                             )
@@ -621,8 +663,8 @@ fun ReportScreen(
                                     photoUri = photoUriString,
                                     barangay = selectedBarangayPair.first,
                                     severity = selectedSeverity,
-                                    latitude = selectedBarangayPair.second.first,
-                                    longitude = selectedBarangayPair.second.second
+                                    latitude = pinnedLatitude,
+                                    longitude = pinnedLongitude
                                 )
                                 // Clear fields
                                 title = ""
@@ -647,8 +689,16 @@ fun ReportScreen(
                     }
                 }
             }
+        }
+    } else {
+        // TRACK SUBMISSIONS LIST VIEW
+        if (currentUser == null) {
+            CitizenAccountRequiredGate(
+                viewModel = viewModel,
+                customTitle = "Citizen Account Required to Track",
+                customSubtitle = "Sign in or create an account to view and follow up on your reported environmental hazards."
+            )
         } else {
-            // TRACK SUBMISSIONS LIST VIEW
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -816,3 +866,324 @@ fun ReportScreen(
         }
     }
 }
+}
+
+@Composable
+fun CitizenAccountRequiredGate(
+    viewModel: ClimateViewModel,
+    customTitle: String? = null,
+    customSubtitle: String? = null
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("account_required_gate_card"),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, EcoBorder)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = EcoMint,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(text = "🌱", fontSize = 32.sp)
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = EcoForestGreen.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        text = "Ordinance #2026-04 Compliance",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = EcoForestGreen,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+
+                Text(
+                    text = customTitle ?: "Citizen Account Required to Report",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = EcoTextPrimary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Text(
+                    text = customSubtitle ?: "Under Metro Verde Environmental Ordinance #2026-04, citizens must create an account and verify their government ID before submitting environmental hazard reports to CENRO.",
+                    fontSize = 12.sp,
+                    color = EcoTextSecondary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 17.sp
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = EcoSurface,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "📍", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Geotagged routing to Barangay & CENRO taskforces",
+                                fontSize = 11.sp,
+                                color = EcoTextPrimary
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🔔", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Real-time updates as officers validate and resolve issues",
+                                fontSize = 11.sp,
+                                color = EcoTextPrimary
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🏆", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "+50 Welcome Points on signup, +10 points per report",
+                                fontSize = 11.sp,
+                                color = EcoTextPrimary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Button(
+                    onClick = { viewModel.openAuthDialog("register") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("btn_gate_create_account"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
+                ) {
+                    Text(
+                        text = "🌱 Create Citizen Account",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { viewModel.openAuthDialog("login") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp)
+                        .testTag("btn_gate_login"),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "🔑 Sign In to Existing Account",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = EcoForestGreen
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CitizenKycRequiredGate(
+    currentUser: UserEntity,
+    viewModel: ClimateViewModel
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("kyc_required_gate_card"),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, EcoBorder)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFFEF3C7),
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(text = "🛡️", fontSize = 32.sp)
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFEE2E2)
+                ) {
+                    Text(
+                        text = "KYC Status: Unverified",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFDC2626),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+
+                Text(
+                    text = "ID Verification Required to Report",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = EcoTextPrimary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Text(
+                    text = "Hello, ${currentUser.name}! Your citizen account is created. To prevent spam, false alarms, and anonymous abuse, City Ordinance #2026-04 requires one-time government ID verification before filing environmental incident reports.",
+                    fontSize = 12.sp,
+                    color = EcoTextSecondary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 17.sp
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = EcoSurface,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🪪", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Accepted: PhilSys, Driver's License, Passport, UMID",
+                                fontSize = 11.sp,
+                                color = EcoTextPrimary
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "⚡", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Instant verification approval in seconds",
+                                fontSize = 11.sp,
+                                color = EcoTextPrimary
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🎁", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Earn +25 Bonus Climate Points upon verification",
+                                fontSize = 11.sp,
+                                color = EcoTextPrimary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Button(
+                    onClick = { viewModel.openKycDialog() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("btn_gate_verify_kyc"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
+                ) {
+                    Text(
+                        text = "🛡️ Verify Government ID (KYC)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun VerifiedCitizenBanner(currentUser: UserEntity) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("verified_citizen_reporter_banner"),
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF0FDF4),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBBF7D0))
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = EcoEmerald,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Verified,
+                        contentDescription = "Verified",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Verified Citizen Reporter: ${currentUser.name}",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = EcoForestGreen
+                    )
+                }
+                Text(
+                    text = "ID Verified (${if (currentUser.kycIdType.isNotBlank()) currentUser.kycIdType else "PhilSys National ID"}) • Reporting Authorized",
+                    fontSize = 11.sp,
+                    color = Color(0xFF15803D)
+                )
+            }
+        }
+    }
+}
+

@@ -221,23 +221,6 @@ const activities = [
   }
 ];
 
-// Default baseline citizen (Mark Kenneth Ulgasan) to match the mockup
-const DEFAULT_CITIZEN = {
-  id: "usr-mk-001",
-  name: "Mark Kenneth",
-  fullName: "Mark Kenneth Ulgasan",
-  email: "markkennethulgasan@gmail.com",
-  phone: "+63 917 889 1234",
-  barangay: "Barangay Makilas",
-  role: "citizen",
-  ecoPoints: 750,
-  level: "Climate Advocate",
-  rank: "#12",
-  badgesCount: 3,
-  reportsCount: 5,
-  registeredAt: "2026-03-10T08:00:00.000Z"
-};
-
 // ==========================================================================
 // Initialization on DOM Load
 // ==========================================================================
@@ -251,26 +234,54 @@ document.addEventListener('DOMContentLoaded', () => {
   setupGlobalClickHandlers();
 });
 
+// Helper functions for Barrier and Guest mode
+function showAuthBarrier() {
+  const barrier = document.getElementById('auth-barrier-screen');
+  if (barrier) barrier.style.display = 'flex';
+}
+
+function dismissBarrierToGuest() {
+  sessionStorage.setItem('climate_citizen_guest_browse', 'true');
+  const barrier = document.getElementById('auth-barrier-screen');
+  if (barrier) barrier.style.display = 'none';
+  showToast('👁️ Browsing as guest. Account creation & verification are required to submit reports.');
+}
+
 // 1. Citizen Session Handling & Authentication
 async function initCitizenSession() {
   const saved = localStorage.getItem(CITIZEN_STORAGE_KEY);
   if (saved) {
     try {
-      state.currentUser = JSON.parse(saved);
-      // Fetch fresh profile from server to stay up-to-date with KYC status & edits
-      if (state.currentUser && state.currentUser.email) {
+      const parsed = JSON.parse(saved);
+      // If legacy hardcoded demo user was previously cached in browser, clear it
+      if (parsed && (parsed.id === 'usr-mk-001' || parsed.id === 'citizen-mk-01')) {
+        localStorage.removeItem(CITIZEN_STORAGE_KEY);
+        state.currentUser = null;
+      } else if (parsed && parsed.email) {
+        // Fetch fresh profile from server to stay up-to-date with KYC status & edits
         try {
-          const res = await fetch(`/api/user/profile?email=${encodeURIComponent(state.currentUser.email)}`);
+          const res = await fetch(`/api/user/profile?email=${encodeURIComponent(parsed.email)}`);
           if (res.ok) {
             const data = await res.json();
             if (data.user) {
-              state.currentUser = { ...state.currentUser, ...data.user };
+              state.currentUser = data.user;
               localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+            } else {
+              state.currentUser = null;
+              localStorage.removeItem(CITIZEN_STORAGE_KEY);
             }
+          } else {
+            // User no longer registered on backend
+            state.currentUser = null;
+            localStorage.removeItem(CITIZEN_STORAGE_KEY);
           }
         } catch (err) {
           console.warn('Profile background refresh fallback:', err);
+          state.currentUser = parsed;
         }
+      } else {
+        state.currentUser = null;
+        localStorage.removeItem(CITIZEN_STORAGE_KEY);
       }
     } catch (e) {
       state.currentUser = null;
@@ -286,17 +297,22 @@ function updateAuthUI() {
   // 1. Mandatory Citizen Authentication Barrier
   const barrier = document.getElementById('auth-barrier-screen');
   if (barrier) {
-    barrier.style.display = state.currentUser ? 'none' : 'flex';
+    const isGuest = sessionStorage.getItem('climate_citizen_guest_browse') === 'true';
+    if (!state.currentUser && !isGuest) {
+      barrier.style.display = 'flex';
+    } else {
+      barrier.style.display = 'none';
+    }
   }
 
   const authContainer = document.getElementById('citizen-auth-container');
   const drawerUserCard = document.getElementById('drawer-user-card');
-  const gateCard = document.getElementById('report-auth-gate');
+  const gateCard = document.getElementById('report-kyc-gate') || document.getElementById('report-auth-gate');
   const reportForm = document.getElementById('report-form-container');
   const dashPoints = document.getElementById('dash-user-eco-points');
 
-  if (dashPoints && state.currentUser) {
-    dashPoints.textContent = state.currentUser.ecoPoints || 50;
+  if (dashPoints) {
+    dashPoints.textContent = state.currentUser ? (state.currentUser.ecoPoints || 50) : 0;
   }
 
   if (state.currentUser) {
@@ -315,7 +331,7 @@ function updateAuthUI() {
             <div class="user-text-info">
               <div class="user-name-title">${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</div>
               <div class="user-role-subtitle">
-                <span>${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified Citizen' : 'Citizen Account'}</span>
+                <span>${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified Citizen' : '⏳ Action Needed'}</span>
                 <span style="font-size:0.6rem;">▼</span>
               </div>
             </div>
@@ -394,8 +410,8 @@ function updateAuthUI() {
     // User is logged out / Guest
     if (authContainer) {
       authContainer.innerHTML = `
-        <button class="btn-citizen-signin" onclick="setBarrierMode('login'); document.getElementById('auth-barrier-screen').style.display = 'flex';">
-          Citizen Sign In
+        <button class="btn-citizen-signin" onclick="setBarrierMode('register'); showAuthBarrier();">
+          🌱 Create Account / Sign In
         </button>
       `;
     }
@@ -403,22 +419,50 @@ function updateAuthUI() {
     if (drawerUserCard) {
       drawerUserCard.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 0.8rem; color: #fff;">Guest Citizen</span>
-          <button onclick="setBarrierMode('login'); document.getElementById('auth-barrier-screen').style.display = 'flex'; closeMobileDrawer();" style="background: var(--emerald); border:none; color:#fff; font-size:0.75rem; padding:0.3rem 0.75rem; border-radius: 999px; cursor:pointer; font-weight:700;">Sign In</button>
+          <span style="font-size: 0.8rem; color: #fff;">Guest Visitor</span>
+          <button onclick="setBarrierMode('register'); showAuthBarrier(); closeMobileDrawer();" style="background: var(--emerald); border:none; color:#fff; font-size:0.75rem; padding:0.3rem 0.75rem; border-radius: 999px; cursor:pointer; font-weight:700;">Create Account</button>
         </div>
       `;
     }
 
-    if (gateCard) gateCard.style.display = 'block';
+    if (gateCard) {
+      gateCard.style.display = 'block';
+      updateReportingKycGateCard();
+    }
     if (reportForm) reportForm.style.display = 'none';
   }
 }
 
 function updateReportingKycGateCard() {
-  const gateCard = document.getElementById('report-auth-gate');
+  const gateCard = document.getElementById('report-kyc-gate') || document.getElementById('report-auth-gate');
   if (!gateCard) return;
 
-  const status = state.currentUser ? (state.currentUser.kycStatus || 'unverified') : 'unverified';
+  if (!state.currentUser) {
+    // Case 1: Guest / Not Logged In
+    gateCard.innerHTML = `
+      <div style="font-size: 3.2rem; margin-bottom: 0.75rem;">🔒</div>
+      <div style="display: inline-block; background: var(--primary-light); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
+        Account & Verification Required
+      </div>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">
+        Create an Account & Verify Identity to Report Incidents
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 540px; margin: 0 auto 1.25rem; line-height: 1.65;">
+        Under City Environmental Ordinance #2026-04, citizens must create an official account and undergo government ID verification (KYC) before filing environmental reports to eliminate fake reports and misinformation.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+        <button class="btn-primary" onclick="setBarrierMode('register'); showAuthBarrier();" style="padding: 0.8rem 1.6rem; font-size: 0.95rem;">
+          🌱 Create Citizen Account
+        </button>
+        <button class="btn-secondary" onclick="setBarrierMode('login'); showAuthBarrier();" style="padding: 0.8rem 1.4rem; font-size: 0.95rem;">
+          🔑 Sign In
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const status = state.currentUser.kycStatus || 'unverified';
   if (status === 'pending') {
     gateCard.innerHTML = `
       <div style="font-size: 3rem; margin-bottom: 0.75rem;">⏳</div>
@@ -462,17 +506,17 @@ function updateReportingKycGateCard() {
   } else {
     // Unverified
     gateCard.innerHTML = `
-      <div style="font-size: 3rem; margin-bottom: 0.75rem;">🛡️</div>
+      <div style="font-size: 3.2rem; margin-bottom: 0.75rem;">🛡️</div>
       <div style="display: inline-block; background: var(--amber-dark); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
         Identity Verification Required
       </div>
-      <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">
         Verify Your Identity to Submit Environmental Reports
       </h3>
-      <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 540px; margin: 0 auto 1.25rem; line-height: 1.6;">
-        To prevent misinformation, spam, and unverified hazards, all citizens are required to verify their account through KYC verification using a valid government ID before filing reports.
+      <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 540px; margin: 0 auto 1.25rem; line-height: 1.65;">
+        Welcome, <strong>${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</strong>! To prevent misinformation, spam, and unverified hazards, all citizens are required to verify their account through KYC verification using a valid government ID before filing reports.
       </p>
-      <button class="btn-primary" onclick="openKycModal()" style="padding: 0.75rem 1.5rem;">
+      <button class="btn-primary" onclick="openKycModal()" style="padding: 0.85rem 1.75rem; font-size: 0.95rem;">
         🪪 Upload & Verify Government ID
       </button>
     `;
@@ -1001,7 +1045,10 @@ async function handleCitizenRegister(e) {
 
 function handleCitizenLogout() {
   localStorage.removeItem(CITIZEN_STORAGE_KEY);
+  sessionStorage.removeItem('climate_citizen_guest_browse');
   state.currentUser = null;
+  setBarrierMode('login');
+  showAuthBarrier();
   updateAuthUI();
   showToast('Signed out of citizen session.');
 }
@@ -2042,6 +2089,10 @@ function switchTab(tabName) {
   document.querySelectorAll('.portal-section').forEach(sec => sec.classList.remove('active'));
   const activeSec = document.getElementById(`section-${tabName}`);
   if (activeSec) activeSec.classList.add('active');
+
+  if (tabName === 'report') {
+    updateAuthUI();
+  }
 
   // Trigger leaflet recalculation when switching to map tab
   if (tabName === 'map' && state.fullMapInstance) {

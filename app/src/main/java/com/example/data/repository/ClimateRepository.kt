@@ -203,4 +203,105 @@ class ClimateRepository(private val db: AppDatabase) {
     suspend fun markAllNotificationsAsRead() = withContext(Dispatchers.IO) {
         db.notificationDao().markAllAsRead()
     }
+
+    suspend fun registerCitizen(
+        name: String,
+        email: String,
+        phone: String,
+        barangay: String,
+        address: String,
+        password: String
+    ): Result<UserEntity> = withContext(Dispatchers.IO) {
+        val cleanEmail = email.trim().lowercase()
+        val existing = db.userDao().getUserByEmail(cleanEmail)
+        if (existing != null) {
+            return@withContext Result.failure(Exception("An account with this email ($cleanEmail) already exists. Please log in."))
+        }
+
+        val colors = listOf("#10B981", "#3B82F6", "#EC4899", "#8B5CF6", "#F59E0B", "#06B6D4")
+        val randomColor = colors.random()
+
+        val newUser = UserEntity(
+            name = name.trim(),
+            email = cleanEmail,
+            phone = phone.trim(),
+            password = password.trim(),
+            role = "Citizen",
+            points = 50, // Welcome bonus
+            barangay = barangay.trim(),
+            municipality = "Metro Verde",
+            address = address.trim(),
+            isVerified = false,
+            kycStatus = "unverified",
+            kycIdType = "",
+            kycIdNumber = "",
+            avatarColorHex = randomColor
+        )
+
+        val insertedId = db.userDao().insertUser(newUser).toInt()
+        val created = newUser.copy(id = insertedId)
+
+        db.pointsDao().insertLog(
+            PointsLogEntity(
+                userId = insertedId,
+                action = "Welcome Bonus: Citizen Account Created",
+                points = 50
+            )
+        )
+
+        db.notificationDao().insertNotification(
+            NotificationEntity(
+                userId = insertedId,
+                title = "Welcome to Metro Verde Climate Portal! 🌱",
+                message = "Account created! Verify your government ID (KYC) to unlock environmental hazard reporting.",
+                type = "Account"
+            )
+        )
+
+        Result.success(created)
+    }
+
+    suspend fun loginCitizen(email: String, password: String): Result<UserEntity> = withContext(Dispatchers.IO) {
+        val cleanEmail = email.trim().lowercase()
+        val user = db.userDao().getUserByEmail(cleanEmail)
+        if (user == null) {
+            return@withContext Result.failure(Exception("Account not found. Please create a citizen account first."))
+        }
+        if (user.password.isNotBlank() && user.password != password.trim()) {
+            return@withContext Result.failure(Exception("Incorrect password. Please verify your credentials."))
+        }
+        Result.success(user)
+    }
+
+    suspend fun verifyKyc(userId: Int, idType: String, idNumber: String): Result<Unit> = withContext(Dispatchers.IO) {
+        db.userDao().updateKyc(
+            userId = userId,
+            verified = true,
+            status = "verified",
+            idType = idType,
+            idNum = idNumber
+        )
+
+        // Award verification bonus
+        val bonus = 25
+        db.userDao().addPoints(userId, bonus)
+        db.pointsDao().insertLog(
+            PointsLogEntity(
+                userId = userId,
+                action = "KYC Verified ($idType)",
+                points = bonus
+            )
+        )
+
+        db.notificationDao().insertNotification(
+            NotificationEntity(
+                userId = userId,
+                title = "Identity Verified (KYC) 🛡️",
+                message = "Your government ID was verified! Reporting environmental incidents is now fully unlocked. +$bonus pts awarded.",
+                type = "Verification"
+            )
+        )
+
+        Result.success(Unit)
+    }
 }

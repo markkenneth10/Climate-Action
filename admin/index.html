@@ -96,11 +96,11 @@
           </div>
         </div>
 
-        <button onclick="exitDashboard(false)" class="btn-admin-outline" style="text-decoration: none; font-size: 0.82rem; background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.3); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.85rem; font-weight: 700; cursor: pointer;" title="Exit Dashboard and Return to Citizen Website">
-          🚪 <span class="admin-site-link-text">Exit Dashboard</span>
-        </button>
+        <a href="/" target="_blank" class="btn-admin-outline" style="text-decoration: none; font-size: 0.82rem; background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.3); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.85rem; font-weight: 700;" title="Open Citizen Portal in New Tab">
+          🌐 <span class="admin-site-link-text">Public Website ↗</span>
+        </a>
 
-        <button onclick="exitDashboard(true)" class="btn-admin-outline" style="color: #FECACA; border-color: rgba(239, 68, 68, 0.4); background: rgba(127, 29, 29, 0.3); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.48rem 0.85rem; font-weight: 700; cursor: pointer;" title="Sign out of Admin Session">
+        <button type="button" onclick="exitDashboard(true)" class="btn-admin-outline" style="color: #FECACA; border-color: rgba(239, 68, 68, 0.4); background: rgba(127, 29, 29, 0.3); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.48rem 0.85rem; font-weight: 700; cursor: pointer;" title="Sign out of Administrative Console">
           🔒 Sign Out
         </button>
       </div>
@@ -130,12 +130,12 @@
         <button class="admin-nav-item" id="nav-subadmins" onclick="switchAdminTab('subadmins')">🛡️ Sub-Admin Management</button>
         <button class="admin-nav-item" id="nav-settings" onclick="switchAdminTab('settings')">⚙️ Super Admin Settings</button>
 
-        <div class="admin-nav-category" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">Exit & Navigation</div>
-        <button class="admin-nav-item" onclick="exitDashboard(false)" style="color: var(--primary); font-weight: 700; background: var(--primary-tint);">
-          🚪 Exit from Dashboard
-        </button>
-        <button class="admin-nav-item" onclick="exitDashboard(true)" style="color: #DC2626; font-weight: 600;">
-          🔒 Sign Out & Exit
+        <div class="admin-nav-category" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">Citizen Portal & Session</div>
+        <a href="/" target="_blank" class="admin-nav-item" style="color: var(--primary); font-weight: 700; background: var(--primary-tint); text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+          🌐 View Public Website ↗
+        </a>
+        <button type="button" class="admin-nav-item" onclick="exitDashboard(true)" style="color: #DC2626; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+          🔒 Sign Out
         </button>
       </aside>
 
@@ -892,6 +892,70 @@
                 💾 Update Super Admin Credentials & Profile
               </button>
             </form>
+          </div>
+
+          <!-- SUPABASE CLOUD DATABASE INTEGRATION -->
+          <div class="admin-card" style="max-width: 620px; margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #1c4228; padding-bottom: 0.75rem;">
+              <div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                  ⚡ Supabase PostgreSQL Database
+                </h3>
+                <p style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.2rem;">
+                  Real-time cloud database synchronization for Citizen Reports & CMS Website Configuration
+                </p>
+              </div>
+              <div id="supabase-status-pill" style="padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; background: #1e293b; color: #94a3b8;">
+                Checking...
+              </div>
+            </div>
+
+            <!-- Connection Details & Form -->
+            <form id="supabase-config-form" onsubmit="handleSaveSupabaseConfig(event)">
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.4rem; color: #cbd5e1;">
+                  Supabase Project URL
+                </label>
+                <input type="url" id="supabase-input-url" class="admin-input" placeholder="https://your-project-id.supabase.co" required>
+                <span style="font-size: 0.72rem; color: #94a3b8;">Found in Supabase Dashboard → Project Settings → API</span>
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.4rem; color: #cbd5e1;">
+                  API Key (service_role secret or anon public key)
+                </label>
+                <input type="password" id="supabase-input-key" class="admin-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required autocomplete="off">
+                <span style="font-size: 0.72rem; color: #94a3b8;">Prefer <code>service_role</code> key on server for full administrative sync</span>
+              </div>
+
+              <div id="supabase-result-msg" style="display: none; padding: 0.75rem; border-radius: 6px; font-size: 0.82rem; margin-bottom: 1rem;"></div>
+
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="submit" class="btn-admin-primary" id="btn-save-supabase" style="flex: 1; min-width: 150px;">
+                  💾 Save & Connect Supabase
+                </button>
+                <button type="button" class="btn-admin-outline" onclick="testSupabaseConnection()" style="padding: 0.5rem 1rem;">
+                  🔌 Test Connection
+                </button>
+                <button type="button" class="btn-admin-outline" onclick="triggerSupabaseSync()" style="padding: 0.5rem 1rem;">
+                  🔄 Force Sync Data
+                </button>
+              </div>
+            </form>
+
+            <!-- SQL Schema Quick Setup Section -->
+            <div style="margin-top: 1.5rem; background: #08150c; border: 1px dashed #1c4228; border-radius: 8px; padding: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #34d399;">📋 Supabase SQL Schema Setup</span>
+                <button type="button" class="btn-admin-outline" id="btn-copy-supabase-sql" onclick="copySupabaseSchema()" style="font-size: 0.72rem; padding: 0.25rem 0.6rem;">
+                  📋 Copy SQL Script
+                </button>
+              </div>
+              <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.75rem; line-height: 1.4;">
+                To prepare your Supabase project, open <strong>SQL Editor</strong> in Supabase, paste this script, and click <strong>Run</strong>.
+              </p>
+              <textarea id="supabase-sql-schema" readonly style="width: 100%; height: 110px; background: #030a05; color: #a7f3d0; border: 1px solid #14351e; border-radius: 6px; font-family: monospace; font-size: 0.72rem; padding: 0.5rem; resize: vertical;"></textarea>
+            </div>
           </div>
         </section>
 

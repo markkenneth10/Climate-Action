@@ -35,6 +35,12 @@ interface UserDao {
     @Query("UPDATE users SET points = points + :addPoints WHERE id = :userId")
     suspend fun addPoints(userId: Int, addPoints: Int)
 
+    @Query("SELECT * FROM users WHERE LOWER(email) = LOWER(:email) LIMIT 1")
+    suspend fun getUserByEmail(email: String): UserEntity?
+
+    @Query("UPDATE users SET isVerified = :verified, kycStatus = :status, kycIdType = :idType, kycIdNumber = :idNum WHERE id = :userId")
+    suspend fun updateKyc(userId: Int, verified: Boolean, status: String, idType: String, idNum: String)
+
     @Query("SELECT COUNT(*) FROM users")
     suspend fun getUserCount(): Int
 }

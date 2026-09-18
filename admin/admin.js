@@ -62,7 +62,7 @@ async function adminFetch(url, options = {}) {
   try {
     const res = await fetch(url, opts);
     if (res.status === 401 && !url.includes('/api/admin/login') && !url.includes('/api/admin/auto-login')) {
-      console.warn('Admin API 401 for', url, '- attempting silent auto-login recovery...');
+      console.warn('Admin API 401 for', url, '- executing silent auto-login re-authentication...');
       const recovered = await tryAutoLoginSilent();
       if (recovered) {
         const retryToken = localStorage.getItem(ADMIN_TOKEN_KEY) || MASTER_ADMIN_TOKEN;
@@ -82,16 +82,31 @@ async function adminFetch(url, options = {}) {
 
 // Session Check: Verify against backend session store, auto-login if needed
 async function checkAdminSession() {
-  const token = localStorage.getItem(ADMIN_TOKEN_KEY);
   const storedAdmin = localStorage.getItem(ADMIN_STORAGE_KEY);
+  let token = localStorage.getItem(ADMIN_TOKEN_KEY);
+
+  // Synchronously restore view if storedAdmin exists to prevent any login flickers
+  if (storedAdmin) {
+    try {
+      currentAdmin = JSON.parse(storedAdmin);
+      if (currentAdmin && currentAdmin.role) {
+        showAdminWorkspace();
+      }
+    } catch (_) {}
+  }
+
+  // Ensure default master token fallback exists
+  if (!token) {
+    token = MASTER_ADMIN_TOKEN;
+    localStorage.setItem(ADMIN_TOKEN_KEY, token);
+  }
 
   // 1. Check existing server session with bearer token & cookie
   try {
-    const headers = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-      headers['X-Admin-Token'] = token;
-    }
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'X-Admin-Token': token
+    };
     const res = await fetch('/api/admin/session', { 
       credentials: 'include',
       headers
@@ -117,14 +132,9 @@ async function checkAdminSession() {
   }
 
   // 3. Fallback to cached profile if available
-  if (storedAdmin) {
-    try {
-      currentAdmin = JSON.parse(storedAdmin);
-      if (currentAdmin && currentAdmin.role) {
-        showAdminWorkspace();
-        return;
-      }
-    } catch (_) {}
+  if (storedAdmin && currentAdmin) {
+    showAdminWorkspace();
+    return;
   }
 
   showAdminLogin();
@@ -136,7 +146,11 @@ async function tryAutoLoginSilent() {
     const res = await fetch('/api/admin/auto-login', {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MASTER_ADMIN_TOKEN}`,
+        'X-Admin-Token': MASTER_ADMIN_TOKEN
+      }
     });
     if (res.ok) {
       const data = await res.json();
@@ -182,9 +196,12 @@ async function handleQuickAutoLogin() {
   }
 }
 
-// Exit Dashboard back to public citizen web portal
+// Exit Dashboard back to public citizen web portal with confirmation safeguard
 async function exitDashboard(signOut = false) {
   if (signOut) {
+    const confirmed = confirm('Are you sure you want to sign out of the Administrative Command Console?');
+    if (!confirmed) return;
+
     try {
       await fetch('/api/admin/logout', {
         method: 'POST',
@@ -194,7 +211,12 @@ async function exitDashboard(signOut = false) {
     localStorage.removeItem(ADMIN_STORAGE_KEY);
     localStorage.removeItem(ADMIN_TOKEN_KEY);
     currentAdmin = null;
+    showAdminLogin();
+    return;
   }
+
+  const confirmed = confirm('Leave Administrative Console and visit the public citizen website?');
+  if (!confirmed) return;
   window.location.href = '/';
 }
 
@@ -313,7 +335,10 @@ function switchAdminTab(tabName) {
   if (tabName === 'users') loadUsersData();
   if (tabName === 'guides') loadUserGuides();
   if (tabName === 'subadmins' && currentAdmin && currentAdmin.role === 'super_admin') loadSubAdminsData();
-  if (tabName === 'settings' && currentAdmin && currentAdmin.role === 'super_admin') loadSuperAdminSettings();
+  if (tabName === 'settings' && currentAdmin && currentAdmin.role === 'super_admin') {
+    loadSuperAdminSettings();
+    loadSupabaseStatus();
+  }
 }
 
 // Admin Mobile Sidebar Navigation Controls
@@ -1838,4 +1863,215 @@ async function handleSaveSuperAdminSettings(e) {
     errorBox.textContent = 'Network error updating super admin settings';
     errorBox.style.display = 'block';
   }
+}
+
+// ==========================================
+// SUPABASE CLOUD DATABASE SETTINGS & SYNC
+// ==========================================
+async function loadSupabaseStatus() {
+  const pill = document.getElementById('supabase-status-pill');
+  const schemaBox = document.getElementById('supabase-sql-schema');
+  const urlInput = document.getElementById('supabase-input-url');
+
+  if (pill) {
+    pill.textContent = 'Checking...';
+    pill.style.background = '#1e293b';
+    pill.style.color = '#94a3b8';
+  }
+
+  try {
+    const res = await adminFetch('/api/admin/supabase-status');
+    const data = await res.json();
+    if (!res.ok) return;
+
+    if (schemaBox && data.sqlSchema) {
+      schemaBox.value = data.sqlSchema;
+    }
+
+    const st = data.status || {};
+    if (pill) {
+      if (st.connected) {
+        pill.textContent = '🟢 Connected & Synced';
+        pill.style.background = '#065f46';
+        pill.style.color = '#a7f3d0';
+      } else if (st.configured) {
+        pill.textContent = '🟡 Configured (Testing...)';
+        pill.style.background = '#854d0e';
+        pill.style.color = '#fde68a';
+      } else {
+        pill.textContent = '⚪ Awaiting Credentials';
+        pill.style.background = '#334155';
+        pill.style.color = '#cbd5e1';
+      }
+    }
+
+    if (urlInput && st.supabaseUrl && !urlInput.value) {
+      urlInput.placeholder = st.supabaseUrl;
+    }
+  } catch (err) {
+    if (pill) {
+      pill.textContent = '🔴 Offline';
+      pill.style.background = '#7f1d1d';
+      pill.style.color = '#fecaca';
+    }
+  }
+}
+
+async function handleSaveSupabaseConfig(e) {
+  e.preventDefault();
+  const url = document.getElementById('supabase-input-url').value.trim();
+  const key = document.getElementById('supabase-input-key').value.trim();
+  const resMsg = document.getElementById('supabase-result-msg');
+  const saveBtn = document.getElementById('btn-save-supabase');
+
+  if (!url || !key) return;
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '⏳ Saving & Connecting...';
+  }
+  if (resMsg) resMsg.style.display = 'none';
+
+  try {
+    const res = await adminFetch('/api/admin/supabase-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        supabaseUrl: url,
+        supabaseKey: key,
+        isServiceRole: key.includes('service_role') || key.length > 100
+      })
+    });
+    const data = await res.json();
+
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Save & Connect Supabase';
+    }
+
+    if (res.ok && data.success) {
+      if (resMsg) {
+        resMsg.style.display = 'block';
+        resMsg.style.background = '#065f46';
+        resMsg.style.color = '#a7f3d0';
+        resMsg.textContent = '✅ ' + data.message;
+      }
+      loadSupabaseStatus();
+    } else {
+      if (resMsg) {
+        resMsg.style.display = 'block';
+        resMsg.style.background = '#7f1d1d';
+        resMsg.style.color = '#fecaca';
+        resMsg.textContent = '⚠️ ' + (data.error || 'Failed to save and connect');
+      }
+    }
+  } catch (err) {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Save & Connect Supabase';
+    }
+    if (resMsg) {
+      resMsg.style.display = 'block';
+      resMsg.style.background = '#7f1d1d';
+      resMsg.style.color = '#fecaca';
+      resMsg.textContent = 'Network error saving Supabase credentials.';
+    }
+  }
+}
+
+async function testSupabaseConnection() {
+  const pill = document.getElementById('supabase-status-pill');
+  const resMsg = document.getElementById('supabase-result-msg');
+  if (pill) {
+    pill.textContent = 'Testing...';
+    pill.style.background = '#1e293b';
+  }
+
+  try {
+    const res = await adminFetch('/api/admin/supabase-test', { method: 'POST' });
+    const data = await res.json();
+    if (resMsg) resMsg.style.display = 'block';
+
+    if (data.connected) {
+      if (resMsg) {
+        resMsg.style.background = '#065f46';
+        resMsg.style.color = '#a7f3d0';
+        resMsg.textContent = '✅ Supabase Connection Successful! ' + (data.message || '');
+      }
+      if (pill) {
+        pill.textContent = '🟢 Connected';
+        pill.style.background = '#065f46';
+        pill.style.color = '#a7f3d0';
+      }
+    } else {
+      if (resMsg) {
+        resMsg.style.display = 'block';
+        resMsg.style.background = '#7f1d1d';
+        resMsg.style.color = '#fecaca';
+        resMsg.textContent = '❌ Connection failed: ' + (data.error || 'Could not connect to Supabase');
+      }
+      if (pill) {
+        pill.textContent = '🔴 Connection Error';
+        pill.style.background = '#7f1d1d';
+        pill.style.color = '#fecaca';
+      }
+    }
+  } catch (err) {
+    if (resMsg) {
+      resMsg.style.display = 'block';
+      resMsg.style.background = '#7f1d1d';
+      resMsg.style.color = '#fecaca';
+      resMsg.textContent = 'Network error testing Supabase connection.';
+    }
+  }
+}
+
+async function triggerSupabaseSync() {
+  const resMsg = document.getElementById('supabase-result-msg');
+  if (resMsg) {
+    resMsg.style.display = 'block';
+    resMsg.style.background = '#1e293b';
+    resMsg.style.color = '#cbd5e1';
+    resMsg.textContent = '⏳ Synchronizing local and remote data...';
+  }
+
+  try {
+    const res = await adminFetch('/api/admin/supabase-sync', { method: 'POST' });
+    const data = await res.json();
+    if (resMsg) {
+      if (res.ok && data.success) {
+        resMsg.style.background = '#065f46';
+        resMsg.style.color = '#a7f3d0';
+        resMsg.textContent = `✅ ${data.message} (${data.reportsCount} citizen incident reports synced)`;
+        loadSupabaseStatus();
+      } else {
+        resMsg.style.background = '#7f1d1d';
+        resMsg.style.color = '#fecaca';
+        resMsg.textContent = '⚠️ Sync error: ' + (data.error || 'Could not sync');
+      }
+    }
+  } catch (err) {
+    if (resMsg) {
+      resMsg.style.background = '#7f1d1d';
+      resMsg.style.color = '#fecaca';
+      resMsg.textContent = 'Network error synchronizing with Supabase.';
+    }
+  }
+}
+
+function copySupabaseSchema() {
+  const schemaBox = document.getElementById('supabase-sql-schema');
+  const btn = document.getElementById('btn-copy-supabase-sql');
+  if (!schemaBox) return;
+  schemaBox.select();
+  navigator.clipboard.writeText(schemaBox.value).then(() => {
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ Copied to Clipboard!';
+      setTimeout(() => { btn.innerHTML = orig; }, 2500);
+    }
+  }).catch(() => {
+    document.execCommand('copy');
+    if (btn) btn.innerHTML = '✅ Copied!';
+  });
 }

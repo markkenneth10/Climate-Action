@@ -46,12 +46,20 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
     val unreadNotificationsCount: StateFlow<Int> = repository.unreadNotificationsCount
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    // Current user state
-    private val _currentUserId = MutableStateFlow(1)
-    val currentUserId: StateFlow<Int> = _currentUserId.asStateFlow()
+    // Shared preferences for session persistence
+    private val prefs = application.getSharedPreferences("climate_action_prefs", android.content.Context.MODE_PRIVATE)
+
+    // Current user state - null by default (guest). Only restored if citizen previously signed in.
+    private val _currentUserId = MutableStateFlow<Int?>(
+        if (prefs.contains("logged_in_user_id")) {
+            val savedId = prefs.getInt("logged_in_user_id", -1)
+            if (savedId > 0) savedId else null
+        } else null
+    )
+    val currentUserId: StateFlow<Int?> = _currentUserId.asStateFlow()
 
     val currentUser: StateFlow<UserEntity?> = combine(allUsers, _currentUserId) { users, id ->
-        users.find { it.id == id } ?: users.firstOrNull()
+        if (id == null) null else users.find { it.id == id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     // Active bottom navigation tab
@@ -89,6 +97,101 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
     val showThesisSummaryDialog = MutableStateFlow(false)
     val showWebPortalDialog = MutableStateFlow(false)
     val showSuccessSnackbar = MutableStateFlow<String?>(null)
+
+    // Citizen Auth & KYC Dialogs
+    val showAuthDialog = MutableStateFlow(false)
+    val authDialogInitialMode = MutableStateFlow("register") // "register" or "login"
+    val showKycDialog = MutableStateFlow(false)
+
+    fun openAuthDialog(initialMode: String = "register") {
+        authDialogInitialMode.value = initialMode
+        showAuthDialog.value = true
+    }
+
+    fun closeAuthDialog() {
+        showAuthDialog.value = false
+    }
+
+    fun openKycDialog() {
+        showKycDialog.value = true
+    }
+
+    fun closeKycDialog() {
+        showKycDialog.value = false
+    }
+
+    fun registerCitizen(
+        name: String,
+        email: String,
+        phone: String,
+        barangay: String,
+        address: String,
+        password: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = repository.registerCitizen(name, email, phone, barangay, address, password)
+            result.onSuccess { user ->
+                _currentUserId.value = user.id
+                prefs.edit().putInt("logged_in_user_id", user.id).apply()
+                showAuthDialog.value = false
+                showSuccessSnackbar.value = "🌱 Account created! Welcome, ${user.name} (+50 pts). Complete KYC to report."
+                onSuccess()
+            }.onFailure { err ->
+                onError(err.message ?: "Registration failed")
+            }
+        }
+    }
+
+    fun loginCitizen(
+        email: String,
+        password: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = repository.loginCitizen(email, password)
+            result.onSuccess { user ->
+                _currentUserId.value = user.id
+                prefs.edit().putInt("logged_in_user_id", user.id).apply()
+                showAuthDialog.value = false
+                showSuccessSnackbar.value = "Welcome back, ${user.name}!"
+                onSuccess()
+            }.onFailure { err ->
+                onError(err.message ?: "Invalid credentials")
+            }
+        }
+    }
+
+    fun logout() {
+        _currentUserId.value = null
+        prefs.edit().remove("logged_in_user_id").apply()
+        showSuccessSnackbar.value = "Signed out of citizen account."
+    }
+
+    fun submitKycVerification(
+        idType: String,
+        idNumber: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val user = currentUser.value
+        if (user == null) {
+            onError("You must be signed in to submit KYC verification.")
+            return
+        }
+        viewModelScope.launch {
+            val result = repository.verifyKyc(user.id, idType, idNumber)
+            result.onSuccess {
+                showKycDialog.value = false
+                showSuccessSnackbar.value = "🛡️ Identity Verified! Environmental reporting unlocked (+25 pts)."
+                onSuccess()
+            }.onFailure { err ->
+                onError(err.message ?: "Verification failed")
+            }
+        }
+    }
 
     // Quiz Session State
     val quizCurrentIndex = MutableStateFlow(0)
@@ -143,7 +246,17 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
         latitude: Double,
         longitude: Double
     ) {
-        val user = currentUser.value ?: return
+        val user = currentUser.value
+        if (user == null) {
+            showSuccessSnackbar.value = "⚠️ Please sign in or create an account to submit reports."
+            openAuthDialog("login")
+            return
+        }
+        if (!user.isVerified || user.kycStatus != "verified") {
+            showSuccessSnackbar.value = "🛡️ Government ID verification (KYC) required before submitting reports."
+            openKycDialog()
+            return
+        }
         viewModelScope.launch {
             repository.submitReport(
                 userId = user.id,
