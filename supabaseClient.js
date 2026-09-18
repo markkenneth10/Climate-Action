@@ -41,7 +41,18 @@ let lastError = null;
 function initSupabase() {
   loadEnv();
   const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
-  const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+  // Valid Supabase API key should not be a PostgreSQL connection string (postgresql://...)
+  const isPostgresConnStr = (k) => typeof k === 'string' && k.trim().startsWith('postgresql://');
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const anonKey = (process.env.SUPABASE_ANON_KEY || '').trim();
+  let supabaseKey = '';
+  if (serviceKey && !isPostgresConnStr(serviceKey)) {
+    supabaseKey = serviceKey;
+  } else if (anonKey && !isPostgresConnStr(anonKey)) {
+    supabaseKey = anonKey;
+  } else if (serviceKey) {
+    supabaseKey = serviceKey;
+  }
 
   if (!supabaseUrl || !supabaseKey) {
     supabaseClient = null;
@@ -230,6 +241,57 @@ async function syncConfigToSupabase(config) {
   }
 }
 
+// Helper: Map in-memory JavaScript report (camelCase) to Supabase Postgres row (snake_case)
+function mapReportToSupabaseRow(report) {
+  if (!report || typeof report !== 'object') return report;
+  const row = {
+    id: report.id,
+    title: report.title,
+    category: report.category,
+    severity: report.severity || 'Moderate',
+    barangay: report.barangay,
+    landmark: report.landmark || null,
+    description: report.description,
+    photo_url: report.photoUrl || report.photo_url || null,
+    latitude: typeof report.latitude === 'number' ? report.latitude : (parseFloat(report.latitude) || 14.5995),
+    longitude: typeof report.longitude === 'number' ? report.longitude : (parseFloat(report.longitude) || 120.9842),
+    status: report.status || 'Submitted',
+    submitted_by: report.submittedBy || report.submitted_by || 'Anonymous Citizen',
+    user_email: report.userEmail || report.user_email || null,
+    assigned_to: report.assignedTo || report.assigned_to || null,
+    status_remarks: report.statusRemarks || report.status_remarks || null,
+    inspection_notes: report.inspectionNotes || report.inspection_notes || null,
+    timeline: report.timeline ? (typeof report.timeline === 'string' ? JSON.parse(report.timeline) : report.timeline) : null,
+    timestamp: typeof report.timestamp === 'number' ? report.timestamp : Date.now()
+  };
+  return row;
+}
+
+// Helper: Map Supabase Postgres row (snake_case) to in-memory JavaScript report (camelCase)
+function mapSupabaseRowToReport(row) {
+  if (!row || typeof row !== 'object') return row;
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    severity: row.severity,
+    barangay: row.barangay,
+    landmark: row.landmark,
+    description: row.description,
+    photoUrl: row.photo_url || row.photoUrl || null,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    status: row.status,
+    submittedBy: row.submitted_by || row.submittedBy,
+    userEmail: row.user_email || row.userEmail,
+    assignedTo: row.assigned_to || row.assignedTo,
+    statusRemarks: row.status_remarks || row.statusRemarks,
+    inspectionNotes: row.inspection_notes || row.inspectionNotes,
+    timeline: row.timeline,
+    timestamp: typeof row.timestamp === 'string' ? parseInt(row.timestamp, 10) : (row.timestamp || Date.now())
+  };
+}
+
 // 3. Fetch Reports
 async function fetchReportsFromSupabase() {
   if (!supabaseClient) return null;
@@ -240,7 +302,7 @@ async function fetchReportsFromSupabase() {
       .order('timestamp', { ascending: false });
 
     if (error || !data) return null;
-    return data;
+    return data.map(mapSupabaseRowToReport);
   } catch (err) {
     console.warn('Supabase fetchReports error:', err.message);
     return null;
@@ -251,9 +313,10 @@ async function fetchReportsFromSupabase() {
 async function saveReportToSupabase(report) {
   if (!supabaseClient) return false;
   try {
+    const row = mapReportToSupabaseRow(report);
     const { error } = await supabaseClient
       .from('reports')
-      .upsert(report, { onConflict: 'id' });
+      .upsert(row, { onConflict: 'id' });
 
     if (error) {
       console.warn('Supabase saveReport warning:', error.message);
@@ -270,9 +333,40 @@ async function saveReportToSupabase(report) {
 async function updateReportInSupabase(id, updates) {
   if (!supabaseClient) return false;
   try {
+    const dbUpdates = {};
+    const keyMap = {
+      title: 'title',
+      category: 'category',
+      severity: 'severity',
+      barangay: 'barangay',
+      landmark: 'landmark',
+      description: 'description',
+      photoUrl: 'photo_url',
+      photo_url: 'photo_url',
+      latitude: 'latitude',
+      longitude: 'longitude',
+      status: 'status',
+      submittedBy: 'submitted_by',
+      submitted_by: 'submitted_by',
+      userEmail: 'user_email',
+      user_email: 'user_email',
+      assignedTo: 'assigned_to',
+      assigned_to: 'assigned_to',
+      statusRemarks: 'status_remarks',
+      status_remarks: 'status_remarks',
+      inspectionNotes: 'inspection_notes',
+      inspection_notes: 'inspection_notes',
+      timeline: 'timeline',
+      timestamp: 'timestamp'
+    };
+    for (const [k, v] of Object.entries(updates)) {
+      const targetKey = keyMap[k] || k;
+      dbUpdates[targetKey] = v;
+    }
+
     const { error } = await supabaseClient
       .from('reports')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id);
 
     if (error) {
