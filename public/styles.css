@@ -2380,6 +2380,39 @@ textarea.form-control {
   overflow: hidden;
   border: 1px solid var(--border);
   animation: authFadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.auth-barrier-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  font-size: 1.5rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 20;
+}
+.auth-barrier-close:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(1.05);
+}
+
+/* Strict rule: After login, completely remove and hide create account and login elements from the website */
+body.citizen-logged-in #auth-barrier-screen,
+body.citizen-logged-in #auth-modal,
+body.citizen-logged-in .btn-citizen-signin,
+body.citizen-logged-in .auth-guest-only {
+  display: none !important;
 }
 
 @keyframes authFadeUp {

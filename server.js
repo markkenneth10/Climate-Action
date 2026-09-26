@@ -224,8 +224,57 @@ let adminStore = [
   }
 ];
 
-// 2. Citizen Users (Registration pool - users register their own accounts)
+// 2. Citizen Users (Registration pool - users register their own accounts with persistence)
 let userStore = [];
+const USERS_FILE = path.join(__dirname, 'users_store.json');
+const TMP_USERS_FILE = path.join('/tmp', 'climate_users_store.json');
+
+function saveUsersToDisk() {
+  try {
+    const dataStr = JSON.stringify(userStore, null, 2);
+    try {
+      fs.writeFileSync(USERS_FILE, dataStr, 'utf8');
+    } catch (_) {
+      try {
+        fs.writeFileSync(TMP_USERS_FILE, dataStr, 'utf8');
+      } catch (err2) {
+        console.warn('Could not write users to /tmp:', err2.message);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not save users to disk:', err.message);
+  }
+}
+
+function loadUsersFromDisk() {
+  try {
+    let raw = null;
+    if (fs.existsSync(USERS_FILE)) {
+      raw = fs.readFileSync(USERS_FILE, 'utf8');
+    } else if (fs.existsSync(TMP_USERS_FILE)) {
+      raw = fs.readFileSync(TMP_USERS_FILE, 'utf8');
+    }
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (Array.isArray(data) && data.length > 0) {
+        const map = new Map();
+        data.forEach(u => {
+          if (u && u.email) map.set(u.email.toLowerCase().trim(), u);
+        });
+        userStore.forEach(u => {
+          if (u && u.email) {
+            const diskU = map.get(u.email.toLowerCase().trim());
+            map.set(u.email.toLowerCase().trim(), diskU ? { ...diskU, ...u } : u);
+          }
+        });
+        userStore = Array.from(map.values());
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load users from disk:', err.message);
+  }
+}
+loadUsersFromDisk();
 
 // 3. Website Configuration & CMS Content (Authoritative municipal climate information)
 let websiteConfig = {
@@ -618,15 +667,26 @@ const server = http.createServer(async (req, res) => {
     // ------------------------------------------
     // 2. Authentication (User & Admin)
     // ------------------------------------------
-    // Register Citizen User
+    // Register Citizen User (with Auto-Login & Persistence)
     if (pathname === '/api/auth/register' && req.method === 'POST') {
       const data = await parseBody(req);
       if (!data.email || !data.password || !data.name) {
         return sendJson(400, { error: 'Name, email, and password are required' });
       }
-      const existingUser = userStore.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+      loadUsersFromDisk();
+      const existingUser = userStore.find(u => (u.email || '').toLowerCase() === data.email.toLowerCase().trim());
       if (existingUser) {
-        return sendJson(409, { error: 'A citizen account with this email address already exists. Please sign in.' });
+        // If password matches existing account, automatically log them in!
+        if (existingUser.password === data.password) {
+          const { password, ...safeUser } = existingUser;
+          return sendJson(200, {
+            success: true,
+            autoLoggedIn: true,
+            message: 'Existing account verified! Automatically signed in.',
+            user: safeUser
+          });
+        }
+        return sendJson(409, { error: 'A citizen account with this email address already exists. Please sign in with your password.' });
       }
 
       const newUser = {
@@ -665,12 +725,14 @@ const server = http.createServer(async (req, res) => {
         createdAt: Date.now()
       };
       userStore.push(newUser);
+      saveUsersToDisk();
 
       // Return safe user object (omit password)
       const { password, ...safeUser } = newUser;
       return sendJson(201, {
         success: true,
-        message: 'Account registered successfully! Please complete your KYC verification to enable incident reporting.',
+        autoLoggedIn: true,
+        message: 'Account registered successfully! Welcome to Climate Action.',
         user: safeUser
       });
     }
@@ -681,12 +743,18 @@ const server = http.createServer(async (req, res) => {
       const email = (data.email || '').trim().toLowerCase();
       const pass = (data.password || '').trim();
 
-      const user = userStore.find(u => u.email.toLowerCase() === email && u.password === pass);
+      loadUsersFromDisk();
+      let user = userStore.find(u => (u.email || '').toLowerCase() === email && u.password === pass);
       if (!user) {
-        return sendJson(401, { error: 'Invalid email or password' });
+        // Check if user exists but password differed
+        const userByEmail = userStore.find(u => (u.email || '').toLowerCase() === email);
+        if (userByEmail) {
+          return sendJson(401, { error: 'Incorrect password for this account. Please try again.' });
+        }
+        return sendJson(401, { error: 'No citizen account found for this email. Please click "Create Account".' });
       }
       if (user.status === 'Suspended') {
-        return sendJson(403, { error: 'Account has been temporarily suspended. Contact support.' });
+        return sendJson(403, { error: 'Account has been temporarily suspended. Contact CENRO support.' });
       }
 
       const { password, ...safeUser } = user;
@@ -697,13 +765,43 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // Rehydrate/Sync client session (ensures seamless continuity across server restarts & cold starts)
+    if (pathname === '/api/auth/sync-client-session' && req.method === 'POST') {
+      const data = await parseBody(req);
+      if (data && data.user && data.user.email) {
+        loadUsersFromDisk();
+        const existing = userStore.find(u => (u.email || '').toLowerCase() === data.user.email.toLowerCase().trim());
+        if (!existing) {
+          const rehydrated = {
+            id: data.user.id || `user-${Date.now().toString().slice(-4)}`,
+            name: (data.user.fullName || data.user.name || 'Citizen').trim(),
+            email: data.user.email.toLowerCase().trim(),
+            phone: data.user.phone || '+63 900 000 0000',
+            barangay: data.user.barangay || 'Barangay Makilas',
+            address: data.user.address || '',
+            role: 'citizen',
+            status: 'Active',
+            ecoPoints: data.user.ecoPoints || 50,
+            kycStatus: data.user.kycStatus || 'unverified',
+            createdAt: data.user.createdAt || Date.now()
+          };
+          userStore.push(rehydrated);
+          saveUsersToDisk();
+          return sendJson(200, { success: true, synced: true });
+        }
+        return sendJson(200, { success: true, existing: true });
+      }
+      return sendJson(400, { error: 'Valid user session required' });
+    }
+
     // Get Citizen User Profile
     if (pathname === '/api/user/profile' && req.method === 'GET') {
+      loadUsersFromDisk();
       const email = (query.email || req.headers['x-user-email'] || '').trim().toLowerCase();
       if (!email) {
         return sendJson(400, { error: 'User email parameter required' });
       }
-      const user = userStore.find(u => u.email.toLowerCase() === email);
+      const user = userStore.find(u => (u.email || '').toLowerCase() === email);
       if (!user) {
         return sendJson(404, { error: 'User profile not found' });
       }
@@ -734,6 +832,7 @@ const server = http.createServer(async (req, res) => {
       if (data.avatar !== undefined) user.avatar = data.avatar;
       if (data.emergencyContactName !== undefined) user.emergencyContactName = data.emergencyContactName.trim();
       if (data.emergencyContactPhone !== undefined) user.emergencyContactPhone = data.emergencyContactPhone.trim();
+      saveUsersToDisk();
 
       const { password, ...safeUser } = user;
       return sendJson(200, {
@@ -770,6 +869,7 @@ const server = http.createServer(async (req, res) => {
       user.kycSelfieImage = data.selfieImage;
       user.kycSubmittedAt = Date.now();
       user.kycRejectReason = '';
+      saveUsersToDisk();
 
       const { password, ...safeUser } = user;
       return sendJson(200, {
@@ -1197,6 +1297,7 @@ const server = http.createServer(async (req, res) => {
       } else {
         return sendJson(400, { error: 'Invalid action. Must be approve or reject.' });
       }
+      saveUsersToDisk();
 
       const { password, ...safeUser } = user;
       return sendJson(200, {

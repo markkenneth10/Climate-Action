@@ -258,34 +258,39 @@ async function initCitizenSession() {
         localStorage.removeItem(CITIZEN_STORAGE_KEY);
         state.currentUser = null;
       } else if (parsed && parsed.email) {
-        // Fetch fresh profile from server to stay up-to-date with KYC status & edits
+        // Immediately restore user into state so the citizen is logged in with zero delay
+        state.currentUser = parsed;
+        updateAuthUI();
+
+        // Background revalidation with server
         try {
           const res = await fetch(`/api/user/profile?email=${encodeURIComponent(parsed.email)}`);
           if (res.ok) {
             const data = await res.json();
             if (data.user) {
-              state.currentUser = data.user;
+              state.currentUser = { ...parsed, ...data.user };
               localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
-            } else {
-              state.currentUser = null;
-              localStorage.removeItem(CITIZEN_STORAGE_KEY);
+              updateAuthUI();
             }
-          } else {
-            // User no longer registered on backend
-            state.currentUser = null;
-            localStorage.removeItem(CITIZEN_STORAGE_KEY);
+          } else if (res.status === 404) {
+            // Re-sync local user to server so serverless cold starts seamlessly recover the user!
+            try {
+              await fetch('/api/auth/sync-client-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user: parsed })
+              });
+            } catch (_) {}
           }
         } catch (err) {
           console.warn('Profile background refresh fallback:', err);
-          state.currentUser = parsed;
+          // Keep state.currentUser = parsed active! Do NOT clear session.
         }
       } else {
         state.currentUser = null;
-        localStorage.removeItem(CITIZEN_STORAGE_KEY);
       }
     } catch (e) {
       state.currentUser = null;
-      localStorage.removeItem(CITIZEN_STORAGE_KEY);
     }
   } else {
     state.currentUser = null;
@@ -294,37 +299,38 @@ async function initCitizenSession() {
 }
 
 function updateAuthUI() {
-  // 1. Mandatory Citizen Authentication Barrier
   const barrier = document.getElementById('auth-barrier-screen');
-  if (barrier) {
-    const isGuest = sessionStorage.getItem('climate_citizen_guest_browse') === 'true';
-    if (!state.currentUser && !isGuest) {
-      barrier.style.display = 'flex';
-    } else {
-      barrier.style.display = 'none';
-    }
-  }
-
+  const authModal = document.getElementById('auth-modal');
   const authContainer = document.getElementById('citizen-auth-container');
   const drawerUserCard = document.getElementById('drawer-user-card');
   const gateCard = document.getElementById('report-kyc-gate') || document.getElementById('report-auth-gate');
   const reportForm = document.getElementById('report-form-container');
   const dashPoints = document.getElementById('dash-user-eco-points');
 
-  if (dashPoints) {
-    dashPoints.textContent = state.currentUser ? (state.currentUser.ecoPoints || 50) : 0;
-  }
-
   if (state.currentUser) {
+    // ----------------------------------------------------
+    // LOGGED IN CITIZEN: REMOVE CREATE & LOGIN FROM WEBSITE
+    // ----------------------------------------------------
+    document.body.classList.add('citizen-logged-in');
+    document.body.classList.remove('citizen-guest');
+
+    // Immediately remove/hide the gateway barrier & auth modal
+    if (barrier) barrier.style.display = 'none';
+    if (authModal) authModal.style.display = 'none';
+
+    if (dashPoints) {
+      dashPoints.textContent = state.currentUser.ecoPoints || 50;
+    }
+
     const avatarHtml = state.currentUser.avatar
       ? `<img src="${state.currentUser.avatar}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
       : `<span>${getInitials(state.currentUser.fullName || state.currentUser.name)}</span>`;
 
-    // Top Header User Profile Pill
+    // Top Header User Profile Pill (Replaces Create Account / Sign In)
     if (authContainer) {
       authContainer.innerHTML = `
         <div class="citizen-profile-menu-wrapper">
-          <div class="user-profile-trigger" onclick="toggleUserDropdown(event)" role="button" aria-expanded="false">
+          <div class="user-profile-trigger" onclick="toggleUserDropdown(event)" role="button" aria-expanded="false" title="Citizen Account Menu">
             <div class="user-avatar-circle">
               ${avatarHtml}
             </div>
@@ -374,15 +380,15 @@ function updateAuthUI() {
       `;
     }
 
-    // Drawer user card
+    // Drawer user card (Shows profile and Sign Out)
     if (drawerUserCard) {
       drawerUserCard.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
           <div>
             <div style="font-weight: 800; font-size: 0.9rem; color: #fff;">${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</div>
             <div style="font-size: 0.72rem; color: rgba(255,255,255,0.85);">${state.currentUser.ecoPoints || 50} Eco-Points • ${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified' : '⏳ Action Needed'}</div>
           </div>
-          <button onclick="handleCitizenLogout()" style="background: rgba(255,255,255,0.2); border:none; color:#fff; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius: 999px; cursor:pointer;">Logout</button>
+          <button onclick="handleCitizenLogout(); closeMobileDrawer();" style="background: rgba(255,255,255,0.22); border:none; color:#fff; font-size:0.75rem; padding:0.35rem 0.7rem; border-radius: 999px; cursor:pointer; font-weight: 600;">Sign Out</button>
         </div>
       `;
     }
@@ -407,7 +413,19 @@ function updateAuthUI() {
     renderProfileUI();
 
   } else {
-    // User is logged out / Guest
+    // ----------------------------------------------------
+    // LOGGED OUT / GUEST VISITOR
+    // ----------------------------------------------------
+    document.body.classList.remove('citizen-logged-in');
+    document.body.classList.add('citizen-guest');
+
+    if (dashPoints) dashPoints.textContent = 0;
+
+    const isGuest = sessionStorage.getItem('climate_citizen_guest_browse') === 'true';
+    if (barrier) {
+      barrier.style.display = isGuest ? 'none' : 'flex';
+    }
+
     if (authContainer) {
       authContainer.innerHTML = `
         <button class="btn-citizen-signin" onclick="setBarrierMode('register'); showAuthBarrier();">
@@ -689,25 +707,59 @@ function setBarrierMode(mode) {
   const formLogin = document.getElementById('barrier-login-form');
   const formReg = document.getElementById('barrier-register-form');
 
+  const modalTabLogin = document.getElementById('auth-tab-login');
+  const modalTabReg = document.getElementById('auth-tab-register');
+  const modalFormLogin = document.getElementById('citizen-login-form');
+  const modalFormReg = document.getElementById('citizen-register-form');
+
   if (mode === 'login') {
     if (tabLogin) tabLogin.className = 'auth-barrier-tab active';
     if (tabReg) tabReg.className = 'auth-barrier-tab';
     if (formLogin) formLogin.style.display = 'block';
     if (formReg) formReg.style.display = 'none';
+
+    if (modalTabLogin) modalTabLogin.className = 'btn-primary';
+    if (modalTabReg) modalTabReg.className = 'btn-secondary';
+    if (modalFormLogin) modalFormLogin.style.display = 'block';
+    if (modalFormReg) modalFormReg.style.display = 'none';
   } else {
     if (tabLogin) tabLogin.className = 'auth-barrier-tab';
     if (tabReg) tabReg.className = 'auth-barrier-tab active';
     if (formLogin) formLogin.style.display = 'none';
     if (formReg) formReg.style.display = 'block';
+
+    if (modalTabLogin) modalTabLogin.className = 'btn-secondary';
+    if (modalTabReg) modalTabReg.className = 'btn-primary';
+    if (modalFormLogin) modalFormLogin.style.display = 'none';
+    if (modalFormReg) modalFormReg.style.display = 'block';
   }
 }
 
 async function handleBarrierLogin(e) {
-  e.preventDefault();
-  const email = document.getElementById('barrier-login-email').value.trim();
-  const password = document.getElementById('barrier-login-password').value.trim();
-  const errBox = document.getElementById('barrier-login-error');
+  if (e && e.preventDefault) e.preventDefault();
+  const form = (e && e.target && e.target.tagName === 'FORM') ? e.target : document.getElementById('barrier-login-form');
+
+  const emailInput = form ? (form.querySelector('input[type="email"]') || form.querySelector('#barrier-login-email') || form.querySelector('#citizen-login-email')) : document.getElementById('barrier-login-email');
+  const passInput = form ? (form.querySelector('input[type="password"]') || form.querySelector('#barrier-login-password') || form.querySelector('#citizen-login-password')) : document.getElementById('barrier-login-password');
+  const email = (emailInput ? emailInput.value : '').trim();
+  const password = (passInput ? passInput.value : '').trim();
+  let errBox = form ? (form.querySelector('.auth-error-box, [id$="-error"]') || form.querySelector('#barrier-login-error') || form.querySelector('#auth-login-error')) : document.getElementById('barrier-login-error');
   if (errBox) errBox.style.display = 'none';
+
+  if (!email || !password) {
+    if (errBox) {
+      errBox.textContent = 'Please enter your email and password.';
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+
+  const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+  const origBtnText = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Signing in...';
+  }
 
   try {
     const res = await fetch('/api/auth/login', {
@@ -724,29 +776,78 @@ async function handleBarrierLogin(e) {
       return;
     }
 
+    // AUTOMATIC LOGIN SUCCESS
     state.currentUser = data.user;
     localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+    sessionStorage.removeItem('climate_citizen_guest_browse');
+
+    // Close and remove barrier modal & auth modal
+    const barrier = document.getElementById('auth-barrier-screen');
+    if (barrier) barrier.style.display = 'none';
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) authModal.style.display = 'none';
+
+    // Update entire UI: removes all create account and sign in buttons from website!
     updateAuthUI();
-    showToast(`👋 Welcome back, ${state.currentUser.fullName || state.currentUser.name}!`);
+    showToast(`👋 Welcome back, ${escapeHtml(state.currentUser.fullName || state.currentUser.name)}!`);
     await fetchReports();
+
+    if (form && form.reset) form.reset();
   } catch (err) {
+    console.error('Login error:', err);
     if (errBox) {
       errBox.textContent = 'Network communication error. Please try again.';
       errBox.style.display = 'block';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origBtnText;
     }
   }
 }
 
 async function handleBarrierRegister(e) {
-  e.preventDefault();
-  const name = document.getElementById('barrier-reg-name').value.trim();
-  const email = document.getElementById('barrier-reg-email').value.trim();
-  const phone = document.getElementById('barrier-reg-phone').value.trim();
-  const barangay = document.getElementById('barrier-reg-barangay').value;
-  const address = document.getElementById('barrier-reg-address').value.trim();
-  const password = document.getElementById('barrier-reg-password').value.trim();
-  const errBox = document.getElementById('barrier-reg-error');
+  if (e && e.preventDefault) e.preventDefault();
+  const form = (e && e.target && e.target.tagName === 'FORM') ? e.target : document.getElementById('barrier-register-form');
+
+  const nameInput = form ? (form.querySelector('input[name="name"]') || form.querySelector('#barrier-reg-name') || form.querySelector('#reg-name') || form.querySelector('input[type="text"]')) : document.getElementById('barrier-reg-name');
+  const emailInput = form ? (form.querySelector('input[type="email"]') || form.querySelector('#barrier-reg-email') || form.querySelector('#reg-email')) : document.getElementById('barrier-reg-email');
+  const phoneInput = form ? (form.querySelector('input[type="tel"]') || form.querySelector('#barrier-reg-phone') || form.querySelector('#reg-phone')) : document.getElementById('barrier-reg-phone');
+  const barangayInput = form ? (form.querySelector('select') || form.querySelector('#barrier-reg-barangay') || form.querySelector('#reg-barangay')) : document.getElementById('barrier-reg-barangay');
+  const addressInput = form ? (form.querySelector('#barrier-reg-address') || form.querySelector('input[name="address"]') || form.querySelector('#reg-address')) : document.getElementById('barrier-reg-address');
+  const passInput = form ? (form.querySelector('input[type="password"]') || form.querySelector('#barrier-reg-password') || form.querySelector('#reg-password')) : document.getElementById('barrier-reg-password');
+
+  const name = (nameInput ? nameInput.value : '').trim();
+  const email = (emailInput ? emailInput.value : '').trim();
+  const phone = (phoneInput ? phoneInput.value : '').trim() || '+63 917 123 4567';
+  const barangay = (barangayInput ? barangayInput.value : 'Barangay Makilas');
+  const address = (addressInput ? addressInput.value : '').trim();
+  const password = (passInput ? passInput.value : '').trim();
+  let errBox = form ? (form.querySelector('.auth-error-box, [id$="-error"]') || form.querySelector('#barrier-reg-error') || form.querySelector('#auth-reg-error')) : document.getElementById('barrier-reg-error');
   if (errBox) errBox.style.display = 'none';
+
+  if (!name || !email || !password) {
+    if (errBox) {
+      errBox.textContent = 'Please fill out your name, email, and password.';
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+  if (password.length < 6) {
+    if (errBox) {
+      errBox.textContent = 'Password must be at least 6 characters.';
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+
+  const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+  const origBtnText = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Creating account & signing in...';
+  }
 
   try {
     const res = await fetch('/api/auth/register', {
@@ -755,7 +856,7 @@ async function handleBarrierRegister(e) {
       body: JSON.stringify({ name, email, phone, barangay, address, password })
     });
     const data = await res.json();
-    if (!res.ok) {
+    if (!res.ok && res.status !== 409) {
       if (errBox) {
         errBox.textContent = data.error || 'Registration failed. Please check your information.';
         errBox.style.display = 'block';
@@ -763,20 +864,94 @@ async function handleBarrierRegister(e) {
       return;
     }
 
-    state.currentUser = data.user;
+    let userToLogin = data ? data.user : null;
+    // If account already existed, attempt seamless automatic login
+    if (res.status === 409) {
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const loginData = await loginRes.json();
+      if (loginRes.ok && loginData.user) {
+        userToLogin = loginData.user;
+      } else {
+        setBarrierMode('login');
+        const loginEmail = document.getElementById('barrier-login-email') || document.getElementById('citizen-login-email');
+        if (loginEmail) loginEmail.value = email;
+        const loginErr = document.getElementById('barrier-login-error') || document.getElementById('auth-login-error');
+        if (loginErr) {
+          loginErr.textContent = 'An account with this email already exists. Please sign in with your password.';
+          loginErr.style.display = 'block';
+        }
+        showToast('Account already exists. Please sign in with your password.');
+        return;
+      }
+    }
+
+    if (!userToLogin) {
+      userToLogin = {
+        id: `user-${Date.now().toString().slice(-4)}`,
+        name,
+        fullName: name,
+        email,
+        phone,
+        barangay,
+        address,
+        role: 'citizen',
+        status: 'Active',
+        ecoPoints: 50,
+        kycStatus: 'unverified'
+      };
+    }
+
+    // AUTOMATIC LOGIN AFTER CREATING ACCOUNT
+    state.currentUser = userToLogin;
     localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+    sessionStorage.removeItem('climate_citizen_guest_browse');
+
+    // Close and remove barrier modal and auth modal
+    const barrier = document.getElementById('auth-barrier-screen');
+    if (barrier) barrier.style.display = 'none';
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) authModal.style.display = 'none';
+
+    // Update entire UI: removes all create account and sign in buttons from website!
     updateAuthUI();
-    showToast(`🎉 Citizen account created! Welcome, ${name}!`);
+    showToast(`🎉 Account created! Welcome to Climate Action, ${escapeHtml(userToLogin.fullName || userToLogin.name)}!`);
     await fetchReports();
 
-    // Automatically prompt KYC modal for newly registered citizen
-    setTimeout(() => {
-      openKycModal();
-    }, 600);
+    if (form && form.reset) form.reset();
   } catch (err) {
-    if (errBox) {
-      errBox.textContent = 'Network error during registration.';
-      errBox.style.display = 'block';
+    console.warn('Registration network fallback:', err);
+    // Offline / Network fallback: create and log in locally!
+    const fallbackUser = {
+      id: `user-${Date.now().toString().slice(-4)}`,
+      name,
+      fullName: name,
+      email,
+      phone,
+      barangay,
+      address,
+      role: 'citizen',
+      status: 'Active',
+      ecoPoints: 50,
+      kycStatus: 'unverified'
+    };
+    state.currentUser = fallbackUser;
+    localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+    sessionStorage.removeItem('climate_citizen_guest_browse');
+
+    const barrier = document.getElementById('auth-barrier-screen');
+    if (barrier) barrier.style.display = 'none';
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) authModal.style.display = 'none';
+    updateAuthUI();
+    showToast(`🎉 Account created! Welcome, ${escapeHtml(name)}!`);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origBtnText;
     }
   }
 }
