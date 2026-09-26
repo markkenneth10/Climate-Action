@@ -305,10 +305,17 @@ let websiteConfig = {
 };
 
 const CONFIG_FILE = path.join(__dirname, 'website_config.json');
+const TMP_CONFIG_FILE = path.join('/tmp', 'climate_website_config.json');
 
 function saveConfigToDisk() {
   try {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(websiteConfig, null, 2), 'utf8');
+    const jsonStr = JSON.stringify(websiteConfig, null, 2);
+    try {
+      fs.writeFileSync(CONFIG_FILE, jsonStr, 'utf8');
+    } catch (_) {}
+    try {
+      fs.writeFileSync(TMP_CONFIG_FILE, jsonStr, 'utf8');
+    } catch (_) {}
   } catch (err) {
     console.warn('Could not save website config to disk:', err.message);
   }
@@ -316,8 +323,14 @@ function saveConfigToDisk() {
 
 function loadConfigFromDisk() {
   try {
+    let raw = null;
     if (fs.existsSync(CONFIG_FILE)) {
-      const saved = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+      raw = fs.readFileSync(CONFIG_FILE, 'utf8');
+    } else if (fs.existsSync(TMP_CONFIG_FILE)) {
+      raw = fs.readFileSync(TMP_CONFIG_FILE, 'utf8');
+    }
+    if (raw) {
+      const saved = JSON.parse(raw);
       if (saved && typeof saved === 'object') {
         websiteConfig = { ...websiteConfig, ...saved };
       }
@@ -1064,6 +1077,11 @@ const server = http.createServer(async (req, res) => {
         return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
       }
       const updates = await parseBody(req);
+      // Retain existing logoImageUrl if not explicitly removed or set to emoji
+      if (!updates.logoImageUrl && updates.logoType !== 'emoji' && websiteConfig.logoImageUrl) {
+        updates.logoImageUrl = websiteConfig.logoImageUrl;
+        updates.logoType = websiteConfig.logoType || 'image';
+      }
       websiteConfig = {
         ...websiteConfig,
         ...updates,
