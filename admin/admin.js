@@ -345,8 +345,14 @@ function switchAdminTab(tabName) {
 function toggleAdminMobileSidebar() {
   const sidebar = document.querySelector('.admin-sidebar');
   const backdrop = document.querySelector('.admin-sidebar-backdrop');
-  if (sidebar) sidebar.classList.toggle('mobile-open');
-  if (backdrop) backdrop.classList.toggle('active');
+  const isOpen = sidebar && sidebar.classList.contains('mobile-open');
+  if (isOpen) {
+    closeAdminMobileSidebar();
+  } else {
+    if (sidebar) sidebar.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('active');
+    document.body.classList.add('admin-drawer-open');
+  }
 }
 
 function closeAdminMobileSidebar() {
@@ -354,6 +360,7 @@ function closeAdminMobileSidebar() {
   const backdrop = document.querySelector('.admin-sidebar-backdrop');
   if (sidebar) sidebar.classList.remove('mobile-open');
   if (backdrop) backdrop.classList.remove('active');
+  document.body.classList.remove('admin-drawer-open');
 }
 
 // Refresh all telemetry
@@ -537,6 +544,17 @@ async function uploadImageFile(file, category = 'media') {
     throw new Error(err.error || 'Failed to upload image file');
   }
   return await res.json();
+}
+
+// Safe HTML escape to prevent XSS and prevent undefined function errors in KYC & user cards
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // Updates the dynamic browser tab favicon for the admin console
