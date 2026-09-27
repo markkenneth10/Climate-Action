@@ -576,6 +576,10 @@ async function syncWithSupabase() {
       // 1. Sync Configuration
       const remoteConfig = await supabaseClient.fetchConfigFromSupabase();
       if (remoteConfig && typeof remoteConfig === 'object' && Object.keys(remoteConfig).length > 0) {
+        if (websiteConfig.logoImageUrl && (!remoteConfig.logoImageUrl || remoteConfig.logoType !== 'image')) {
+          remoteConfig.logoImageUrl = websiteConfig.logoImageUrl;
+          remoteConfig.logoType = websiteConfig.logoType || 'image';
+        }
         websiteConfig = { ...websiteConfig, ...remoteConfig };
         saveConfigToDisk();
       } else {
@@ -1077,10 +1081,13 @@ const server = http.createServer(async (req, res) => {
         return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
       }
       const updates = await parseBody(req);
-      // Retain existing logoImageUrl if not explicitly removed or set to emoji
-      if (!updates.logoImageUrl && updates.logoType !== 'emoji' && websiteConfig.logoImageUrl) {
+      // Retain existing logoImageUrl permanently unless explicitly cleared with removeLogo=true
+      if (!updates.logoImageUrl && websiteConfig.logoImageUrl && updates.removeLogo !== true) {
         updates.logoImageUrl = websiteConfig.logoImageUrl;
-        updates.logoType = websiteConfig.logoType || 'image';
+        updates.logoType = 'image';
+      }
+      if (updates.logoImageUrl) {
+        updates.logoType = 'image';
       }
       websiteConfig = {
         ...websiteConfig,
@@ -1830,6 +1837,20 @@ const server = http.createServer(async (req, res) => {
 
     // USER WEB DATA DIRECTORY ACCESS: Strictly isolated to /public directory
     let reqPath = pathname === '/' ? '/index.html' : pathname;
+
+    // Fast memory cache check for uploaded images, seals, and brand assets
+    if (uploadedFilesCache.has(pathname)) {
+      const cached = uploadedFilesCache.get(pathname);
+      const ext = path.extname(pathname).toLowerCase();
+      const contentType = cached.contentType || MIME_TYPES[ext] || 'image/png';
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Length': cached.buffer.length,
+        'Cache-Control': 'public, max-age=86400, immutable'
+      });
+      return res.end(cached.buffer);
+    }
+
     const filePath = path.join(USER_PUBLIC_DIR, reqPath);
 
     // Security check: ensure filePath is strictly within USER_PUBLIC_DIR

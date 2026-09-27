@@ -225,6 +225,15 @@ const activities = [
 // Initialization on DOM Load
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Preload cached site branding and permanent logo instantly before network request
+  try {
+    const cachedConfig = JSON.parse(localStorage.getItem('climate_site_config') || localStorage.getItem('climate_brand_logo_updated') || '{}');
+    if (cachedConfig && (cachedConfig.logoImageUrl || cachedConfig.websiteName)) {
+      state.config = { ...state.config, ...cachedConfig };
+      applyConfigUI(state.config);
+    }
+  } catch (_) {}
+
   initCitizenSession();
   setupNavigation();
   loadAllData();
@@ -1243,10 +1252,19 @@ async function fetchConfig() {
   try {
     const res = await fetch('/api/config?_t=' + Date.now(), { cache: 'no-store' });
     const data = await res.json();
-    state.config = data.config || {};
+    const newConfig = data.config || {};
+    // Permanent Logo Guarantee: Never erase logoImageUrl if one was previously configured
+    if (!newConfig.logoImageUrl && state.config && state.config.logoImageUrl && newConfig.logoType !== 'emoji') {
+      newConfig.logoImageUrl = state.config.logoImageUrl;
+      newConfig.logoType = 'image';
+    }
+    state.config = { ...state.config, ...newConfig };
+    try {
+      localStorage.setItem('climate_site_config', JSON.stringify(state.config));
+    } catch (_) {}
     applyConfigUI(state.config);
   } catch (e) {
-    console.warn('Using default config', e);
+    console.warn('Using cached or default config', e);
   }
 }
 
@@ -1255,6 +1273,12 @@ function renderBrandLogoElement(el, c, size = 44) {
   const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
   const fallback = c.websiteLogo || '🌱';
   if (isImage) {
+    // If element already contains the identical logo image, DO NOT destroy and recreate the DOM node!
+    const existingImg = el.querySelector('img.brand-logo-img');
+    if (existingImg && existingImg.getAttribute('src') === c.logoImageUrl && el.classList.contains('has-image')) {
+      return; // Already actively rendered, prevent flicker
+    }
+
     el.classList.add('has-image');
     el.style.background = 'transparent';
     el.style.backgroundImage = 'none';
@@ -1266,8 +1290,12 @@ function renderBrandLogoElement(el, c, size = 44) {
     el.style.width = 'auto';
     el.style.maxWidth = '200px';
     el.style.height = `${size}px`;
-    el.innerHTML = `<img src="${c.logoImageUrl}" alt="Official Logo" class="brand-logo-img" style="height:100%!important; max-height:${size}px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.style.background=''; this.parentElement.style.backgroundImage=''; this.parentElement.style.boxShadow=''; this.parentElement.style.border=''; this.parentElement.style.padding=''; this.parentElement.style.borderRadius=''; this.parentElement.style.overflow=''; this.parentElement.style.width=''; this.parentElement.style.maxWidth=''; this.parentElement.style.height=''; this.parentElement.textContent='${fallback}';">`;
+    el.innerHTML = `<img src="${c.logoImageUrl}" alt="Official Logo" class="brand-logo-img" style="height:100%!important; max-height:${size}px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="console.warn('Logo image load error, retrying...'); setTimeout(() => { this.src = '${c.logoImageUrl}' + (('${c.logoImageUrl}'.includes('?') ? '&' : '?') + 'r=' + Date.now()); }, 2000);">`;
   } else {
+    // Only revert if there is no image configured at all
+    if (el.querySelector('img.brand-logo-img') && c.logoImageUrl) {
+      return;
+    }
     el.textContent = fallback;
     el.classList.remove('has-image');
     el.style.background = '';

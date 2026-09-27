@@ -1058,12 +1058,18 @@ async function loadCMSData() {
 async function handleSaveCMS(e) {
   e.preventDefault();
 
+  const logoUrlVal = document.getElementById('cms-logo-image-url').value.trim();
+  let logoTypeVal = document.getElementById('cms-logo-type').value || (logoUrlVal ? 'image' : 'emoji');
+  if (logoUrlVal) {
+    logoTypeVal = 'image';
+  }
+
   const updates = {
     websiteName: document.getElementById('cms-website-name').value.trim(),
     websiteSubtitle: document.getElementById('cms-website-subtitle').value.trim(),
     websiteLogo: document.getElementById('cms-website-logo').value.trim(),
-    logoType: document.getElementById('cms-logo-type').value || 'emoji',
-    logoImageUrl: document.getElementById('cms-logo-image-url').value.trim(),
+    logoType: logoTypeVal,
+    logoImageUrl: logoUrlVal,
     heroImageUrl: document.getElementById('cms-hero-image-url').value.trim(),
     aboutImageUrl: document.getElementById('cms-about-image-url').value.trim(),
     emergencyHotline: document.getElementById('cms-emergency-hotline').value.trim(),

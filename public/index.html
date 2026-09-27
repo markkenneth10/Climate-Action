@@ -19,6 +19,20 @@
 
   <!-- Design System CSS -->
   <link rel="stylesheet" href="/styles.css">
+  <script>
+    (function() {
+      try {
+        var raw = localStorage.getItem('climate_site_config') || localStorage.getItem('climate_brand_logo_updated');
+        if (raw) {
+          var cfg = JSON.parse(raw);
+          var logoUrl = cfg.logoImageUrl || (cfg.config && cfg.config.logoImageUrl);
+          if (logoUrl) {
+            window.__permanentLogoUrl = logoUrl;
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
 
@@ -131,6 +145,15 @@
       <!-- Left: Logo & Branding -->
       <div class="brand-wrapper" onclick="switchTab('dashboard')" role="button" aria-label="Go to Dashboard">
         <div class="brand-icon-box" id="site-logo-icon">🌱</div>
+        <script>
+          if (window.__permanentLogoUrl) {
+            var el = document.getElementById('site-logo-icon');
+            if (el) {
+              el.classList.add('has-image');
+              el.innerHTML = '<img src="' + window.__permanentLogoUrl + '" alt="Official Logo" class="brand-logo-img">';
+            }
+          }
+        </script>
         <div class="brand-text-block">
           <div class="brand-name-row">
             <span class="brand-name" id="site-brand-name">Climate Action</span>
