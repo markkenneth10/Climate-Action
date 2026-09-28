@@ -266,30 +266,35 @@ async function initCitizenSession() {
       if (parsed && (parsed.id === 'usr-mk-001' || parsed.id === 'citizen-mk-01')) {
         localStorage.removeItem(CITIZEN_STORAGE_KEY);
         state.currentUser = null;
-      } else if (parsed && parsed.email) {
+      } else if (parsed && (parsed.email || parsed.name)) {
         // Immediately restore user into state so the citizen is logged in with zero delay
         state.currentUser = parsed;
         updateAuthUI();
 
         // Background revalidation with server
         try {
-          const res = await fetch(`/api/user/profile?email=${encodeURIComponent(parsed.email)}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.user) {
-              state.currentUser = { ...parsed, ...data.user };
-              localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
-              updateAuthUI();
+          if (parsed.email) {
+            const res = await fetch(`/api/user/profile?email=${encodeURIComponent(parsed.email)}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.user) {
+                state.currentUser = { ...parsed, ...data.user };
+                if (!state.currentUser.email && parsed.email) {
+                  state.currentUser.email = parsed.email;
+                }
+                localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
+                updateAuthUI();
+              }
+            } else if (res.status === 404) {
+              // Re-sync local user to server so serverless cold starts seamlessly recover the user!
+              try {
+                await fetch('/api/auth/sync-client-session', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ user: parsed })
+                });
+              } catch (_) {}
             }
-          } else if (res.status === 404) {
-            // Re-sync local user to server so serverless cold starts seamlessly recover the user!
-            try {
-              await fetch('/api/auth/sync-client-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user: parsed })
-              });
-            } catch (_) {}
           }
         } catch (err) {
           console.warn('Profile background refresh fallback:', err);
@@ -299,7 +304,7 @@ async function initCitizenSession() {
         state.currentUser = null;
       }
     } catch (e) {
-      state.currentUser = null;
+      console.warn('Session parse error:', e);
     }
   } else {
     state.currentUser = null;
@@ -556,6 +561,7 @@ function renderProfileUI() {
 
   const nameEl = document.getElementById('profile-user-name');
   const bgyEl = document.getElementById('profile-user-barangay');
+  const emailPill = document.getElementById('profile-user-email-pill');
   const contEl = document.getElementById('profile-user-contacts');
   const pointsEl = document.getElementById('profile-eco-points');
   const levelEl = document.getElementById('profile-citizen-level');
@@ -567,7 +573,8 @@ function renderProfileUI() {
 
   if (nameEl) nameEl.textContent = u.fullName || u.name;
   if (bgyEl) bgyEl.textContent = `📍 ${u.barangay || 'Metro Verde City'}`;
-  if (contEl) contEl.textContent = `📧 ${u.email} • 📱 ${u.phone || 'No phone set'}`;
+  if (emailPill) emailPill.textContent = u.email || 'Registered Citizen';
+  if (contEl) contEl.textContent = `📱 ${u.phone || 'No phone set'}`;
   if (pointsEl) pointsEl.innerHTML = `${u.ecoPoints || 50} <span style="font-size: 0.9rem;">pts</span>`;
   if (levelEl) levelEl.textContent = u.level || 'Eco Citizen';
   if (rankEl) rankEl.innerHTML = `Rank: <strong>#${u.rank || 1} in LGU</strong> • Status: <strong>${u.status || 'Active'}</strong>`;
@@ -686,6 +693,7 @@ function renderProfileUI() {
   }
 
   // Pre-fill profile settings form
+  const editEmail = document.getElementById('edit-profile-email');
   const editName = document.getElementById('edit-profile-name');
   const editPhone = document.getElementById('edit-profile-phone');
   const editBgy = document.getElementById('edit-profile-barangay');
@@ -694,6 +702,7 @@ function renderProfileUI() {
   const editEmgName = document.getElementById('edit-profile-emg-name');
   const editEmgPhone = document.getElementById('edit-profile-emg-phone');
 
+  if (editEmail) editEmail.value = u.email || '';
   if (editName) editName.value = u.fullName || u.name || '';
   if (editPhone) editPhone.value = u.phone || '';
   if (editBgy && u.barangay) editBgy.value = u.barangay;
@@ -1913,6 +1922,15 @@ function initOrUpdateFullMap() {
       `);
 
       circle.on('click', () => {
+        // Automatically zoom and center the map on the selected incident report marker
+        if (state.fullMapInstance) {
+          state.fullMapInstance.flyTo([r.latitude, r.longitude], 16, {
+            animate: true,
+            duration: 1.2
+          });
+          circle.openPopup();
+        }
+
         const pinBox = document.getElementById('map-pin-detail-box');
         if (pinBox) {
           pinBox.innerHTML = `

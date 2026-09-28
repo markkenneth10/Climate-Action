@@ -30,38 +30,42 @@ const MIME_TYPES = {
 
 // Uploads Directory & In-Memory Media Cache
 const UPLOADS_DIR = path.join(USER_PUBLIC_DIR, 'uploads');
+const TMP_UPLOADS_DIR = path.join('/tmp', 'climate_uploads');
 const uploadedFilesCache = new Map();
 
 function initUploadsCache() {
-  try {
-    if (!fs.existsSync(UPLOADS_DIR)) {
-      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    } else {
-      const files = fs.readdirSync(UPLOADS_DIR);
-      files.forEach(file => {
-        try {
-          const filePath = path.join(UPLOADS_DIR, file);
-          const stat = fs.statSync(filePath);
-          if (stat.isFile()) {
-            const ext = path.extname(file).toLowerCase();
-            const contentType = MIME_TYPES[ext] || 'image/png';
-            const buffer = fs.readFileSync(filePath);
-            uploadedFilesCache.set(`/uploads/${file}`, {
-              filename: file,
-              url: `/uploads/${file}`,
-              category: file.split('_')[0] || 'media',
-              buffer,
-              contentType,
-              size: buffer.length,
-              timestamp: stat.mtimeMs
-            });
-          }
-        } catch (_) {}
-      });
+  const dirs = [UPLOADS_DIR, TMP_UPLOADS_DIR];
+  dirs.forEach(dir => {
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      } else {
+        const files = fs.readdirSync(dir);
+        files.forEach(file => {
+          try {
+            const filePath = path.join(dir, file);
+            const stat = fs.statSync(filePath);
+            if (stat.isFile()) {
+              const ext = path.extname(file).toLowerCase();
+              const contentType = MIME_TYPES[ext] || 'image/png';
+              const buffer = fs.readFileSync(filePath);
+              uploadedFilesCache.set(`/uploads/${file}`, {
+                filename: file,
+                url: `/uploads/${file}`,
+                category: file.split('_')[0] || 'media',
+                buffer,
+                contentType,
+                size: buffer.length,
+                timestamp: stat.mtimeMs
+              });
+            }
+          } catch (_) {}
+        });
+      }
+    } catch (err) {
+      console.warn('Uploads directory init warning for ' + dir + ':', err.message);
     }
-  } catch (err) {
-    console.warn('Uploads directory init warning:', err.message);
-  }
+  });
 }
 initUploadsCache();
 
@@ -234,12 +238,13 @@ function saveUsersToDisk() {
     const dataStr = JSON.stringify(userStore, null, 2);
     try {
       fs.writeFileSync(USERS_FILE, dataStr, 'utf8');
-    } catch (_) {
-      try {
-        fs.writeFileSync(TMP_USERS_FILE, dataStr, 'utf8');
-      } catch (err2) {
-        console.warn('Could not write users to /tmp:', err2.message);
-      }
+    } catch (err1) {
+      console.warn('Could not write users to USERS_FILE:', err1.message);
+    }
+    try {
+      fs.writeFileSync(TMP_USERS_FILE, dataStr, 'utf8');
+    } catch (err2) {
+      console.warn('Could not write users to TMP_USERS_FILE:', err2.message);
     }
   } catch (err) {
     console.warn('Could not save users to disk:', err.message);
@@ -248,27 +253,43 @@ function saveUsersToDisk() {
 
 function loadUsersFromDisk() {
   try {
-    let raw = null;
+    const map = new Map();
+    // Load from USERS_FILE
     if (fs.existsSync(USERS_FILE)) {
-      raw = fs.readFileSync(USERS_FILE, 'utf8');
-    } else if (fs.existsSync(TMP_USERS_FILE)) {
-      raw = fs.readFileSync(TMP_USERS_FILE, 'utf8');
+      try {
+        const raw = fs.readFileSync(USERS_FILE, 'utf8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data)) {
+          data.forEach(u => {
+            if (u && u.email) map.set(u.email.toLowerCase().trim(), u);
+          });
+        }
+      } catch (_) {}
     }
-    if (raw) {
-      const data = JSON.parse(raw);
-      if (Array.isArray(data) && data.length > 0) {
-        const map = new Map();
-        data.forEach(u => {
-          if (u && u.email) map.set(u.email.toLowerCase().trim(), u);
-        });
-        userStore.forEach(u => {
-          if (u && u.email) {
-            const diskU = map.get(u.email.toLowerCase().trim());
-            map.set(u.email.toLowerCase().trim(), diskU ? { ...diskU, ...u } : u);
-          }
-        });
-        userStore = Array.from(map.values());
+    // Also load and merge from TMP_USERS_FILE
+    if (fs.existsSync(TMP_USERS_FILE)) {
+      try {
+        const rawTmp = fs.readFileSync(TMP_USERS_FILE, 'utf8');
+        const dataTmp = JSON.parse(rawTmp);
+        if (Array.isArray(dataTmp)) {
+          dataTmp.forEach(u => {
+            if (u && u.email) {
+              const existing = map.get(u.email.toLowerCase().trim());
+              map.set(u.email.toLowerCase().trim(), existing ? { ...existing, ...u } : u);
+            }
+          });
+        }
+      } catch (_) {}
+    }
+    // Merge existing in-memory users
+    userStore.forEach(u => {
+      if (u && u.email) {
+        const existing = map.get(u.email.toLowerCase().trim());
+        map.set(u.email.toLowerCase().trim(), existing ? { ...existing, ...u } : u);
       }
+    });
+    if (map.size > 0) {
+      userStore = Array.from(map.values());
     }
   } catch (err) {
     console.warn('Could not load users from disk:', err.message);
@@ -763,9 +784,20 @@ const server = http.createServer(async (req, res) => {
       loadUsersFromDisk();
       let user = userStore.find(u => (u.email || '').toLowerCase() === email && u.password === pass);
       if (!user) {
-        // Check if user exists but password differed
+        // Check if user exists but password differed or was rehydrated
         const userByEmail = userStore.find(u => (u.email || '').toLowerCase() === email);
         if (userByEmail) {
+          // If the account exists and was rehydrated without a password, or user signs in with password:
+          if (!userByEmail.password && pass) {
+            userByEmail.password = pass;
+            saveUsersToDisk();
+            const { password, ...safeUser } = userByEmail;
+            return sendJson(200, {
+              success: true,
+              user: safeUser,
+              role: 'citizen'
+            });
+          }
           return sendJson(401, { error: 'Incorrect password for this account. Please try again.' });
         }
         return sendJson(401, { error: 'No citizen account found for this email. Please click "Create Account".' });
@@ -787,26 +819,48 @@ const server = http.createServer(async (req, res) => {
       const data = await parseBody(req);
       if (data && data.user && data.user.email) {
         loadUsersFromDisk();
-        const existing = userStore.find(u => (u.email || '').toLowerCase() === data.user.email.toLowerCase().trim());
+        const userEmail = data.user.email.toLowerCase().trim();
+        let existing = userStore.find(u => (u.email || '').toLowerCase() === userEmail);
         if (!existing) {
           const rehydrated = {
             id: data.user.id || `user-${Date.now().toString().slice(-4)}`,
             name: (data.user.fullName || data.user.name || 'Citizen').trim(),
-            email: data.user.email.toLowerCase().trim(),
+            email: userEmail,
+            password: data.user.password || '',
             phone: data.user.phone || '+63 900 000 0000',
             barangay: data.user.barangay || 'Barangay Makilas',
             address: data.user.address || '',
+            city: data.user.city || 'Metro Verde City',
+            province: data.user.province || 'Rizal',
+            zip: data.user.zip || '1920',
+            bio: data.user.bio || '',
+            avatar: data.user.avatar || '',
             role: 'citizen',
             status: 'Active',
             ecoPoints: data.user.ecoPoints || 50,
+            level: data.user.level || 'Eco Citizen',
+            badges: data.user.badges || ['🌱 Welcome Pioneer'],
             kycStatus: data.user.kycStatus || 'unverified',
             createdAt: data.user.createdAt || Date.now()
           };
           userStore.push(rehydrated);
           saveUsersToDisk();
-          return sendJson(200, { success: true, synced: true });
+          return sendJson(200, { success: true, synced: true, user: rehydrated });
+        } else {
+          // Update existing with fresh client data
+          if (data.user.ecoPoints && data.user.ecoPoints > (existing.ecoPoints || 0)) {
+            existing.ecoPoints = data.user.ecoPoints;
+          }
+          if (data.user.avatar && !existing.avatar) {
+            existing.avatar = data.user.avatar;
+          }
+          if (data.user.password && !existing.password) {
+            existing.password = data.user.password;
+          }
+          saveUsersToDisk();
+          const { password, ...safeUser } = existing;
+          return sendJson(200, { success: true, existing: true, user: safeUser });
         }
-        return sendJson(200, { success: true, existing: true });
       }
       return sendJson(400, { error: 'Valid user session required' });
     }
@@ -818,9 +872,24 @@ const server = http.createServer(async (req, res) => {
       if (!email) {
         return sendJson(400, { error: 'User email parameter required' });
       }
-      const user = userStore.find(u => (u.email || '').toLowerCase() === email);
+      let user = userStore.find(u => (u.email || '').toLowerCase() === email);
       if (!user) {
-        return sendJson(404, { error: 'User profile not found' });
+        // Auto-rehydrate citizen from email so user profile is never abruptly broken
+        const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        user = {
+          id: `user-${Date.now().toString().slice(-4)}`,
+          name: defaultName,
+          email: email,
+          phone: '+63 900 000 0000',
+          barangay: 'Barangay Makilas',
+          role: 'citizen',
+          status: 'Active',
+          ecoPoints: 50,
+          kycStatus: 'unverified',
+          createdAt: Date.now()
+        };
+        userStore.push(user);
+        saveUsersToDisk();
       }
       const { password, ...safeUser } = user;
       return sendJson(200, { success: true, user: safeUser });
@@ -833,9 +902,22 @@ const server = http.createServer(async (req, res) => {
       if (!email) {
         return sendJson(400, { error: 'User email required to update profile' });
       }
-      const user = userStore.find(u => u.email.toLowerCase() === email);
+      loadUsersFromDisk();
+      let user = userStore.find(u => u.email.toLowerCase() === email);
       if (!user) {
-        return sendJson(404, { error: 'User profile not found' });
+        user = {
+          id: `user-${Date.now().toString().slice(-4)}`,
+          name: (data.name || email.split('@')[0]).trim(),
+          email: email,
+          phone: (data.phone || '+63 900 000 0000').trim(),
+          barangay: data.barangay || 'Barangay Makilas',
+          role: 'citizen',
+          status: 'Active',
+          ecoPoints: 50,
+          kycStatus: 'unverified',
+          createdAt: Date.now()
+        };
+        userStore.push(user);
       }
 
       if (data.name) user.name = data.name.trim();
@@ -1539,14 +1621,22 @@ const server = http.createServer(async (req, res) => {
         timestamp: Date.now()
       });
 
-      // Write to public/uploads directory on disk
+      // Write to public/uploads directory on disk and persistent /tmp backup
       try {
         if (!fs.existsSync(UPLOADS_DIR)) {
           fs.mkdirSync(UPLOADS_DIR, { recursive: true });
         }
         fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
       } catch (fsErr) {
-        console.warn('Could not write uploaded file to disk (served from memory cache):', fsErr.message);
+        console.warn('Could not write uploaded file to public/uploads:', fsErr.message);
+      }
+      try {
+        if (!fs.existsSync(TMP_UPLOADS_DIR)) {
+          fs.mkdirSync(TMP_UPLOADS_DIR, { recursive: true });
+        }
+        fs.writeFileSync(path.join(TMP_UPLOADS_DIR, filename), buffer);
+      } catch (tmpErr) {
+        console.warn('Could not write uploaded file to /tmp/climate_uploads:', tmpErr.message);
       }
 
       // Auto-apply to website configuration if category matches
@@ -1556,14 +1646,17 @@ const server = http.createServer(async (req, res) => {
         websiteConfig.logoImageUrl = urlPath;
         websiteConfig.updatedAt = Date.now();
         saveConfigToDisk();
+        supabaseClient.syncConfigToSupabase(websiteConfig).catch(() => {});
       } else if (cat === 'hero') {
         websiteConfig.heroImageUrl = urlPath;
         websiteConfig.updatedAt = Date.now();
         saveConfigToDisk();
+        supabaseClient.syncConfigToSupabase(websiteConfig).catch(() => {});
       } else if (cat === 'about') {
         websiteConfig.aboutImageUrl = urlPath;
         websiteConfig.updatedAt = Date.now();
         saveConfigToDisk();
+        supabaseClient.syncConfigToSupabase(websiteConfig).catch(() => {});
       }
 
       return sendJson(200, {
@@ -1849,6 +1942,36 @@ const server = http.createServer(async (req, res) => {
         'Cache-Control': 'public, max-age=86400, immutable'
       });
       return res.end(cached.buffer);
+    }
+
+    // Disk fallback for uploaded images across both directories
+    if (pathname.startsWith('/uploads/')) {
+      const upName = path.basename(pathname);
+      const candidates = [path.join(UPLOADS_DIR, upName), path.join(TMP_UPLOADS_DIR, upName)];
+      for (const cand of candidates) {
+        try {
+          if (fs.existsSync(cand) && fs.statSync(cand).isFile()) {
+            const ext = path.extname(cand).toLowerCase();
+            const contentType = MIME_TYPES[ext] || 'image/png';
+            const buffer = fs.readFileSync(cand);
+            uploadedFilesCache.set(pathname, {
+              filename: upName,
+              url: pathname,
+              category: upName.split('_')[0] || 'media',
+              buffer,
+              contentType,
+              size: buffer.length,
+              timestamp: Date.now()
+            });
+            res.writeHead(200, {
+              'Content-Type': contentType,
+              'Content-Length': buffer.length,
+              'Cache-Control': 'public, max-age=86400, immutable'
+            });
+            return res.end(buffer);
+          }
+        } catch (_) {}
+      }
     }
 
     const filePath = path.join(USER_PUBLIC_DIR, reqPath);

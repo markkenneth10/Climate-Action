@@ -980,8 +980,8 @@ async function loadCMSData() {
     document.getElementById('cms-emergency-hotline').value = config.emergencyHotline || '';
 
     // Logo state & Image preview
-    const logoType = config.logoType || (config.logoImageUrl ? 'image' : 'emoji');
     const logoUrl = config.logoImageUrl || '';
+    const logoType = (logoUrl && config.logoType !== 'emoji') ? 'image' : (config.logoType || (logoUrl ? 'image' : 'emoji'));
     document.getElementById('cms-logo-type').value = logoType;
     document.getElementById('cms-logo-image-url').value = logoUrl;
 
@@ -996,12 +996,13 @@ async function loadCMSData() {
       }
       if (previewPh) previewPh.style.display = 'none';
       if (removeBtn) removeBtn.style.display = 'inline-block';
+      setLogoMode('image');
     } else {
       if (previewImg) previewImg.style.display = 'none';
       if (previewPh) previewPh.style.display = 'block';
       if (removeBtn) removeBtn.style.display = 'none';
+      setLogoMode(logoType);
     }
-    setLogoMode(logoType);
 
     // Hero Banner Image
     const heroUrl = config.heroImageUrl || '';

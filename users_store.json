@@ -72,5 +72,42 @@
     "reportsCount": 0,
     "joinedAt": 1790529176047,
     "createdAt": 1790529176047
+  },
+  {
+    "id": "user-9289",
+    "name": "Maria Cruz",
+    "email": "cruz.maria.registered@metroverde.ph",
+    "password": "SecurePassword2026!",
+    "phone": "+63 917 222 3333",
+    "barangay": "Barangay Makilas",
+    "address": "Block 10 Lot 4",
+    "city": "Metro Verde City",
+    "province": "Rizal",
+    "zip": "1920",
+    "bio": "",
+    "avatar": "",
+    "emergencyContactName": "",
+    "emergencyContactPhone": "",
+    "role": "citizen",
+    "status": "Active",
+    "ecoPoints": 50,
+    "level": "Eco Citizen",
+    "badges": [
+      "🌱 Welcome Pioneer"
+    ],
+    "rank": 3,
+    "kycStatus": "unverified",
+    "kycIdType": "",
+    "kycIdNumber": "",
+    "kycFrontImage": "",
+    "kycBackImage": "",
+    "kycSelfieImage": "",
+    "kycSubmittedAt": null,
+    "kycReviewedAt": null,
+    "kycReviewedBy": "",
+    "kycRejectReason": "",
+    "reportsCount": 0,
+    "joinedAt": 1790597679289,
+    "createdAt": 1790597679289
   }
 ]

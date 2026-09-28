@@ -1071,8 +1071,13 @@
               <div id="profile-user-barangay" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
                 📍 Loading location...
               </div>
-              <div id="profile-user-contacts" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
-                📧 citizen@email.com • 📱 +63 000 000 0000
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.35rem;">
+                <span style="display: inline-flex; align-items: center; gap: 0.35rem; background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.82rem; font-weight: 700;">
+                  <span>📧</span> <span id="profile-user-email-pill">citizen@email.com</span>
+                </span>
+                <span id="profile-user-contacts" style="font-size: 0.82rem; color: var(--text-muted);">
+                  📱 +63 000 000 0000
+                </span>
               </div>
             </div>
           </div>
@@ -1133,6 +1138,11 @@
         </h3>
         <form id="profile-settings-form" onsubmit="handleSaveProfileSettings(event)">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label" for="edit-profile-email">Registered Email Address (Official Citizen Account)</label>
+              <input type="email" id="edit-profile-email" class="form-control" readonly style="background: #F8FAFC; color: #1E293B; font-weight: 700; cursor: not-allowed; border-color: #CBD5E1;">
+              <small style="font-size: 0.72rem; color: var(--text-muted);">This is your official registered citizen portal login email address.</small>
+            </div>
             <div class="form-group">
               <label class="form-label" for="edit-profile-name">Full Legal Name *</label>
               <input type="text" id="edit-profile-name" class="form-control" required>
