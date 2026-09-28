@@ -2297,9 +2297,9 @@ textarea.form-control {
   }
 
   .notif-dropdown-menu {
-    right: -75px;
-    max-width: calc(100vw - 20px);
-    width: 290px;
+    right: 0;
+    max-width: calc(100vw - 24px);
+    width: 310px;
   }
 
   .nav-sub-bar {
