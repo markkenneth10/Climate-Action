@@ -76,21 +76,7 @@
       </div>
 
       <div class="admin-topbar-right">
-        <div class="admin-user-pill">
-          <div class="admin-avatar-circle" id="admin-avatar-initials">MK</div>
-          <div class="admin-user-details" style="text-align: left;">
-            <div style="font-weight: 800; font-size: 0.85rem; color: #fff;" id="admin-profile-name">Mark Kenneth Ulgasan</div>
-            <div style="font-size: 0.7rem; color: #A7F3D0;" id="admin-profile-dept">Executive Directorate</div>
-          </div>
-        </div>
-
-        <a href="/" target="_blank" class="btn-admin-outline" style="text-decoration: none; font-size: 0.82rem; background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.3); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.85rem; font-weight: 700;" title="Open Citizen Portal in New Tab">
-          <span class="admin-site-link-text">Public Website ↗</span>
-        </a>
-
-        <button type="button" onclick="exitDashboard(true)" class="btn-admin-outline" style="color: #FECACA; border-color: rgba(239, 68, 68, 0.4); background: rgba(127, 29, 29, 0.3); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.48rem 0.85rem; font-weight: 700; cursor: pointer;" title="Sign out of Administrative Console">
-          <span class="admin-signout-text">Sign Out</span>
-        </button>
+        <!-- Clean topbar: Profile details and actions moved to Admin Settings tab -->
       </div>
     </header>
 
@@ -840,6 +826,21 @@
           <div style="margin-bottom: 1.5rem;">
             <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff;">Super Admin Security & Credentials Settings</h2>
             <p style="font-size: 0.85rem; color: #94a3b8;">Change Super Admin email, password, and system administrator identity</p>
+          </div>
+
+          <div class="admin-card" style="max-width: 620px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <div>
+              <div style="font-weight: 800; font-size: 1rem; color: #fff;" id="admin-settings-profile-name">Mark Kenneth Ulgasan</div>
+              <div style="font-size: 0.8rem; color: #10B981;" id="admin-settings-profile-dept">Executive Directorate • Super Administrator</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <a href="/" target="_blank" class="btn-admin-outline" style="text-decoration: none; font-size: 0.82rem; background: rgba(16,185,129,0.15); color: #34d399; border-color: rgba(52,211,153,0.3); padding: 0.45rem 0.8rem; font-weight: 700;">
+                Public Website ↗
+              </a>
+              <button type="button" onclick="exitDashboard(true)" class="btn-admin-outline" style="color: #f87171; border-color: rgba(239,68,68,0.3); background: rgba(127,29,29,0.2); padding: 0.45rem 0.8rem; font-weight: 700; cursor: pointer;">
+                Sign Out
+              </button>
+            </div>
           </div>
 
           <div class="admin-card" style="max-width: 620px;">

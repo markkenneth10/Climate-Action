@@ -680,28 +680,10 @@ const server = http.createServer(async (req, res) => {
       loadUsersFromDisk();
       let user = userStore.find(u => (u.email || '').toLowerCase() === email);
       if (!user) {
-        // Auto-rehydrate or create user if not found on disk, so user can always log in
-        const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        user = {
-          id: `user-${Date.now().toString().slice(-4)}`,
-          name: defaultName,
-          email: email,
-          password: pass || 'password123',
-          phone: '+63 917 123 4567',
-          barangay: 'Barangay Makilas',
-          role: 'citizen',
-          status: 'Active',
-          ecoPoints: 50,
-          kycStatus: 'unverified',
-          createdAt: Date.now()
-        };
-        userStore.push(user);
-        saveUsersToDisk();
-      } else {
-        if (pass) {
-          user.password = pass;
-          saveUsersToDisk();
-        }
+        return sendJson(401, { error: 'No citizen account found for this email. Please register first.' });
+      }
+      if (pass && user.password && user.password !== pass) {
+        return sendJson(401, { error: 'Incorrect password. Please try again.' });
       }
       if (user.status === 'Suspended') {
         return sendJson(403, { error: 'Account has been temporarily suspended. Contact CENRO support.' });
@@ -1214,6 +1196,7 @@ const server = http.createServer(async (req, res) => {
 
     // User Information & Analytics (Admin Area)
     if (pathname === '/api/admin/users' && req.method === 'GET') {
+      loadUsersFromDisk();
       const safeUsers = userStore.map(({ password, ...u }) => u);
       return sendJson(200, {
         users: safeUsers,
