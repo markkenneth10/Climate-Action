@@ -2337,6 +2337,34 @@ function switchTab(tabName) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// Dropdown Menu Toggles & Handlers
+function closeAllDropdowns() {
+  const userMenu = document.getElementById('user-dropdown-menu');
+  if (userMenu) userMenu.classList.remove('active');
+  const notifMenu = document.getElementById('notif-dropdown-menu');
+  if (notifMenu) notifMenu.classList.remove('active');
+}
+
+function toggleUserDropdown(event) {
+  if (event) event.stopPropagation();
+  const userMenu = document.getElementById('user-dropdown-menu');
+  const notifMenu = document.getElementById('notif-dropdown-menu');
+  if (notifMenu) notifMenu.classList.remove('active');
+  if (userMenu) {
+    userMenu.classList.toggle('active');
+  }
+}
+
+function toggleNotificationsMenu(event) {
+  if (event) event.stopPropagation();
+  const notifMenu = document.getElementById('notif-dropdown-menu');
+  const userMenu = document.getElementById('user-dropdown-menu');
+  if (userMenu) userMenu.classList.remove('active');
+  if (notifMenu) {
+    notifMenu.classList.toggle('active');
+  }
+}
+
 // Global click handlers to dismiss dropdowns
 function setupGlobalClickHandlers() {
   document.addEventListener('click', () => {

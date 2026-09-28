@@ -2178,9 +2178,10 @@ textarea.form-control {
     max-width: 100vw;
   }
 
-  /* Hide Mobile Bottom Navigation on mobile devices as requested */
+  /* Show Mobile Bottom Navigation on mobile and tablet devices as requested */
   .mobile-bottom-nav {
-    display: none !important;
+    display: flex;
+    height: var(--bottom-nav-height);
   }
 
   /* Header adjustments for small phone screens */
