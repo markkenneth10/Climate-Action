@@ -58,7 +58,7 @@ const articles = [
 // 6 Core Climate Information Pillars (Modal data)
 const climatePillars = {
   'climate-change': {
-    title: "🌡️ Climate Change Realities in Metro Verde",
+    title: "Climate Change Realities in Metro Verde",
     subtitle: "Understanding local risks, sea-surface warming, and adaptation pathways",
     image: "/assets/climate_change_thumb_1789457800658.jpg",
     content: `
@@ -75,7 +75,7 @@ const climatePillars = {
     `
   },
   'flood-safety': {
-    title: "🌊 Stormwater & Flash Flood Preparedness",
+    title: "Stormwater & Flash Flood Preparedness",
     subtitle: "Protecting life, waterways, and community drainage corridors",
     image: "https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=600&q=80",
     content: `
@@ -90,7 +90,7 @@ const climatePillars = {
     `
   },
   'forest-protection': {
-    title: "🌳 Watershed & Urban Forest Conservation",
+    title: "Watershed & Urban Forest Conservation",
     subtitle: "Preserving ecological canopy, slopes, and biodiversity",
     image: "/assets/climate_hero_banner.jpg",
     content: `
@@ -104,7 +104,7 @@ const climatePillars = {
     `
   },
   'waste-mgmt': {
-    title: "♻️ Ecological Solid Waste Management (RA 9003)",
+    title: "Ecological Solid Waste Management (RA 9003)",
     subtitle: "Source segregation, material recovery, and plastic elimination",
     image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80",
     content: `
@@ -119,7 +119,7 @@ const climatePillars = {
     `
   },
   'water-protection': {
-    title: "💧 Freshwater & Aquifer Protection (RA 9275)",
+    title: "Freshwater & Aquifer Protection (RA 9275)",
     subtitle: "Preventing industrial effluent discharge and toxic water contamination",
     image: "https://images.unsplash.com/photo-1618083707368-b3823daa2726?auto=format&fit=crop&w=600&q=80",
     content: `
@@ -134,7 +134,7 @@ const climatePillars = {
     `
   },
   'energy-saving': {
-    title: "☀️ Low-Carbon Living & Energy Efficiency",
+    title: "Low-Carbon Living & Energy Efficiency",
     subtitle: "Micro-actions to reduce municipal carbon footprint and grid strain",
     image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=600&q=80",
     content: `
@@ -253,7 +253,7 @@ function dismissBarrierToGuest() {
   sessionStorage.setItem('climate_citizen_guest_browse', 'true');
   const barrier = document.getElementById('auth-barrier-screen');
   if (barrier) barrier.style.display = 'none';
-  showToast('👁️ Browsing as guest. Account creation & verification are required to submit reports.');
+  showToast('Browsing as guest. Citizen account and verification are required to submit reports.');
 }
 
 // 1. Citizen Session Handling & Authentication
@@ -358,7 +358,7 @@ function updateAuthUI() {
             <div class="user-text-info">
               <div class="user-name-title">${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</div>
               <div class="user-role-subtitle">
-                <span>${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified Citizen' : '⏳ Action Needed'}</span>
+                <span>${state.currentUser.kycStatus === 'verified' ? 'Verified Citizen' : 'ID Verification Needed'}</span>
                 <span style="font-size:0.6rem;">▼</span>
               </div>
             </div>
@@ -370,30 +370,28 @@ function updateAuthUI() {
               <div style="font-weight: 800; font-size: 0.95rem; color: var(--primary-dark);">${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(state.currentUser.email)}</div>
               <div class="user-dropdown-stat-row">
-                <span>🌱 Eco-Points:</span>
-                <strong style="color: var(--primary-light); font-size: 0.9rem;">${state.currentUser.ecoPoints || 50} pts</strong>
+                <span>Status:</span>
+                <strong style="color: var(--primary-light); font-size: 0.9rem;">Active Citizen</strong>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem;">
-                <span>Rank: <strong>#${state.currentUser.rank || 1} in LGU</strong></span>
-                <span>KYC: <strong>${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified' : '⏳ ' + (state.currentUser.kycStatus || 'Unverified')}</strong></span>
+                <span>Standing: <strong>Good Standing</strong></span>
+                <span>ID: <strong>${state.currentUser.kycStatus === 'verified' ? 'Verified' : (state.currentUser.kycStatus === 'pending' ? 'Pending Review' : 'Unverified')}</strong></span>
               </div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
               <button class="dropdown-item-link" onclick="switchTab('profile'); closeAllDropdowns();">
-                <span>👤</span> View Citizen Profile & KYC
+                View Citizen Profile & KYC
               </button>
               <button class="dropdown-item-link" onclick="switchTab('tracker'); closeAllDropdowns();">
-                <span>📋</span> My Incident Reports
+                My Incident Reports
               </button>
-              <button class="dropdown-item-link" onclick="switchTab('quiz'); closeAllDropdowns();">
-                <span>🏆</span> Climate Challenge & Badges
-              </button>
+              
               <button class="dropdown-item-link" onclick="switchTab('activities'); closeAllDropdowns();">
-                <span>🌿</span> Joined Activities
+                Community Activities
               </button>
               <button class="dropdown-item-link text-danger" onclick="handleCitizenLogout(); closeAllDropdowns();">
-                <span>🚪</span> Sign Out
+                Sign Out
               </button>
             </div>
           </div>
@@ -407,7 +405,7 @@ function updateAuthUI() {
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
           <div>
             <div style="font-weight: 800; font-size: 0.9rem; color: #fff;">${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</div>
-            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.85);">${state.currentUser.ecoPoints || 50} Eco-Points • ${state.currentUser.kycStatus === 'verified' ? '🛡️ Verified' : '⏳ Action Needed'}</div>
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.85);">${state.currentUser.kycStatus === 'verified' ? 'Verified Citizen' : 'ID Needed'}</div>
           </div>
           <button onclick="handleCitizenLogout(); closeMobileDrawer();" style="background: rgba(255,255,255,0.22); border:none; color:#fff; font-size:0.75rem; padding:0.35rem 0.7rem; border-radius: 999px; cursor:pointer; font-weight: 600;">Sign Out</button>
         </div>
@@ -450,7 +448,7 @@ function updateAuthUI() {
     if (authContainer) {
       authContainer.innerHTML = `
         <button class="btn-citizen-signin" onclick="setBarrierMode('register'); showAuthBarrier();">
-          🌱 Create Account / Sign In
+          Create Account / Sign In
         </button>
       `;
     }
@@ -479,7 +477,7 @@ function updateReportingKycGateCard() {
   if (!state.currentUser) {
     // Case 1: Guest / Not Logged In
     gateCard.innerHTML = `
-      <div style="font-size: 3.2rem; margin-bottom: 0.75rem;">🔒</div>
+      <div style="margin-bottom: 0.75rem;"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-light);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
       <div style="display: inline-block; background: var(--primary-light); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
         Account & Verification Required
       </div>
@@ -491,10 +489,10 @@ function updateReportingKycGateCard() {
       </p>
       <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
         <button class="btn-primary" onclick="setBarrierMode('register'); showAuthBarrier();" style="padding: 0.8rem 1.6rem; font-size: 0.95rem;">
-          🌱 Create Citizen Account
+          Create Citizen Account
         </button>
         <button class="btn-secondary" onclick="setBarrierMode('login'); showAuthBarrier();" style="padding: 0.8rem 1.4rem; font-size: 0.95rem;">
-          🔑 Sign In
+          Sign In
         </button>
       </div>
     `;
@@ -504,7 +502,7 @@ function updateReportingKycGateCard() {
   const status = state.currentUser.kycStatus || 'unverified';
   if (status === 'pending') {
     gateCard.innerHTML = `
-      <div style="font-size: 3rem; margin-bottom: 0.75rem;">⏳</div>
+      <div style="margin-bottom: 0.75rem;"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--amber);"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
       <div style="display: inline-block; background: var(--amber-dark); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
         Verification Pending CENRO Review
       </div>
@@ -516,16 +514,16 @@ function updateReportingKycGateCard() {
       </p>
       <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
         <button class="btn-primary" onclick="openKycModal()" style="padding: 0.75rem 1.5rem;">
-          🪪 View / Re-upload Submitted Documents
+          View Submitted Documents
         </button>
         <button class="btn-secondary" onclick="switchTab('tracker')" style="padding: 0.75rem 1.5rem;">
-          📋 View Community Incident Tracker
+          View Community Incident Tracker
         </button>
       </div>
     `;
   } else if (status === 'rejected') {
     gateCard.innerHTML = `
-      <div style="font-size: 3rem; margin-bottom: 0.75rem;">❌</div>
+      <div style="margin-bottom: 0.75rem;"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--red);"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></div>
       <div style="display: inline-block; background: var(--red); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
         Verification Rejected / Incomplete
       </div>
@@ -539,13 +537,13 @@ function updateReportingKycGateCard() {
         Please re-upload clear photos of a valid Philippine government-issued ID to activate incident reporting.
       </p>
       <button class="btn-primary" onclick="openKycModal()" style="padding: 0.75rem 1.5rem;">
-        🪪 Upload Valid Government ID
+        Upload Valid Government ID
       </button>
     `;
   } else {
     // Unverified
     gateCard.innerHTML = `
-      <div style="font-size: 3.2rem; margin-bottom: 0.75rem;">🛡️</div>
+      <div style="margin-bottom: 0.75rem;"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-light);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
       <div style="display: inline-block; background: var(--amber-dark); color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem;">
         Identity Verification Required
       </div>
@@ -556,7 +554,7 @@ function updateReportingKycGateCard() {
         Welcome, <strong>${escapeHtml(state.currentUser.fullName || state.currentUser.name)}</strong>! To prevent misinformation, spam, and unverified hazards, all citizens are required to verify their account through KYC verification using a valid government ID before filing reports.
       </p>
       <button class="btn-primary" onclick="openKycModal()" style="padding: 0.85rem 1.75rem; font-size: 0.95rem;">
-        🪪 Upload & Verify Government ID
+        Upload & Verify Government ID
       </button>
     `;
   }
@@ -579,9 +577,9 @@ function renderProfileUI() {
   const initialsSpan = document.getElementById('profile-avatar-initials');
 
   if (nameEl) nameEl.textContent = u.fullName || u.name;
-  if (bgyEl) bgyEl.textContent = `📍 ${u.barangay || 'Metro Verde City'}`;
+  if (bgyEl) bgyEl.textContent = u.barangay || 'Metro Verde City';
   if (emailPill) emailPill.textContent = u.email || 'Registered Citizen';
-  if (contEl) contEl.textContent = `📱 ${u.phone || 'No phone set'}`;
+  if (contEl) contEl.textContent = u.phone || 'No phone set';
   if (pointsEl) pointsEl.innerHTML = `${u.ecoPoints || 50} <span style="font-size: 0.9rem;">pts</span>`;
   if (levelEl) levelEl.textContent = u.level || 'Eco Citizen';
   if (rankEl) rankEl.innerHTML = `Rank: <strong>#${u.rank || 1} in LGU</strong> • Status: <strong>${u.status || 'Active'}</strong>`;
@@ -608,11 +606,11 @@ function renderProfileUI() {
 
   if (kycStatus === 'verified') {
     if (badgeEl) {
-      badgeEl.textContent = '🛡️ Verified Citizen';
+      badgeEl.textContent = 'Verified Citizen';
       badgeEl.style.background = 'var(--primary-light)';
     }
     if (authStatusEl) {
-      authStatusEl.textContent = '✅ Authorized';
+      authStatusEl.textContent = 'Authorized';
       authStatusEl.style.color = 'var(--primary-light)';
     }
     if (kycCard) kycCard.style.borderLeftColor = 'var(--primary-light)';
@@ -625,18 +623,18 @@ function renderProfileUI() {
     }
     if (kycDetails) {
       kycDetails.style.display = 'block';
-      kycDetails.textContent = `📄 ${u.kycIdType || 'Government ID'} • Number: ${maskIdNumber(u.kycIdNumber || '')}`;
+      kycDetails.textContent = `${u.kycIdType || 'Government ID'} • Number: ${maskIdNumber(u.kycIdNumber || '')}`;
     }
     if (kycActionBtn) {
-      kycActionBtn.textContent = '🪪 Update / Replace ID';
+      kycActionBtn.textContent = 'Update / Replace ID';
     }
   } else if (kycStatus === 'pending') {
     if (badgeEl) {
-      badgeEl.textContent = '⏳ Verification Pending';
+      badgeEl.textContent = 'Verification Pending';
       badgeEl.style.background = 'var(--amber-dark)';
     }
     if (authStatusEl) {
-      authStatusEl.textContent = '⏳ Pending Review';
+      authStatusEl.textContent = 'Pending Review';
       authStatusEl.style.color = 'var(--amber-dark)';
     }
     if (kycCard) kycCard.style.borderLeftColor = 'var(--amber)';
@@ -652,15 +650,15 @@ function renderProfileUI() {
       kycDetails.textContent = `Submitted: ${u.kycIdType || 'Government ID'} (${maskIdNumber(u.kycIdNumber || '')})`;
     }
     if (kycActionBtn) {
-      kycActionBtn.textContent = '🪪 Re-upload / Update Documents';
+      kycActionBtn.textContent = 'Re-upload Documents';
     }
   } else if (kycStatus === 'rejected') {
     if (badgeEl) {
-      badgeEl.textContent = '❌ Verification Rejected';
+      badgeEl.textContent = 'Verification Rejected';
       badgeEl.style.background = 'var(--red)';
     }
     if (authStatusEl) {
-      authStatusEl.textContent = '❌ Not Authorized';
+      authStatusEl.textContent = 'Not Authorized';
       authStatusEl.style.color = 'var(--red)';
     }
     if (kycCard) kycCard.style.borderLeftColor = 'var(--red)';
@@ -673,12 +671,12 @@ function renderProfileUI() {
     }
     if (kycDetails) kycDetails.style.display = 'none';
     if (kycActionBtn) {
-      kycActionBtn.textContent = '🪪 Re-upload Valid ID';
+      kycActionBtn.textContent = 'Re-upload Valid ID';
     }
   } else {
     // Unverified
     if (badgeEl) {
-      badgeEl.textContent = '⚠️ Unverified';
+      badgeEl.textContent = 'Unverified';
       badgeEl.style.background = 'var(--text-muted)';
     }
     if (authStatusEl) {
@@ -695,7 +693,7 @@ function renderProfileUI() {
     }
     if (kycDetails) kycDetails.style.display = 'none';
     if (kycActionBtn) {
-      kycActionBtn.textContent = '🪪 Upload & Verify Government ID';
+      kycActionBtn.textContent = 'Upload & Verify Government ID';
     }
   }
 
@@ -783,7 +781,7 @@ async function handleBarrierLogin(e) {
   const origBtnText = submitBtn ? submitBtn.innerHTML : '';
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '⏳ Signing in...';
+    submitBtn.innerHTML = 'Signing in...';
   }
 
   try {
@@ -814,7 +812,7 @@ async function handleBarrierLogin(e) {
 
     // Update entire UI: removes all create account and sign in buttons from website!
     updateAuthUI();
-    showToast(`👋 Welcome back, ${escapeHtml(state.currentUser.fullName || state.currentUser.name)}!`);
+    showToast(`Welcome back, ${escapeHtml(state.currentUser.fullName || state.currentUser.name)}!`);
     await fetchReports();
 
     if (form && form.reset) form.reset();
@@ -871,7 +869,7 @@ async function handleBarrierRegister(e) {
   const origBtnText = submitBtn ? submitBtn.innerHTML : '';
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '⏳ Creating account & signing in...';
+    submitBtn.innerHTML = 'Creating account & signing in...';
   }
 
   try {
@@ -943,7 +941,7 @@ async function handleBarrierRegister(e) {
 
     // Update entire UI: removes all create account and sign in buttons from website!
     updateAuthUI();
-    showToast(`🎉 Account created! Welcome to Climate Action, ${escapeHtml(userToLogin.fullName || userToLogin.name)}!`);
+    showToast(`Account created! Welcome, ${escapeHtml(userToLogin.fullName || userToLogin.name)}!`);
     await fetchReports();
 
     if (form && form.reset) form.reset();
@@ -972,7 +970,7 @@ async function handleBarrierRegister(e) {
     const authModal = document.getElementById('auth-modal');
     if (authModal) authModal.style.display = 'none';
     updateAuthUI();
-    showToast(`🎉 Account created! Welcome, ${escapeHtml(name)}!`);
+    showToast(`Account created! Welcome, ${escapeHtml(name)}!`);
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -1003,7 +1001,7 @@ async function handleAvatarFileChange(event) {
         state.currentUser.avatar = dataUrl;
         localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
         updateAuthUI();
-        showToast('📷 Profile photo updated successfully!');
+        showToast('Profile photo updated successfully!');
       } else {
         alert(data.error || 'Failed to update avatar.');
       }
@@ -1054,10 +1052,10 @@ async function handleSaveProfileSettings(event) {
         statusEl.style.background = '#ECFDF5';
         statusEl.style.color = '#065F46';
         statusEl.style.border = '1px solid #A7F3D0';
-        statusEl.textContent = '✅ Profile details and address saved successfully!';
+        statusEl.textContent = 'Profile details and address saved successfully.';
         setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
       }
-      showToast('✅ Profile information updated!');
+      showToast('Profile information updated.');
     } else {
       if (statusEl) {
         statusEl.style.display = 'block';
@@ -1204,7 +1202,7 @@ async function handleKycSubmit(event) {
 
     closeKycModal();
     updateAuthUI();
-    showToast('🎉 KYC documents submitted! CENRO administration is reviewing your application.');
+    showToast('KYC documents submitted for CENRO administrative review.');
 
   } catch (err) {
     if (errBox) {
@@ -1214,7 +1212,7 @@ async function handleKycSubmit(event) {
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = '📤 Submit Documents for Admin Review';
+      submitBtn.textContent = 'Submit Documents for Admin Review';
     }
   }
 }
@@ -1287,7 +1285,7 @@ async function fetchConfig() {
 function renderBrandLogoElement(el, c, size = 44) {
   if (!el) return;
   const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
-  const fallback = c.websiteLogo || '🌱';
+  const fallback = c.websiteLogo && c.websiteLogo !== '🌱' ? c.websiteLogo : '';
   if (isImage) {
     // If element already contains the identical logo image, DO NOT destroy and recreate the DOM node!
     const existingImg = el.querySelector('img.brand-logo-img');
@@ -1312,7 +1310,7 @@ function renderBrandLogoElement(el, c, size = 44) {
     if (el.querySelector('img.brand-logo-img') && c.logoImageUrl) {
       return;
     }
-    el.textContent = fallback;
+    el.innerHTML = fallback ? escapeHtml(fallback) : '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
     el.classList.remove('has-image');
     el.style.background = '';
     el.style.backgroundImage = '';
@@ -1345,9 +1343,9 @@ function updateSiteFavicon(c) {
     const cacheBuster = (c.logoImageUrl.includes('?') ? '&' : '?') + 'fav=' + (c.updatedAt || Date.now());
     newLink.href = c.logoImageUrl + cacheBuster;
   } else {
-    const emoji = c.websiteLogo || '🌱';
+    const emoji = c.websiteLogo && c.websiteLogo !== '🌱' ? c.websiteLogo : '';
     newLink.type = 'image/svg+xml';
-    newLink.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`;
+    newLink.href = emoji ? `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>` : `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230B4D2B'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>`;
   }
 
   document.head.appendChild(newLink);
@@ -1437,17 +1435,17 @@ function applyWeatherUI(w) {
   if (feelsEl) feelsEl.textContent = `Feels like ${Math.round((w.temperature || 32) + 4)}°C`;
   if (aqiEl) aqiEl.textContent = w.airQuality || '68';
   if (rainEl) rainEl.textContent = w.rainRisk || '45%';
-  if (alertEl) alertEl.textContent = `🟡 PAGASA STATUS: ${w.alertLevel || 'Yellow'} Alert`;
+  if (alertEl) alertEl.innerHTML = `<span class="advisory-dot"></span> PAGASA Status: ${w.alertLevel || 'Yellow'} Alert`;
   if (advEl) advEl.textContent = `${w.advisoryNotice || 'Low Pressure Area approaching Eastern Seaboard. Preemptive culvert monitoring active.'} >`;
 }
 
 function refreshClimateTelemetry() {
   const indicator = document.querySelector('.status-updated-indicator');
-  if (indicator) indicator.textContent = 'Updating... ⏳';
+  if (indicator) indicator.textContent = 'Updating telemetry...';
   setTimeout(async () => {
     await fetchWeather();
-    if (indicator) indicator.textContent = 'Updated just now 🔄';
-    showToast('🌤 Real-time climate telemetry refreshed.');
+    if (indicator) indicator.textContent = 'Telemetry updated';
+    showToast('Real-time climate telemetry refreshed.');
   }, 600);
 }
 
@@ -1463,7 +1461,7 @@ function openAdvisoryModal() {
     <div style="font-size: 0.88rem; line-height: 1.6; color: var(--text-main);">
       <p>A Low Pressure Area (LPA) was estimated based on all available data at 280 km East of Metro Verde. It is forecasted to bring moderate to heavy rainfall along mountain foothills and downstream river spillways.</p>
       <div style="background: var(--surface-alt); padding: 0.85rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid var(--amber);">
-        <strong>⚠️ Municipal Directives:</strong>
+        <strong>Municipal Directives:</strong>
         <ul style="padding-left: 1.25rem; margin-top: 0.25rem;">
           <li>Barangay DRRMO Eco-Wardens are mobilized for round-the-clock water level telemetry.</li>
           <li>Residents along river corridors are advised to clear roadside drainage culverts.</li>
@@ -1543,21 +1541,21 @@ function renderUserGuidesUI(guides) {
 
   const defaultGuides = [
     {
-      icon: "📷",
+      icon: "",
       title: "How to Take Valid Photographic Evidence",
       category: "Reporting Standard",
       summary: "High quality photographic evidence accelerates CENRO inspection and avoids ticket rejection.",
       content: "Ensure daylight capture when possible. Frame both the specific hazard (e.g. leaking culvert, illegal dumping) and a recognizable background landmark (street corner, bridge pillar, barangay hall) so wardens can locate the site immediately."
     },
     {
-      icon: "🗺️",
+      icon: "",
       title: "Understanding the 5-Stage Ticket Lifecycle",
       category: "Municipal Workflow",
       summary: "From citizen submission to final field audit photo verification.",
       content: "Once submitted, your ticket is verified within 24 hours. The assigned CENRO team cleans or declogs the site. After remediation, the wardens upload an after-photo and credit 50 eco-points to your profile."
     },
     {
-      icon: "🌱",
+      icon: "",
       title: "Redeeming Citizen Eco-Points",
       category: "Civic Rewards",
       summary: "Unlock tree saplings, compost starter kits, and civic commendations.",
@@ -1570,7 +1568,7 @@ function renderUserGuidesUI(guides) {
     <div class="card" style="border-left: 5px solid var(--primary-light);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <span style="font-size: 1.5rem;">${g.icon || '📖'}</span>
+          <svg class="icon-svg-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-light);"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
           <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary-dark);">${escapeHtml(g.title)}</h3>
         </div>
         <span class="badge-portal-pill" style="font-size: 0.7rem;">${escapeHtml(g.category || 'Guide')}</span>
@@ -1610,10 +1608,10 @@ function renderDashboardData() {
   const inProgress = userReports.filter(r => r.status === 'In Progress' || r.status === 'Investigating' || r.status === 'Under Review').length;
   const resolved = userReports.filter(r => r.status === 'Resolved' || r.status === 'Closed').length;
 
-  const totalEl = document.getElementById('kpi-total-reports');
-  const pendEl = document.getElementById('kpi-pending-reports');
-  const inProgEl = document.getElementById('kpi-inprogress-reports');
-  const resEl = document.getElementById('kpi-resolved-reports');
+  const totalEl = document.getElementById('kpi-total-reports') || document.getElementById('kpi-user-total-reports');
+  const pendEl = document.getElementById('kpi-pending-reports') || document.getElementById('kpi-user-pending-reports');
+  const inProgEl = document.getElementById('kpi-inprogress-reports') || document.getElementById('kpi-user-inprogress-reports');
+  const resEl = document.getElementById('kpi-resolved-reports') || document.getElementById('kpi-user-resolved-reports');
 
   if (totalEl) totalEl.textContent = total;
   if (pendEl) pendEl.textContent = pending;
@@ -1627,7 +1625,7 @@ function renderDashboardData() {
       tableBody.innerHTML = `
         <tr>
           <td colspan="4" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
-            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📋</div>
+            <div style="margin-bottom: 0.5rem;"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--text-muted);"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></div>
             <div style="font-weight: 800; color: var(--text-main); font-size: 1.05rem;">No Incident Reports Filed Yet</div>
             <div style="font-size: 0.85rem; margin-top: 0.35rem; line-height: 1.5; max-width: 480px; margin-left: auto; margin-right: auto;">
               ${state.currentUser.kycStatus === 'verified'
@@ -1635,8 +1633,8 @@ function renderDashboardData() {
                 : 'Under City Ordinance #2026-04, please complete one-time government ID verification to begin filing real-time hazard reports.'}
             </div>
             ${state.currentUser.kycStatus === 'verified'
-              ? '<button class="btn-primary" onclick="switchTab(\'report\')" style="margin-top: 1.25rem; font-size: 0.88rem; padding: 0.65rem 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;">🚨 Submit Your First Incident Report</button>'
-              : '<button class="btn-primary" onclick="openKycModal()" style="margin-top: 1.25rem; font-size: 0.88rem; padding: 0.65rem 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;">🪪 Complete KYC Verification (+100 pts)</button>'}
+              ? '<button class="btn-primary" onclick="switchTab(\'report\')" style="margin-top: 1.25rem; font-size: 0.88rem; padding: 0.65rem 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;">Submit Your First Incident Report</button>'
+              : '<button class="btn-primary" onclick="openKycModal()" style="margin-top: 1.25rem; font-size: 0.88rem; padding: 0.65rem 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;">Verify Identity (Government ID)</button>'}
           </td>
         </tr>
       `;
@@ -1645,7 +1643,7 @@ function renderDashboardData() {
         const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
         const st = (r.status || 'Submitted');
         const stClass = st.toLowerCase().replace(' ', '-');
-        const icon = st === 'Resolved' ? '🟢' : st === 'In Progress' ? '🔵' : st === 'Investigating' ? '🟡' : '🟠';
+        const dotHtml = `<span class="status-dot ${stClass}"></span>`;
 
         return `
           <tr class="interactive-row" onclick="openReportTimelineModal('${r.id}', '${escapeHtml(r.category || r.title)}', '${escapeHtml(r.barangay || '')}', '${st}')">
@@ -1655,7 +1653,7 @@ function renderDashboardData() {
             <td>${escapeHtml(r.barangay || 'Metro Verde')}</td>
             <td>
               <span class="status-badge ${stClass}">
-                ${icon} ${st}
+                ${dotHtml} ${st}
               </span>
             </td>
             <td style="color: var(--text-muted); font-size: 0.78rem;">${dateStr}</td>
@@ -1673,12 +1671,12 @@ function renderDashboardData() {
         <div class="activity-info-block">
           <div class="activity-name">${act.title}</div>
           <div class="activity-meta">
-            <span>📅 ${act.date}</span>
-            <span>👤 ${act.registered} Participants</span>
+            <span>${act.date}</span>
+            <span>${act.registered} Volunteers</span>
           </div>
         </div>
         <button class="btn-join-activity ${state.joinedActivities.has(act.id) ? 'joined' : ''}" onclick="toggleJoinActivity('${act.id}')">
-          ${state.joinedActivities.has(act.id) ? '✓ Joined' : 'Join Activity'}
+          ${state.joinedActivities.has(act.id) ? 'Joined' : 'Join Activity'}
         </button>
       </div>
     `).join('');
@@ -1763,7 +1761,7 @@ function openReportTimelineModal(reportId, type, location, status) {
     </div>
 
     <div style="background: var(--surface-alt); padding: 0.85rem 1rem; border-radius: 8px; font-size: 0.82rem; margin-top: 1.25rem;">
-      <strong>🏛️ CENRO Dispatch Log:</strong>
+      <strong>CENRO Dispatch Log:</strong>
       <div style="color: var(--text-muted); margin-top: 0.25rem;">
         Team #4 Alpha deployed to ${location}. Environmental inspection conducted under Republic Act 9003. Citizen reporter notified via mobile alert.
       </div>
@@ -1864,7 +1862,7 @@ function initOrUpdatePreviewMap() {
         fillOpacity: 0.85
       }).addTo(state.previewMapInstance);
 
-      circle.bindPopup(`<strong>${r.category}</strong><br>${escapeHtml(r.title)}<br>📍 ${r.barangay}`);
+      circle.bindPopup(`<strong>${r.category}</strong><br>${escapeHtml(r.title)}<br>${r.barangay}`);
       state.previewMapMarkers.push(circle);
     });
   } catch (err) {
@@ -1923,7 +1921,7 @@ function initOrUpdateFullMap() {
         <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; line-height:1.4;">
           <strong style="color:${color};">${r.category}</strong><br>
           <strong>${escapeHtml(r.title)}</strong><br>
-          <span>📍 ${escapeHtml(r.barangay)}</span><br>
+          <span>${escapeHtml(r.barangay)}</span><br>
           <span style="font-size:11px; color:#5A6A80;">Status: ${r.status}</span>
         </div>
       `);
@@ -1943,7 +1941,7 @@ function initOrUpdateFullMap() {
           pinBox.innerHTML = `
             <div style="background: var(--surface-alt); padding: 0.85rem; border-radius: 8px; border-left: 4px solid ${color};">
               <div style="font-weight: 800; color: var(--text-main);">${escapeHtml(r.title)}</div>
-              <div style="font-size: 0.78rem; color: var(--text-muted); margin: 0.35rem 0;">📍 ${escapeHtml(r.barangay)} • ${escapeHtml(r.landmark || '')}</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin: 0.35rem 0;">${escapeHtml(r.barangay)} • ${escapeHtml(r.landmark || '')}</div>
               <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
                 <span class="status-badge" style="background:${color}22; color:${color}; font-size:0.72rem;">${r.severity}</span>
                 <span class="status-badge in-progress" style="font-size:0.72rem;">${r.status}</span>
@@ -2005,8 +2003,8 @@ function renderIncidentTracker(statusFilter = 'All', searchQuery = '') {
 
       <div>
         <div style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
-          <span>📍 ${escapeHtml(r.barangay)}</span>
-          <span>📅 ${new Date(r.timestamp).toLocaleDateString()}</span>
+          <span>${escapeHtml(r.barangay)}</span>
+          <span>${new Date(r.timestamp).toLocaleDateString()}</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 0.65rem;">
           <span class="status-badge in-progress">${r.status}</span>
@@ -2040,7 +2038,7 @@ async function handleFormSubmit(e) {
     setBarrierMode('login');
     const barrier = document.getElementById('auth-barrier-screen');
     if (barrier) barrier.style.display = 'flex';
-    showToast('⚠️ You must log in or register before submitting an incident report.');
+    showToast('You must log in or register before submitting an incident report.');
     return;
   }
 
@@ -2110,7 +2108,7 @@ async function handleFormSubmit(e) {
       if (placeholder) placeholder.style.display = 'block';
       state.uploadedPhotoData = null;
 
-      showToast(`🎉 Incident logged as Ticket ${data.report.id}! +50 Eco-Points awarded.`);
+      showToast(`Incident submitted as Ticket ${data.report.id}.`);
       await fetchReports();
       renderDashboardData();
       switchTab('tracker');
@@ -2153,7 +2151,7 @@ function renderArticles() {
           <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.5rem 0; line-height: 1.5;">${a.summary}</p>
         </div>
         <div style="font-size: 0.75rem; color: var(--primary-light); font-weight: 800; margin-top: 0.75rem;">
-          ⏱️ ${a.readTime}
+          ${a.readTime}
         </div>
       </div>
     </div>
@@ -2167,12 +2165,12 @@ function renderQuiz() {
   if (state.currentQuizIndex >= quizQuestions.length) {
     container.innerHTML = `
       <div style="text-align: center; padding: 2rem;">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🏆</div>
+        
         <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem;">Climate Literacy Champion!</h3>
         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
           You scored ${state.quizScore} out of ${quizQuestions.length} correct. Thank you for advancing environmental literacy in Metro Verde!
         </p>
-        <button class="btn-primary" onclick="resetQuiz()">🔄 Retake Quiz</button>
+        <button class="btn-primary" onclick="resetQuiz()">Retake Quiz</button>
       </div>
     `;
     return;
@@ -2208,7 +2206,7 @@ function handleQuizAnswer(selectedIdx) {
     }
   }
 
-  alert(isCorrect ? `✅ Correct! ${q.explanation}` : `❌ Incorrect. ${q.explanation}`);
+  alert(isCorrect ? `Correct! ${q.explanation}` : `Incorrect. ${q.explanation}`);
   state.currentQuizIndex++;
   renderQuiz();
 }
@@ -2232,14 +2230,14 @@ function renderActivities() {
         </div>
         <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">${act.title}</h4>
         <div style="font-size: 0.82rem; color: var(--text-muted); margin: 0.5rem 0; line-height: 1.6;">
-          <div>📅 <strong>Date:</strong> ${act.date}</div>
-          <div>📍 <strong>Location:</strong> ${act.location}</div>
-          <div>🎯 <strong>Target:</strong> ${act.target}</div>
+          <div><strong>Date:</strong> ${act.date}</div>
+          <div><strong>Location:</strong> ${act.location}</div>
+          <div><strong>Target:</strong> ${act.target}</div>
         </div>
       </div>
 
       <button class="btn-primary" onclick="toggleJoinActivity('${act.id}')" style="width: 100%; margin-top: 1rem; font-size: 0.85rem; padding: 0.65rem;">
-        ${state.joinedActivities.has(act.id) ? '✓ Registered Volunteer' : 'Join Activity (+30 pts)'}
+        ${state.joinedActivities.has(act.id) ? 'Registered Volunteer' : 'Join Volunteer Drive'}
       </button>
     </div>
   `).join('');
@@ -2264,7 +2262,7 @@ function toggleJoinActivity(actId) {
     state.currentUser.ecoPoints = (state.currentUser.ecoPoints || 750) + 30;
     localStorage.setItem(CITIZEN_STORAGE_KEY, JSON.stringify(state.currentUser));
     updateAuthUI();
-    showToast(`🌿 RSVP Confirmed for ${act.title}! +30 Eco-Points awarded.`);
+    showToast(`RSVP Confirmed for ${act.title}.`);
   }
   renderDashboardData();
   renderActivities();

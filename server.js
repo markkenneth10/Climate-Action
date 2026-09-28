@@ -301,8 +301,8 @@ loadUsersFromDisk();
 let websiteConfig = {
   websiteName: "Climate Action",
   websiteSubtitle: "Reporting & Information System • Metro Verde",
-  websiteLogo: "🌱",
-  logoType: "emoji", // "emoji" or "image"
+  websiteLogo: "",
+  logoType: "image", // "emoji" or "image"
   logoImageUrl: "",
   heroImageUrl: "",
   aboutImageUrl: "",
@@ -383,7 +383,7 @@ let weatherAdvisory = {
   temperature: 32,
   heatIndex: 38,
   condition: "Partly Cloudy with Scattered Showers",
-  conditionIcon: "⛅",
+  conditionIcon: "",
   alertLevel: "Yellow", // Normal, Yellow, Orange, Red
   airQuality: "Moderate (AQI 68)",
   typhoonSignal: "Signal No. 1",
@@ -412,7 +412,7 @@ let userGuidesStore = [
   {
     id: "guide-01",
     title: "How to File a Verified Environmental Report",
-    icon: "📸",
+    icon: "",
     category: "Reporting",
     summary: "Step-by-step checklist to submit geotagged photos that CENRO officers can immediately action.",
     content: "1. Log into your citizen account. 2. Select 'Report Incident' in the menu. 3. Select hazard type (Dumping, Tree Felling, Open Burning, Pollution). 4. Attach photo showing scope. 5. Provide landmark (e.g., 'Behind purok basketball court'). 6. Submit and save your Ticket ID (e.g. ECO-2026-1004)."
@@ -420,18 +420,18 @@ let userGuidesStore = [
   {
     id: "guide-02",
     title: "Understanding the 6-Stage Resolution Lifecycle",
-    icon: "⏳",
+    icon: "",
     category: "Tracking",
     summary: "What happens after you hit submit? Track municipal audit milestones in real-time.",
     content: "Stage 1: Submitted (Ticket generated) -> Stage 2: Under Review (CENRO Desk Triage) -> Stage 3: Verified (Field inspection confirmed) -> Stage 4: In Progress (Clean-up or enforcement underway) -> Stage 5: Resolved (Hazard remediated with proof) -> Stage 6: Closed (Audited by citizen & admin)."
   },
   {
     id: "guide-03",
-    title: "Earning & Redeeming Citizen Eco-Points",
-    icon: "🎖️",
-    category: "Gamification",
-    summary: "How reporting environmental violations and joining cleanups unlocks community rewards.",
-    content: "Earn +50 points for each verified incident report, +30 points for completing climate awareness quizzes, and +100 points for attending municipal tree-planting drives. Points can be redeemed for municipal eco-tote bags, native saplings, and barangay clearance discounts."
+    title: "Community Environmental Drives",
+    icon: "",
+    category: "Participation",
+    summary: "How reporting environmental violations and joining cleanups helps Metro Verde.",
+    content: "Participate in local tree-planting drives, river cleanups, and community zero-waste initiatives organized by CENRO and accredited barangay civic groups."
   }
 ];
 
@@ -652,7 +652,7 @@ const server = http.createServer(async (req, res) => {
         status: 'Active',
         ecoPoints: 50, // Welcome bonus points
         level: 'Eco Citizen',
-        badges: ['🌱 Welcome Pioneer'],
+        badges: ['Registered Citizen'],
         rank: userStore.length + 1,
         kycStatus: 'unverified', // 'unverified', 'pending', 'verified', 'rejected'
         kycIdType: '',
@@ -745,7 +745,7 @@ const server = http.createServer(async (req, res) => {
             status: 'Active',
             ecoPoints: data.user.ecoPoints || 50,
             level: data.user.level || 'Eco Citizen',
-            badges: data.user.badges || ['🌱 Welcome Pioneer'],
+            badges: data.user.badges || ['Registered Citizen'],
             kycStatus: data.user.kycStatus || 'unverified',
             createdAt: data.user.createdAt || Date.now()
           };
@@ -1299,8 +1299,8 @@ const server = http.createServer(async (req, res) => {
         user.kycRejectReason = '';
         // Award verification bonus ecoPoints
         user.ecoPoints = (user.ecoPoints || 0) + 100;
-        if (!user.badges.includes('🛡️ Verified Citizen')) {
-          user.badges.push('🛡️ Verified Citizen');
+        if (!user.badges.includes('Verified Citizen')) {
+          user.badges.push('Verified Citizen');
         }
       } else if (action === 'reject') {
         user.kycStatus = 'rejected';

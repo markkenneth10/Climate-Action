@@ -1342,6 +1342,54 @@ button, input, select, textarea, a {
   color: #C2410C;
 }
 
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.status-dot.resolved, .status-dot.closed { background-color: #15803D; }
+.status-dot.in-progress, .status-dot.dispatched { background-color: #0369A1; }
+.status-dot.investigating, .status-dot.under-review { background-color: #B45309; }
+.status-dot.pending, .status-dot.submitted { background-color: #C2410C; }
+
+.advisory-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: var(--amber);
+  box-shadow: 0 0 0 2px rgba(244, 180, 0, 0.35);
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.7; }
+}
+
+.icon-svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.icon-svg-sm {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.icon-svg-lg {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
 /* CLIMATE INFORMATION 6-CARD GRID */
 .climate-info-card {
   background: var(--surface);
@@ -1506,92 +1554,73 @@ button, input, select, textarea, a {
   color: #FFFFFF;
 }
 
-/* CLIMATE CHALLENGE CARD */
-.climate-challenge-card {
+/* MUNICIPAL RESPONSE PROTOCOL & DISPATCH CARD */
+.response-protocol-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 1.5rem;
+  padding: 1.25rem 1.35rem;
   box-shadow: var(--shadow-sm);
-}
-
-.challenge-content-row {
-  display: grid;
-  grid-template-columns: 1.25fr 1fr;
-  gap: 1rem;
-  align-items: center;
-}
-
-.quiz-score-subcard {
-  background: var(--surface-alt);
-  border-radius: var(--radius-lg);
-  padding: 1rem;
-  border: 1px solid var(--border);
-}
-
-.progress-track-wrapper {
-  margin: 0.6rem 0;
-}
-.progress-bar-bg {
-  height: 8px;
-  background: #E2ECE6;
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-.progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #16A765, #0EA5A8);
-  border-radius: var(--radius-full);
-}
-
-.quiz-level-badge {
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: var(--primary-dark);
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.btn-start-quiz-pill {
-  background: var(--emerald);
-  color: #fff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-full);
-  font-size: 0.82rem;
-  font-weight: 800;
-  cursor: pointer;
-  margin-top: 0.65rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  transition: all 0.2s ease;
-}
-.btn-start-quiz-pill:hover {
-  background: var(--emerald-dark);
-}
-
-.quiz-stats-column {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  justify-content: space-between;
 }
 
-.quiz-stat-pill-box {
-  background: var(--primary-tint);
-  border-radius: var(--radius-md);
-  padding: 0.5rem 0.75rem;
+.protocol-steps-list {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--primary-dark);
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.75rem 0 1rem;
 }
-.quiz-stat-val-text {
-  font-size: 0.92rem;
+
+.protocol-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+}
+
+.protocol-step-badge {
+  background: var(--primary-tint);
+  color: var(--primary-dark);
   font-weight: 800;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.protocol-hotlines-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.protocol-hotline-item {
+  background: #F0FDF4;
+  border: 1px solid #DCFCE7;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-md);
+  font-size: 0.72rem;
+}
+
+.protocol-hotline-label {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.protocol-hotline-number {
+  font-weight: 800;
+  color: var(--primary-dark);
+  font-size: 0.82rem;
 }
 
 /* ==========================================================================

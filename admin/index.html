@@ -76,11 +76,11 @@
           ☰
         </button>
         <div class="admin-brand">
-          <div class="admin-logo-box" id="admin-header-logo">🌱</div>
+          <div class="admin-logo-box" id="admin-header-logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
           <div>
             <div class="admin-brand-title">
               <span id="admin-header-title">Climate Action</span>
-              <span id="admin-role-badge" class="admin-badge-super">👑 SUPER ADMIN</span>
+              <span id="admin-role-badge" class="admin-badge-super">SUPER ADMIN</span>
             </div>
             <div class="admin-brand-subtitle">Central Ecological Management & Governance Console</div>
           </div>
@@ -97,11 +97,11 @@
         </div>
 
         <a href="/" target="_blank" class="btn-admin-outline" style="text-decoration: none; font-size: 0.82rem; background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.3); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.85rem; font-weight: 700;" title="Open Citizen Portal in New Tab">
-          🌐 <span class="admin-site-link-text">Public Website ↗</span>
+          <span class="admin-site-link-text">Public Website ↗</span>
         </a>
 
         <button type="button" onclick="exitDashboard(true)" class="btn-admin-outline" style="color: #FECACA; border-color: rgba(239, 68, 68, 0.4); background: rgba(127, 29, 29, 0.3); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.48rem 0.85rem; font-weight: 700; cursor: pointer;" title="Sign out of Administrative Console">
-          🔒 <span class="admin-signout-text">Sign Out</span>
+          <span class="admin-signout-text">Sign Out</span>
         </button>
       </div>
     </header>
@@ -125,29 +125,29 @@
         </div>
 
         <div class="admin-nav-category">Main Console</div>
-        <button class="admin-nav-item active" onclick="switchAdminTab('overview')">📊 Command Center</button>
-        <button class="admin-nav-item" onclick="switchAdminTab('triage')">🚨 Incident Triage & Dispatch</button>
+        <button class="admin-nav-item active" onclick="switchAdminTab('overview')">Command Center</button>
+        <button class="admin-nav-item" onclick="switchAdminTab('triage')">Incident Triage & Dispatch</button>
 
         <div class="admin-nav-category">Citizen Site Content</div>
-        <button class="admin-nav-item" onclick="switchAdminTab('cms')">🌐 Website CMS & Info</button>
-        <button class="admin-nav-item" onclick="switchAdminTab('weather')">🌤️ Weather & Advisories</button>
-        <button class="admin-nav-item" onclick="switchAdminTab('announcements')">📢 Announcements</button>
-        <button class="admin-nav-item" onclick="switchAdminTab('guides')">📖 User Guides Manager</button>
+        <button class="admin-nav-item" onclick="switchAdminTab('cms')">Website CMS & Info</button>
+        <button class="admin-nav-item" onclick="switchAdminTab('weather')">Weather & Advisories</button>
+        <button class="admin-nav-item" onclick="switchAdminTab('announcements')">Announcements</button>
+        <button class="admin-nav-item" onclick="switchAdminTab('guides')">User Guides Manager</button>
 
         <div class="admin-nav-category">Governance & Users</div>
         <button class="admin-nav-item" id="nav-kyc" onclick="switchAdminTab('kyc')">
-          🪪 Citizen KYC Verifications <span id="admin-kyc-pending-pill" class="admin-badge-pill" style="display:none; background: #EF4444; color: #fff; margin-left: auto; font-size: 0.68rem; padding: 0.15rem 0.45rem;">0</span>
+          Citizen KYC Verifications <span id="admin-kyc-pending-pill" class="admin-badge-pill" style="display:none; background: #EF4444; color: #fff; margin-left: auto; font-size: 0.68rem; padding: 0.15rem 0.45rem;">0</span>
         </button>
-        <button class="admin-nav-item" onclick="switchAdminTab('users')">👥 Citizen Users & Analytics</button>
+        <button class="admin-nav-item" onclick="switchAdminTab('users')">Citizen Users & Analytics</button>
         <button class="admin-nav-item" id="nav-subadmins" onclick="switchAdminTab('subadmins')">🛡️ Sub-Admin Management</button>
-        <button class="admin-nav-item" id="nav-settings" onclick="switchAdminTab('settings')">⚙️ Super Admin Settings</button>
+        <button class="admin-nav-item" id="nav-settings" onclick="switchAdminTab('settings')">Super Admin Settings</button>
 
         <div class="admin-nav-category" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">Citizen Portal & Session</div>
         <a href="/" target="_blank" class="admin-nav-item" style="color: var(--primary); font-weight: 700; background: var(--primary-tint); text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
-          🌐 View Public Website ↗
+          View Public Website ↗
         </a>
         <button type="button" class="admin-nav-item" onclick="exitDashboard(true)" style="color: #DC2626; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-          🔒 Sign Out
+          Sign Out
         </button>
       </aside>
 
