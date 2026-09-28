@@ -360,20 +360,10 @@ function loadConfigFromDisk() {
     console.warn('Could not load website config from disk:', err.message);
   }
 
-  // Auto-link any uploaded logo file if not explicitly configured
-  if (!websiteConfig.logoImageUrl || websiteConfig.logoType !== 'image') {
-    try {
-      if (fs.existsSync(UPLOADS_DIR)) {
-        const files = fs.readdirSync(UPLOADS_DIR);
-        const logoFiles = files.filter(f => f.startsWith('logo_')).sort().reverse();
-        if (logoFiles.length > 0) {
-          websiteConfig.logoType = 'image';
-          websiteConfig.logoImageUrl = `/uploads/${logoFiles[0]}`;
-          saveConfigToDisk();
-          console.log('✅ Auto-detected and linked uploaded logo:', websiteConfig.logoImageUrl);
-        }
-      }
-    } catch (_) {}
+  // Ensure logoImageUrl is valid
+  if (!websiteConfig.logoImageUrl) {
+    websiteConfig.logoImageUrl = '/assets/ic_climate_app_icon.jpg';
+    websiteConfig.logoType = 'image';
   }
 }
 loadConfigFromDisk();

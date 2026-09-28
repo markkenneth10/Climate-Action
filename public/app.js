@@ -1268,9 +1268,12 @@ async function fetchConfig() {
     const data = await res.json();
     const newConfig = data.config || {};
     // Permanent Logo Guarantee: Never erase logoImageUrl if one was previously configured
-    if (!newConfig.logoImageUrl && state.config && state.config.logoImageUrl && newConfig.logoType !== 'emoji') {
+    if ((!newConfig.logoImageUrl || newConfig.logoImageUrl === '/assets/ic_climate_app_icon.jpg') && state.config && state.config.logoImageUrl && state.config.logoImageUrl !== '/assets/ic_climate_app_icon.jpg') {
       newConfig.logoImageUrl = state.config.logoImageUrl;
-      newConfig.logoType = 'image';
+      newConfig.logoType = state.config.logoType || 'image';
+    } else if (!newConfig.logoImageUrl && state.config && state.config.logoImageUrl) {
+      newConfig.logoImageUrl = state.config.logoImageUrl;
+      newConfig.logoType = state.config.logoType || 'image';
     }
     state.config = { ...state.config, ...newConfig };
     try {
