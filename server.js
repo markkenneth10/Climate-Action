@@ -435,139 +435,44 @@ let userGuidesStore = [
   }
 ];
 
-// 7. Incident Reports Store (Baseline verified citizen incident reports)
-let reportsStore = [
-  {
-    id: "CAR-2026-00128",
-    title: "Severe Stormwater Flooding Along Riverside Culvert",
-    category: "Flooding",
-    severity: "Critical",
-    barangay: "Barangay Makilas",
-    landmark: "Purok 4 Riverside Causeway near Spillway",
-    description: "Water levels rose above road level after heavy thunderstorm downpour due to clogged drainage culvert. Silt and plastic waste are obstructing water passage toward the river basin.",
-    photoUrl: "https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=800&q=80",
-    latitude: 14.6590,
-    longitude: 121.0540,
-    status: "Investigating",
-    submittedBy: "Mark Kenneth Ulgasan",
-    userEmail: "markkennethulgasan@gmail.com",
-    assignedTo: "CENRO Quick Response Team Alpha",
-    statusRemarks: "Field inspection dispatched at 10:45 AM. Backhoe scheduled for drainage declogging.",
-    inspectionNotes: "High silt volume confirmed. Eco-warden assigned for traffic rerouting.",
-    timeline: [
-      { step: "Report Submitted", date: "Sep 15, 2026 10:24 AM", done: true, remarks: "Incident logged via Citizen Portal." },
-      { step: "Verified by Barangay Eco-Warden", date: "Sep 15, 2026 10:35 AM", done: true, remarks: "Barangay Captain verified site severity." },
-      { step: "Assigned to CENRO", date: "Sep 15, 2026 10:40 AM", done: true, remarks: "Assigned to CENRO Field Response Team Alpha." },
-      { step: "Under Investigation", date: "Sep 15, 2026 11:00 AM", done: true, current: true, remarks: "Hydrology assessment in progress." },
-      { step: "Resolved", date: "Pending", done: false, remarks: "Awaiting culvert clearance completion." }
-    ],
-    timestamp: new Date("2026-09-15T10:24:00").getTime()
-  },
-  {
-    id: "CAR-2026-00127",
-    title: "Commercial Waste Dumping in Vacant Public Lot",
-    category: "Illegal Dumping",
-    severity: "High",
-    barangay: "Poblacion",
-    landmark: "Behind Central Public Market Alley 3",
-    description: "Multiple non-biodegradable sacks and rotten organic market refuse dumped overnight without municipal permit. Strong odor and pest swarms detected.",
-    photoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80",
-    latitude: 14.6515,
-    longitude: 121.0620,
-    status: "In Progress",
-    submittedBy: "Elena Santos",
-    userEmail: "elena.santos@gmail.com",
-    assignedTo: "Solid Waste Management Division",
-    statusRemarks: "Municipal dump truck on site collecting hazardous refuse. Violation notice served.",
-    inspectionNotes: "Commercial establishment identified via packaging stamps. Notice of Violation issued.",
-    timeline: [
-      { step: "Report Submitted", date: "Sep 14, 2026 04:12 PM", done: true, remarks: "Logged by citizen." },
-      { step: "Verified by Barangay Eco-Warden", date: "Sep 14, 2026 04:45 PM", done: true, remarks: "Evidence photographed." },
-      { step: "Assigned to CENRO", date: "Sep 14, 2026 05:10 PM", done: true, remarks: "Assigned to SWM Division." },
-      { step: "Under Investigation", date: "Sep 15, 2026 08:30 AM", done: true, remarks: "Clean-up team dispatched." },
-      { step: "Resolved", date: "In Progress", done: false, current: true, remarks: "Refuse extraction ongoing." }
-    ],
-    timestamp: new Date("2026-09-14T16:12:00").getTime()
-  },
-  {
-    id: "CAR-2026-00126",
-    title: "Oily Effluent Discharge into Malinis Creek Tributary",
-    category: "Water Pollution",
-    severity: "Critical",
-    barangay: "Lumbia",
-    landmark: "Beside Old Sawmill Bridge",
-    description: "Dark oily substance seen draining directly into the river tributary. Water surface shows rainbow sheen and foul petroleum odor.",
-    photoUrl: "https://images.unsplash.com/photo-1618083707368-b3823daa2726?auto=format&fit=crop&w=800&q=80",
-    latitude: 14.6620,
-    longitude: 121.0710,
-    status: "Resolved",
-    submittedBy: "Roberto Gomez",
-    userEmail: "roberto.gomez@gmail.com",
-    assignedTo: "DENR Environmental Quality Division",
-    statusRemarks: "Oil boom containment deployed. Auto repair shop fined ₱45,000 under RA 9275.",
-    inspectionNotes: "Water quality samples re-tested. Dissolved oxygen levels normalized.",
-    timeline: [
-      { step: "Report Submitted", date: "Sep 13, 2026 09:45 AM", done: true, remarks: "Logged with chemical photos." },
-      { step: "Verified by Barangay Eco-Warden", date: "Sep 13, 2026 10:15 AM", done: true, remarks: "Water turbidity confirmed high." },
-      { step: "Assigned to CENRO", date: "Sep 13, 2026 10:30 AM", done: true, remarks: "DENR-EMB notified." },
-      { step: "Under Investigation", date: "Sep 13, 2026 01:00 PM", done: true, remarks: "Oil containment deployed." },
-      { step: "Resolved", date: "Sep 14, 2026 05:00 PM", done: true, remarks: "Remediation complete. Violator cited." }
-    ],
-    timestamp: new Date("2026-09-13T09:45:00").getTime()
-  },
-  {
-    id: "CAR-2026-00125",
-    title: "Unauthorized Hardwood Tree Cutting on Hillside",
-    category: "Deforestation",
-    severity: "High",
-    barangay: "Taway",
-    landmark: "Upper Ridge Trailhead Footpath",
-    description: "Observed chainsaws felling mature Narra and Mahogany trees on slope without CENRO tree cutting permit signboard.",
-    photoUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80",
-    latitude: 14.6430,
-    longitude: 121.0490,
-    status: "Pending",
-    submittedBy: "Clara Mendoza",
-    userEmail: "clara.mendoza@gmail.com",
-    assignedTo: "Forest Protection & Watershed Unit",
-    statusRemarks: "Investigation docketed. Forest rangers assigned for site perimeter inspection.",
-    inspectionNotes: "Pending confirmation with Municipal Forestry Registry.",
-    timeline: [
-      { step: "Report Submitted", date: "Sep 12, 2026 03:22 PM", done: true, current: true, remarks: "Submitted via mobile app." },
-      { step: "Verified by Barangay Eco-Warden", date: "Pending", done: false, remarks: "Warden scheduled for verification." },
-      { step: "Assigned to CENRO", date: "Pending", done: false, remarks: "Pending assignment." },
-      { step: "Under Investigation", date: "Pending", done: false, remarks: "Pending field review." },
-      { step: "Resolved", date: "Pending", done: false, remarks: "Pending action." }
-    ],
-    timestamp: new Date("2026-09-12T15:22:00").getTime()
-  },
-  {
-    id: "CAR-2026-00124",
-    title: "Persistent Open Waste Burning Creating Dense Smog",
-    category: "Air Pollution",
-    severity: "Moderate",
-    barangay: "Maasin",
-    landmark: "Compound behind Sitio Maligaya",
-    description: "Repeated open burning of agricultural husks and plastics causing thick smoke drift across residential neighborhood and school zone.",
-    photoUrl: "https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=800&q=80",
-    latitude: 14.6480,
-    longitude: 121.0740,
-    status: "Investigating",
-    submittedBy: "Danilo Cruz",
-    userEmail: "danilo.cruz@gmail.com",
-    assignedTo: "Barangay Public Safety & Clean Air Unit",
-    statusRemarks: "Barangay Tanod deployed to extinguish smoldering embers. Citation ticket issued.",
-    inspectionNotes: "Property owner summoned to Barangay Hall for RA 8749 compliance lecture.",
-    timeline: [
-      { step: "Report Submitted", date: "Sep 11, 2026 11:06 AM", done: true, remarks: "Reported by resident." },
-      { step: "Verified by Barangay Eco-Warden", date: "Sep 11, 2026 11:30 AM", done: true, remarks: "Smoke plume confirmed visible." },
-      { step: "Assigned to CENRO", date: "Sep 11, 2026 01:15 PM", done: true, remarks: "Air Quality unit alerted." },
-      { step: "Under Investigation", date: "Sep 11, 2026 02:00 PM", done: true, current: true, remarks: "Extinguishment & enforcement in progress." },
-      { step: "Resolved", date: "Pending", done: false, remarks: "Follow-up monitoring scheduled." }
-    ],
-    timestamp: new Date("2026-09-11T11:06:00").getTime()
+// 7. Incident Reports Store (Real-time citizen incident reports only - no demo data)
+let reportsStore = [];
+const REPORTS_FILE = path.join(__dirname, 'reports_store.json');
+const TMP_REPORTS_FILE = path.join('/tmp', 'climate_reports_store.json');
+
+function saveReportsToDisk() {
+  try {
+    const dataStr = JSON.stringify(reportsStore, null, 2);
+    try { fs.writeFileSync(REPORTS_FILE, dataStr, 'utf8'); } catch (_) {}
+    try { fs.writeFileSync(TMP_REPORTS_FILE, dataStr, 'utf8'); } catch (_) {}
+  } catch (err) {
+    console.warn('Could not save reports to disk:', err.message);
   }
-];
+}
+
+function loadReportsFromDisk() {
+  try {
+    if (fs.existsSync(REPORTS_FILE)) {
+      const raw = fs.readFileSync(REPORTS_FILE, 'utf8');
+      const data = JSON.parse(raw);
+      if (Array.isArray(data)) {
+        reportsStore = data.filter(r => r && !String(r.id || '').startsWith('CAR-2026-'));
+        return;
+      }
+    }
+    if (fs.existsSync(TMP_REPORTS_FILE)) {
+      const rawTmp = fs.readFileSync(TMP_REPORTS_FILE, 'utf8');
+      const dataTmp = JSON.parse(rawTmp);
+      if (Array.isArray(dataTmp)) {
+        reportsStore = dataTmp.filter(r => r && !String(r.id || '').startsWith('CAR-2026-'));
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load reports from disk:', err.message);
+  }
+}
+loadReportsFromDisk();
 
 // Helper to parse JSON request bodies
 function parseBody(req) {
@@ -610,7 +515,8 @@ async function syncWithSupabase() {
       // 2. Sync Citizen Incident Reports
       const remoteReports = await supabaseClient.fetchReportsFromSupabase();
       if (remoteReports && Array.isArray(remoteReports) && remoteReports.length > 0) {
-        reportsStore = remoteReports;
+        reportsStore = remoteReports.filter(r => r && !String(r.id || '').startsWith('CAR-2026-'));
+        saveReportsToDisk();
       } else if (reportsStore.length > 0) {
         for (const r of reportsStore) {
           await supabaseClient.saveReportToSupabase(r);
@@ -1744,13 +1650,18 @@ const server = http.createServer(async (req, res) => {
       newReport.timestamp = newReport.timestamp || Date.now();
       newReport.status = 'Submitted';
       newReport.assignedTo = 'Pending CENRO Dispatch';
+      newReport.submittedBy = newReport.submittedBy || citizen.name;
+      newReport.submittedEmail = (citizen.email || '').toLowerCase();
+      newReport.userEmail = newReport.submittedEmail;
 
       reportsStore.unshift(newReport);
+      saveReportsToDisk();
       supabaseClient.saveReportToSupabase(newReport).catch(() => {});
 
       // Increment submitting user's reports count & award ecoPoints
       citizen.reportsCount = (citizen.reportsCount || 0) + 1;
       citizen.ecoPoints = (citizen.ecoPoints || 0) + 50;
+      saveUsersToDisk();
 
       return sendJson(201, {
         success: true,
@@ -1773,8 +1684,22 @@ const server = http.createServer(async (req, res) => {
         return sendJson(404, { error: 'Report not found' });
       }
       Object.assign(report, updateData);
+      saveReportsToDisk();
       supabaseClient.updateReportInSupabase(reportId, updateData).catch(() => {});
       return sendJson(200, { success: true, report });
+    }
+
+    // Admin delete report
+    if ((pathname.startsWith('/api/reports/') || pathname.startsWith('/api/admin/reports/')) && req.method === 'DELETE') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+
+      const reportId = pathname.split('/')[3] || pathname.split('/')[4];
+      reportsStore = reportsStore.filter(r => r.id !== reportId);
+      saveReportsToDisk();
+      return sendJson(200, { success: true, message: 'Report removed successfully' });
     }
 
     // ------------------------------------------

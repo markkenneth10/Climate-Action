@@ -263,7 +263,14 @@ async function initCitizenSession() {
     try {
       const parsed = JSON.parse(saved);
       // If legacy hardcoded demo user was previously cached in browser, clear it
-      if (parsed && (parsed.id === 'usr-mk-001' || parsed.id === 'citizen-mk-01')) {
+      const isDemoAccount = parsed && (
+        parsed.id === 'usr-mk-001' ||
+        parsed.id === 'citizen-mk-01' ||
+        String(parsed.email || '').includes('test_citizen_') ||
+        String(parsed.email || '').includes('@test.ph') ||
+        String(parsed.email || '').includes('cruz.maria.registered')
+      );
+      if (isDemoAccount) {
         localStorage.removeItem(CITIZEN_STORAGE_KEY);
         state.currentUser = null;
       } else if (parsed && (parsed.email || parsed.name)) {
@@ -1595,7 +1602,7 @@ function renderDashboardData() {
   if (!state.currentUser) return;
 
   const userEmail = (state.currentUser.email || '').toLowerCase();
-  const userReports = (state.reports || []).filter(r => (r.submittedEmail || '').toLowerCase() === userEmail);
+  const userReports = (state.reports || []).filter(r => ((r.submittedEmail || r.userEmail || '')).toLowerCase() === userEmail);
 
   // Update 4 Personalized KPI Stat Widgets based on citizen's real reports
   const total = userReports.length;
