@@ -80,25 +80,12 @@ async function adminFetch(url, options = {}) {
   }
 }
 
-// Session Check: Verify against backend session store, auto-login if needed
+// Session Check: Verify against backend session store without forcing auto-login on page refresh
 async function checkAdminSession() {
-  const storedAdmin = localStorage.getItem(ADMIN_STORAGE_KEY);
   let token = localStorage.getItem(ADMIN_TOKEN_KEY);
-
-  // Synchronously restore view if storedAdmin exists to prevent any login flickers
-  if (storedAdmin) {
-    try {
-      currentAdmin = JSON.parse(storedAdmin);
-      if (currentAdmin && currentAdmin.role) {
-        showAdminWorkspace();
-      }
-    } catch (_) {}
-  }
-
-  // Ensure default master token fallback exists
   if (!token) {
-    token = MASTER_ADMIN_TOKEN;
-    localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    showAdminLogin();
+    return;
   }
 
   // 1. Check existing server session with bearer token & cookie
@@ -125,18 +112,9 @@ async function checkAdminSession() {
     console.warn('Session verification check failed:', e);
   }
 
-  // 2. Perform silent auto-login to ensure seamless dashboard access
-  const autoLoggedIn = await tryAutoLoginSilent();
-  if (autoLoggedIn) {
-    return;
-  }
-
-  // 3. Fallback to cached profile if available
-  if (storedAdmin && currentAdmin) {
-    showAdminWorkspace();
-    return;
-  }
-
+  // Clear session on refresh/failure so no silent auto-login occurs
+  localStorage.removeItem(ADMIN_STORAGE_KEY);
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
   showAdminLogin();
 }
 
@@ -1302,7 +1280,7 @@ async function loadUsersData() {
 
     const tbody = document.getElementById('admin-users-table-body');
     if (allUsers.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:#94a3b8;">No registered citizens yet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:1.5rem; color:#94a3b8;">No registered citizens yet.</td></tr>`;
       return;
     }
 
@@ -1311,9 +1289,15 @@ async function loadUsersData() {
         <td style="font-weight:700; color:#38bdf8;">${u.id}</td>
         <td style="font-weight:700; color:#fff;">${u.name}</td>
         <td>${u.email}</td>
+        <td>${u.phone || 'N/A'}</td>
         <td>${u.barangay || 'Metro Verde'}</td>
+        <td>
+          <span style="padding:0.2rem 0.5rem; border-radius:4px; font-size:0.72rem; font-weight:700; background:${u.kycStatus === 'verified' ? '#065f46' : (u.kycStatus === 'pending' ? '#b45309' : '#334155')}; color:#fff;">
+            ${u.kycStatus || 'unverified'}
+          </span>
+        </td>
         <td><span style="color:#10b981; font-weight:800;">${u.ecoPoints || 0} pts</span></td>
-        <td>${u.reportsCount || 0} reports</td>
+        <td>${u.reportsCount || 0}</td>
         <td>
           <span style="padding:0.2rem 0.5rem; border-radius:4px; font-size:0.75rem; font-weight:700; background:${u.status === 'Active' ? '#065f46' : '#7f1d1d'}; color:#fff;">
             ${u.status}

@@ -56,23 +56,20 @@
       <div class="auth-barrier-body">
         <!-- Register Form (Default) -->
         <form id="barrier-register-form" onsubmit="handleBarrierRegister(event)">
-          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; background: #F0FDF4; border: 1px solid #BBF7D0; padding: 0.65rem 0.85rem; border-radius: var(--radius-md);">
-            <strong>New Citizen Registration:</strong> Create your account to access municipal climate telemetry. <em>Note: Government ID verification (KYC) is strictly required to file environmental incident reports.</em>
+          <div class="form-group" style="margin-bottom: 0.65rem;">
+            <label class="form-label" for="barrier-reg-name">Full Name *</label>
+            <input type="text" id="barrier-reg-name" class="form-control" placeholder="Juan dela Cruz" required autocomplete="name">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="barrier-reg-name">Full Legal Name *</label>
-            <input type="text" id="barrier-reg-name" class="form-control" placeholder="e.g. Juan dela Cruz" required autocomplete="name">
-          </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom: 0.65rem;">
             <label class="form-label" for="barrier-reg-email">Email Address *</label>
-            <input type="email" id="barrier-reg-email" class="form-control" placeholder="e.g. citizen@example.ph" required autocomplete="email">
+            <input type="email" id="barrier-reg-email" class="form-control" placeholder="citizen@example.ph" required autocomplete="email">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="barrier-reg-phone">Mobile Phone Number *</label>
-            <input type="tel" id="barrier-reg-phone" class="form-control" placeholder="+63 917 123 4567" required autocomplete="tel">
+          <div class="form-group" style="margin-bottom: 0.65rem;">
+            <label class="form-label" for="barrier-reg-phone">Mobile Phone *</label>
+            <input type="tel" id="barrier-reg-phone" class="form-control" placeholder="09171234567" required autocomplete="tel">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="barrier-reg-barangay">Barangay Residence *</label>
+          <div class="form-group" style="margin-bottom: 0.65rem;">
+            <label class="form-label" for="barrier-reg-barangay">Barangay *</label>
             <select id="barrier-reg-barangay" class="form-control" required>
               <option value="Barangay Makilas">Barangay Makilas</option>
               <option value="Poblacion">Poblacion</option>
@@ -84,42 +81,39 @@
               <option value="Barangay Malinis">Barangay Malinis</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="barrier-reg-address">Street Address / Purok *</label>
-            <input type="text" id="barrier-reg-address" class="form-control" placeholder="e.g. 124 Rizal St, Purok 2" required autocomplete="street-address">
+          <div class="form-group" style="margin-bottom: 0.65rem;">
+            <label class="form-label" for="barrier-reg-address">Street Address *</label>
+            <input type="text" id="barrier-reg-address" class="form-control" placeholder="Street / Purok" required autocomplete="street-address">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="barrier-reg-password">Password (Minimum 6 characters) *</label>
-            <input type="password" id="barrier-reg-password" class="form-control" placeholder="Create a secure password" minlength="6" required autocomplete="new-password">
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label class="form-label" for="barrier-reg-password">Password *</label>
+            <input type="password" id="barrier-reg-password" class="form-control" placeholder="At least 6 characters" minlength="6" required autocomplete="new-password">
           </div>
-          <div id="barrier-reg-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 1rem; border: 1px solid #FECACA;"></div>
-          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; justify-content: center;">
-            Create Account & Proceed
+          <div id="barrier-reg-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 0.75rem; border: 1px solid #FECACA;"></div>
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.9rem; justify-content: center;">
+            Create Account
           </button>
-          <div style="text-align: center; margin-top: 0.9rem; font-size: 0.83rem; color: var(--text-muted);">
-            Already have an account? <button type="button" onclick="setBarrierMode('login')" style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Sign In here</button>
+          <div style="text-align: center; margin-top: 0.75rem; font-size: 0.82rem; color: var(--text-muted);">
+            Already have an account? <button type="button" onclick="setBarrierMode('login')" style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Sign In</button>
           </div>
         </form>
 
         <!-- Sign In Form -->
         <form id="barrier-login-form" onsubmit="handleBarrierLogin(event)" style="display: none;">
-          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.65rem 0.85rem; border-radius: var(--radius-md);">
-            Sign in with your registered citizen email and password to access community services and report hazards.
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label" for="barrier-login-email">Email Address *</label>
+            <input type="email" id="barrier-login-email" class="form-control" placeholder="citizen@example.ph" required autocomplete="username">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="barrier-login-email">Citizen Email Address *</label>
-            <input type="email" id="barrier-login-email" class="form-control" placeholder="e.g. citizen@example.ph" required autocomplete="username">
-          </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom: 0.85rem;">
             <label class="form-label" for="barrier-login-password">Password *</label>
-            <input type="password" id="barrier-login-password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+            <input type="password" id="barrier-login-password" class="form-control" placeholder="Enter password" required autocomplete="current-password">
           </div>
-          <div id="barrier-login-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 1rem; border: 1px solid #FECACA;"></div>
-          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; justify-content: center;">
-            Sign In to Citizen Portal
+          <div id="barrier-login-error" style="display: none; background: #FEF2F2; color: var(--red); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 0.75rem; border: 1px solid #FECACA;"></div>
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.9rem; justify-content: center;">
+            Sign In
           </button>
-          <div style="text-align: center; margin-top: 0.9rem; font-size: 0.83rem; color: var(--text-muted);">
-            Don't have an account yet? <button type="button" onclick="setBarrierMode('register')" style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Create an account</button>
+          <div style="text-align: center; margin-top: 0.75rem; font-size: 0.82rem; color: var(--text-muted);">
+            Don't have an account? <button type="button" onclick="setBarrierMode('register')" style="background: none; border: none; color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Create Account</button>
           </div>
         </form>
 
