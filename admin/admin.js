@@ -288,10 +288,20 @@ async function handleAdminLogout() {
 
 // Tab Switching
 function switchAdminTab(tabName) {
-  // Update nav buttons
+  // Update sidebar nav buttons
   document.querySelectorAll('.admin-nav-item').forEach(btn => btn.classList.remove('active'));
   const clicked = Array.from(document.querySelectorAll('.admin-nav-item')).find(b => b.getAttribute('onclick')?.includes(tabName));
   if (clicked) clicked.classList.add('active');
+
+  // Update footer navbar buttons
+  document.querySelectorAll('.admin-footer-nav-item').forEach(btn => {
+    const btnTab = btn.getAttribute('data-tab');
+    if (btnTab === tabName) {
+      btn.classList.add('active');
+    } else if (btnTab) {
+      btn.classList.remove('active');
+    }
+  });
 
   // Hide all sections
   document.querySelectorAll('.admin-section').forEach(sec => sec.style.display = 'none');
@@ -1882,6 +1892,13 @@ async function loadSupabaseStatus() {
   const schemaBox = document.getElementById('supabase-sql-schema');
   const urlInput = document.getElementById('supabase-input-url');
 
+  const dbBadge = document.getElementById('supabase-db-badge');
+  const storageBadge = document.getElementById('supabase-storage-badge');
+  const usersBadge = document.getElementById('supabase-users-badge');
+  const repCount = document.getElementById('supabase-count-reports');
+  const cfgStatus = document.getElementById('supabase-status-config');
+  const usrCount = document.getElementById('supabase-count-users');
+
   if (pill) {
     pill.textContent = 'Checking...';
     pill.style.background = '#1e293b';
@@ -1900,7 +1917,7 @@ async function loadSupabaseStatus() {
     const st = data.status || {};
     if (pill) {
       if (st.connected) {
-        pill.textContent = '🟢 Connected & Synced';
+        pill.textContent = '🟢 Auto-Connected';
         pill.style.background = '#065f46';
         pill.style.color = '#a7f3d0';
       } else if (st.configured) {
@@ -1914,6 +1931,56 @@ async function loadSupabaseStatus() {
       }
     }
 
+    // Database Card
+    if (dbBadge) {
+      if (st.connected) {
+        dbBadge.textContent = 'Active';
+        dbBadge.style.background = '#065f46';
+        dbBadge.style.color = '#a7f3d0';
+      } else {
+        dbBadge.textContent = 'Offline';
+        dbBadge.style.background = '#7f1d1d';
+        dbBadge.style.color = '#fecaca';
+      }
+    }
+    if (repCount) repCount.textContent = (reportsStore ? reportsStore.length : '--');
+    if (cfgStatus) cfgStatus.textContent = st.connected ? 'Active' : 'Offline';
+
+    // Storage Card
+    if (storageBadge) {
+      if (st.storageConnected) {
+        storageBadge.textContent = 'Ready';
+        storageBadge.style.background = '#065f46';
+        storageBadge.style.color = '#a7f3d0';
+      } else if (st.connected) {
+        storageBadge.textContent = 'Needs SQL';
+        storageBadge.style.background = '#854d0e';
+        storageBadge.style.color = '#fde68a';
+      } else {
+        storageBadge.textContent = 'Offline';
+        storageBadge.style.background = '#334155';
+        storageBadge.style.color = '#94a3b8';
+      }
+    }
+
+    // Users Card
+    if (usersBadge) {
+      if (st.usersTableReady) {
+        usersBadge.textContent = 'Synced';
+        usersBadge.style.background = '#065f46';
+        usersBadge.style.color = '#a7f3d0';
+      } else if (st.connected) {
+        usersBadge.textContent = 'Needs Table SQL';
+        usersBadge.style.background = '#854d0e';
+        usersBadge.style.color = '#fde68a';
+      } else {
+        usersBadge.textContent = 'Local Cache';
+        usersBadge.style.background = '#334155';
+        usersBadge.style.color = '#94a3b8';
+      }
+    }
+    if (usrCount) usrCount.textContent = (userStore ? userStore.length : '--');
+
     if (urlInput && st.supabaseUrl && !urlInput.value) {
       urlInput.placeholder = st.supabaseUrl;
     }
@@ -1922,6 +1989,56 @@ async function loadSupabaseStatus() {
       pill.textContent = '🔴 Offline';
       pill.style.background = '#7f1d1d';
       pill.style.color = '#fecaca';
+    }
+  }
+}
+
+async function triggerSupabaseAutoConnect() {
+  const autoBtn = document.getElementById('btn-autoconnect-supabase');
+  const resMsg = document.getElementById('supabase-result-msg');
+  if (autoBtn) {
+    autoBtn.disabled = true;
+    autoBtn.textContent = '⏳ Auto-Connecting...';
+  }
+  if (resMsg) {
+    resMsg.style.display = 'block';
+    resMsg.style.background = '#1e293b';
+    resMsg.style.color = '#cbd5e1';
+    resMsg.textContent = 'Connecting to Supabase Database, Storage, and Accounts...';
+  }
+
+  try {
+    const res = await adminFetch('/api/admin/supabase-auto-connect', { method: 'POST' });
+    const data = await res.json();
+    if (autoBtn) {
+      autoBtn.disabled = false;
+      autoBtn.textContent = '⚡ Auto Connect';
+    }
+
+    if (res.ok && data.success) {
+      if (resMsg) {
+        resMsg.style.background = '#065f46';
+        resMsg.style.color = '#a7f3d0';
+        resMsg.textContent = '✅ ' + (data.message || 'Auto-connected successfully!');
+      }
+      loadSupabaseStatus();
+    } else {
+      if (resMsg) {
+        resMsg.style.background = '#7f1d1d';
+        resMsg.style.color = '#fecaca';
+        resMsg.textContent = '⚠️ Auto-connection warning: ' + (data.message || data.error || 'Failed to auto-connect');
+      }
+      loadSupabaseStatus();
+    }
+  } catch (err) {
+    if (autoBtn) {
+      autoBtn.disabled = false;
+      autoBtn.textContent = '⚡ Auto Connect';
+    }
+    if (resMsg) {
+      resMsg.style.background = '#7f1d1d';
+      resMsg.style.color = '#fecaca';
+      resMsg.textContent = 'Network error during auto-connect.';
     }
   }
 }
@@ -1955,7 +2072,7 @@ async function handleSaveSupabaseConfig(e) {
 
     if (saveBtn) {
       saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Save & Connect Supabase';
+      saveBtn.textContent = '💾 Save & Connect';
     }
 
     if (res.ok && data.success) {
@@ -1977,7 +2094,7 @@ async function handleSaveSupabaseConfig(e) {
   } catch (err) {
     if (saveBtn) {
       saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Save & Connect Supabase';
+      saveBtn.textContent = '💾 Save & Connect';
     }
     if (resMsg) {
       resMsg.style.display = 'block';
@@ -2005,13 +2122,18 @@ async function testSupabaseConnection() {
       if (resMsg) {
         resMsg.style.background = '#065f46';
         resMsg.style.color = '#a7f3d0';
-        resMsg.textContent = '✅ Supabase Connection Successful! ' + (data.message || '');
+        let extra = '';
+        if (data.storage && !data.storage.ready) {
+          extra = ' (Notice: Storage bucket needs SQL setup script)';
+        }
+        resMsg.textContent = '✅ Supabase Connection Successful! ' + (data.message || '') + extra;
       }
       if (pill) {
-        pill.textContent = '🟢 Connected';
+        pill.textContent = '🟢 Auto-Connected';
         pill.style.background = '#065f46';
         pill.style.color = '#a7f3d0';
       }
+      loadSupabaseStatus();
     } else {
       if (resMsg) {
         resMsg.style.display = 'block';
@@ -2051,7 +2173,7 @@ async function triggerSupabaseSync() {
       if (res.ok && data.success) {
         resMsg.style.background = '#065f46';
         resMsg.style.color = '#a7f3d0';
-        resMsg.textContent = `✅ ${data.message} (${data.reportsCount} citizen incident reports synced)`;
+        resMsg.textContent = `✅ ${data.message} (${data.reportsCount || 0} reports, ${data.usersCount || 0} users)`;
         loadSupabaseStatus();
       } else {
         resMsg.style.background = '#7f1d1d';

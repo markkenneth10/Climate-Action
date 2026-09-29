@@ -481,13 +481,13 @@ function parseBody(req) {
 }
 
 // ==========================================
-// SUPABASE DATABASE TWO-WAY SYNCHRONIZATION
+// SUPABASE CLOUD ARCHITECTURE (DATABASE, STORAGE, USER ACCOUNTS) TWO-WAY SYNC
 // ==========================================
 async function syncWithSupabase() {
   try {
     const status = await supabaseClient.testConnection();
     if (status.connected) {
-      console.log('🟢 Supabase Database connected successfully.');
+      console.log('🟢 Supabase Database & Cloud Services connected successfully.');
       
       // 1. Sync Configuration
       const remoteConfig = await supabaseClient.fetchConfigFromSupabase();
@@ -502,14 +502,45 @@ async function syncWithSupabase() {
         await supabaseClient.syncConfigToSupabase(websiteConfig);
       }
 
-      // 2. Sync Citizen Incident Reports
+      // 2. Sync Citizen Incident Reports (Preserve all valid reports from Supabase)
       const remoteReports = await supabaseClient.fetchReportsFromSupabase();
       if (remoteReports && Array.isArray(remoteReports) && remoteReports.length > 0) {
-        reportsStore = remoteReports.filter(r => r && !String(r.id || '').startsWith('CAR-2026-'));
+        // Merge remote reports with local store
+        const reportMap = new Map();
+        remoteReports.forEach(r => { if (r && r.id) reportMap.set(r.id, r); });
+        reportsStore.forEach(r => { if (r && r.id && !reportMap.has(r.id)) reportMap.set(r.id, r); });
+        reportsStore = Array.from(reportMap.values());
         saveReportsToDisk();
       } else if (reportsStore.length > 0) {
         for (const r of reportsStore) {
           await supabaseClient.saveReportToSupabase(r);
+        }
+      }
+
+      // 3. Sync Registered Citizen & Admin User Accounts
+      const remoteUsers = await supabaseClient.fetchUsersFromSupabase();
+      if (remoteUsers && Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+        loadUsersFromDisk();
+        const userMap = new Map();
+        remoteUsers.forEach(u => {
+          if (u && u.email) userMap.set(u.email.toLowerCase().trim(), u);
+        });
+        userStore.forEach(u => {
+          if (u && u.email) {
+            const key = u.email.toLowerCase().trim();
+            if (!userMap.has(key)) {
+              userMap.set(key, u);
+            } else {
+              // Merge local state with remote state
+              userMap.set(key, { ...userMap.get(key), ...u });
+            }
+          }
+        });
+        userStore = Array.from(userMap.values());
+        saveUsersToDisk();
+      } else if (userStore.length > 0) {
+        for (const u of userStore) {
+          await supabaseClient.saveUserToSupabase(u);
         }
       }
     } else {
@@ -520,6 +551,7 @@ async function syncWithSupabase() {
   }
 }
 setTimeout(syncWithSupabase, 800);
+setInterval(syncWithSupabase, 60000); // Recurring auto-sync every 60 seconds
 
 // ==========================================
 // HTTP SERVER & ROUTING
@@ -660,6 +692,7 @@ const server = http.createServer(async (req, res) => {
       };
       userStore.push(newUser);
       saveUsersToDisk();
+      supabaseClient.saveUserToSupabase(newUser).catch(() => {});
 
       // Return safe user object (omit password)
       const { password, ...safeUser } = newUser;
@@ -679,6 +712,23 @@ const server = http.createServer(async (req, res) => {
 
       loadUsersFromDisk();
       let user = userStore.find(u => (u.email || '').toLowerCase() === email);
+      if (!user) {
+        // Fallback: check Supabase Cloud Database for registered accounts
+        try {
+          const remoteUsers = await supabaseClient.fetchUsersFromSupabase();
+          if (remoteUsers && Array.isArray(remoteUsers)) {
+            const remoteUser = remoteUsers.find(u => (u.email || '').toLowerCase() === email);
+            if (remoteUser) {
+              user = remoteUser;
+              userStore.push(remoteUser);
+              saveUsersToDisk();
+            }
+          }
+        } catch (sbErr) {
+          console.warn('Supabase remote user lookup failed:', sbErr.message);
+        }
+      }
+
       if (!user) {
         return sendJson(401, { error: 'No citizen account found for this email. Please register first.' });
       }
@@ -811,10 +861,22 @@ const server = http.createServer(async (req, res) => {
       if (data.province !== undefined) user.province = data.province.trim();
       if (data.zip !== undefined) user.zip = data.zip.trim();
       if (data.bio !== undefined) user.bio = data.bio.trim();
-      if (data.avatar !== undefined) user.avatar = data.avatar;
+      if (data.avatar !== undefined) {
+        if (data.avatar && data.avatar.startsWith('data:image/')) {
+          try {
+            const upAv = await supabaseClient.uploadBase64Image(data.avatar, 'avatars', 'avatar');
+            user.avatar = upAv.success && upAv.publicUrl ? upAv.publicUrl : data.avatar;
+          } catch (e) {
+            user.avatar = data.avatar;
+          }
+        } else {
+          user.avatar = data.avatar;
+        }
+      }
       if (data.emergencyContactName !== undefined) user.emergencyContactName = data.emergencyContactName.trim();
       if (data.emergencyContactPhone !== undefined) user.emergencyContactPhone = data.emergencyContactPhone.trim();
       saveUsersToDisk();
+      supabaseClient.updateUserInSupabase(user.email, user).catch(() => {});
 
       const { password, ...safeUser } = user;
       return sendJson(200, {
@@ -843,15 +905,38 @@ const server = http.createServer(async (req, res) => {
         return sendJson(400, { error: 'Front ID image and Selfie holding ID are required for official verification' });
       }
 
+      // Automatically upload KYC verification documents to Supabase Storage
+      let frontImgUrl = data.frontImage;
+      let backImgUrl = data.backImage || '';
+      let selfieImgUrl = data.selfieImage;
+
+      try {
+        if (frontImgUrl && frontImgUrl.startsWith('data:image/')) {
+          const upF = await supabaseClient.uploadBase64Image(frontImgUrl, 'kyc', 'kyc_front');
+          if (upF.success && upF.publicUrl) frontImgUrl = upF.publicUrl;
+        }
+        if (backImgUrl && backImgUrl.startsWith('data:image/')) {
+          const upB = await supabaseClient.uploadBase64Image(backImgUrl, 'kyc', 'kyc_back');
+          if (upB.success && upB.publicUrl) backImgUrl = upB.publicUrl;
+        }
+        if (selfieImgUrl && selfieImgUrl.startsWith('data:image/')) {
+          const upS = await supabaseClient.uploadBase64Image(selfieImgUrl, 'kyc', 'kyc_selfie');
+          if (upS.success && upS.publicUrl) selfieImgUrl = upS.publicUrl;
+        }
+      } catch (uploadErr) {
+        console.warn('Supabase KYC storage upload warning:', uploadErr.message);
+      }
+
       user.kycStatus = 'pending';
       user.kycIdType = data.idType.trim();
       user.kycIdNumber = data.idNumber.trim();
-      user.kycFrontImage = data.frontImage;
-      user.kycBackImage = data.backImage || '';
-      user.kycSelfieImage = data.selfieImage;
+      user.kycFrontImage = frontImgUrl;
+      user.kycBackImage = backImgUrl;
+      user.kycSelfieImage = selfieImgUrl;
       user.kycSubmittedAt = Date.now();
       user.kycRejectReason = '';
       saveUsersToDisk();
+      supabaseClient.updateUserInSupabase(user.email, user).catch(() => {});
 
       const { password, ...safeUser } = user;
       return sendJson(200, {
@@ -1736,9 +1821,6 @@ const server = http.createServer(async (req, res) => {
         return sendJson(400, { error: 'Both Supabase Project URL and API Key are required' });
       }
       const resSave = supabaseClient.saveCredentials(body.supabaseUrl, body.supabaseKey, Boolean(body.isServiceRole));
-      if (!resSave.success) {
-        return sendJson(500, { error: resSave.error || 'Failed to save credentials' });
-      }
       const testRes = await supabaseClient.testConnection();
       if (testRes.connected) {
         syncWithSupabase().catch(() => {});
@@ -1746,7 +1828,27 @@ const server = http.createServer(async (req, res) => {
       return sendJson(200, {
         success: true,
         message: testRes.connected ? 'Credentials saved and successfully connected to Supabase!' : 'Credentials saved, but connection test failed: ' + (testRes.error || ''),
-        test: testRes
+        test: testRes,
+        status: supabaseClient.getStatus()
+      });
+    }
+
+    if (pathname === '/api/admin/supabase-auto-connect' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+      const testRes = await supabaseClient.testConnection();
+      if (testRes.connected) {
+        await syncWithSupabase();
+      }
+      return sendJson(200, {
+        success: testRes.connected,
+        message: testRes.connected ? 'Successfully auto-connected and synchronized database, storage, and accounts!' : 'Auto-connection attempt: ' + (testRes.error || 'Awaiting credentials'),
+        test: testRes,
+        status: supabaseClient.getStatus(),
+        reportsCount: reportsStore.length,
+        usersCount: userStore.length
       });
     }
 
@@ -1758,8 +1860,10 @@ const server = http.createServer(async (req, res) => {
       await syncWithSupabase();
       return sendJson(200, {
         success: true,
-        message: 'Data synchronized with Supabase database successfully',
-        reportsCount: reportsStore.length
+        message: 'Database, storage, and accounts synchronized with Supabase successfully',
+        reportsCount: reportsStore.length,
+        usersCount: userStore.length,
+        status: supabaseClient.getStatus()
       });
     }
 
