@@ -1059,8 +1059,10 @@ body.admin-drawer-open {
 
 /* ==========================================================================
    Admin Dashboard Footer Navigation Bar (with Relocated Hamburger Menu)
+   Only visible on mobile devices and tablets (max-width: 1024px); Hidden on desktop
    ========================================================================== */
 .admin-footer-navbar {
+  display: none !important; /* Hidden on desktop screens */
   position: fixed;
   bottom: 0;
   left: 0;
@@ -1068,7 +1070,6 @@ body.admin-drawer-open {
   height: 64px;
   background: #07150C;
   border-top: 1px solid #163820;
-  display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 99;
@@ -1124,8 +1125,16 @@ body.admin-drawer-open {
   color: #FFFFFF;
 }
 
-/* Give main workspace content sufficient bottom padding so footer bar never obstructs content */
-#admin-workspace-view .admin-content {
-  padding-bottom: 90px !important;
+/* Show footer navigation bar ONLY on mobile devices and tablets */
+@media (max-width: 1024px) {
+  .admin-footer-navbar {
+    display: flex !important;
+  }
+
+  /* Give workspace content sufficient bottom padding so footer bar never obstructs content */
+  #admin-workspace-view .admin-content {
+    padding-bottom: 90px !important;
+  }
 }
+
 
