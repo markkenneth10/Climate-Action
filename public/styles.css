@@ -2163,6 +2163,45 @@ textarea.form-control {
     grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
   }
+
+  /* Show Mobile Bottom Navigation on mobile and tablet devices as requested */
+  .mobile-bottom-nav {
+    display: flex !important;
+    height: var(--bottom-nav-height);
+  }
+
+  /* Hide Desktop Sub-Bar on mobile devices and tablet */
+  .nav-sub-bar {
+    display: none !important;
+  }
+
+  /* Show hamburger button on mobile devices and tablet */
+  .btn-hamburger-mobile {
+    display: flex !important;
+  }
+
+  /* Padding on body so bottom nav doesn't cover content */
+  body {
+    padding-bottom: calc(var(--bottom-nav-height) + 16px) !important;
+  }
+}
+
+/* Explicitly enforce desktop layout (> 1024px): NEVER show mobile bottom navigation */
+@media (min-width: 1025px) {
+  .mobile-bottom-nav {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  .nav-sub-bar {
+    display: block !important;
+  }
+  .btn-hamburger-mobile {
+    display: none !important;
+  }
+  body {
+    padding-bottom: 0 !important;
+  }
 }
 
 /* Mobile Breakpoint (<= 640px) */

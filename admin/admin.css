@@ -848,8 +848,8 @@ body.admin-drawer-open {
   grid-template-columns: 1fr 1fr;
 }
 
-/* Tablet & Mobile Breakpoint (<= 900px) */
-@media (max-width: 900px) {
+/* Tablet & Mobile Breakpoint (<= 1024px) */
+@media (max-width: 1024px) {
   .btn-admin-hamburger {
     display: flex;
   }
@@ -1125,15 +1125,31 @@ body.admin-drawer-open {
   color: #FFFFFF;
 }
 
-/* Show footer navigation bar ONLY on mobile devices and tablets */
+/* Show footer navigation bar ONLY on mobile devices and tablets (<= 1024px) */
 @media (max-width: 1024px) {
   .admin-footer-navbar {
     display: flex !important;
+    visibility: visible !important;
   }
 
   /* Give workspace content sufficient bottom padding so footer bar never obstructs content */
   #admin-workspace-view .admin-content {
     padding-bottom: 90px !important;
+  }
+}
+
+/* Explicitly enforce desktop layout (> 1024px): NEVER show footer navigation bar */
+@media (min-width: 1025px) {
+  .admin-footer-navbar {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    opacity: 0 !important;
+  }
+
+  #admin-workspace-view .admin-content {
+    padding-bottom: 2rem !important;
   }
 }
 

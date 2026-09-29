@@ -73,7 +73,19 @@
       </div>
 
       <div class="admin-topbar-right">
-        <!-- Clean topbar: Profile details and actions moved to Admin Settings tab -->
+        <div class="admin-user-pill">
+          <div class="admin-avatar-circle" id="admin-header-avatar">SA</div>
+          <div class="admin-user-details">
+            <span class="admin-profile-name" id="admin-profile-name" style="font-weight: 700; font-size: 0.82rem; color: #FFFFFF; display: block; line-height: 1.2;">Administrator</span>
+            <span class="admin-profile-dept" id="admin-profile-dept" style="font-size: 0.68rem; color: rgba(255,255,255,0.75); display: block;">LGU CENRO Command</span>
+          </div>
+        </div>
+        <a href="/" target="_blank" class="btn-admin-outline" style="text-decoration: none; font-size: 0.78rem; padding: 0.45rem 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem; color: #FFFFFF; border-color: rgba(255,255,255,0.25);">
+          <span class="admin-site-link-text">Citizen Site</span> ↗
+        </a>
+        <button type="button" onclick="exitDashboard(true)" class="btn-admin-danger" style="font-size: 0.78rem; padding: 0.45rem 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem;" title="Sign out of Admin Console">
+          <span class="admin-signout-text">Sign Out</span> 🚪
+        </button>
       </div>
     </header>
 
@@ -1009,7 +1021,7 @@
         <span class="admin-footer-icon">📊</span>
         <span class="admin-footer-label">Overview</span>
       </button>
-      <button type="button" class="admin-footer-nav-item" data-tab="tickets" onclick="switchAdminTab('tickets')">
+      <button type="button" class="admin-footer-nav-item" data-tab="triage" onclick="switchAdminTab('triage')">
         <span class="admin-footer-icon">🚨</span>
         <span class="admin-footer-label">Tickets</span>
       </button>

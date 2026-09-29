@@ -204,25 +204,41 @@ function showAdminLogin() {
 }
 
 function showAdminWorkspace() {
-  document.getElementById('admin-auth-view').style.display = 'none';
-  document.getElementById('admin-workspace-view').style.display = 'flex';
+  const authView = document.getElementById('admin-auth-view');
+  if (authView) authView.style.display = 'none';
+  const workView = document.getElementById('admin-workspace-view');
+  if (workView) workView.style.display = 'flex';
 
-  // Set Profile info in Topbar
-  document.getElementById('admin-profile-name').textContent = currentAdmin.name || 'Administrator';
-  document.getElementById('admin-profile-dept').textContent = currentAdmin.department || 'LGU CENRO';
+  // Set Profile info in Topbar safely
+  const profName = document.getElementById('admin-profile-name');
+  if (profName) profName.textContent = currentAdmin.name || 'Administrator';
+  const profDept = document.getElementById('admin-profile-dept');
+  if (profDept) profDept.textContent = currentAdmin.department || 'LGU CENRO';
+
+  const avatar = document.getElementById('admin-header-avatar');
+  if (avatar) {
+    const initials = (currentAdmin.name || 'Admin').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    avatar.textContent = initials || 'SA';
+  }
 
   const badge = document.getElementById('admin-role-badge');
-  if (currentAdmin.role === 'super_admin') {
-    badge.textContent = '👑 SUPER ADMIN';
-    badge.className = 'admin-badge-super';
-    document.getElementById('nav-subadmins').style.display = 'flex';
-    document.getElementById('nav-settings').style.display = 'flex';
-  } else {
-    badge.textContent = '🛡️ SUB-ADMIN';
-    badge.className = 'admin-badge-sub';
-    // Sub-admins cannot see super admin settings or manage sub-admins
-    document.getElementById('nav-subadmins').style.display = 'none';
-    document.getElementById('nav-settings').style.display = 'none';
+  if (badge) {
+    if (currentAdmin.role === 'super_admin') {
+      badge.textContent = '👑 SUPER ADMIN';
+      badge.className = 'admin-badge-super';
+      const subNav = document.getElementById('nav-subadmins');
+      if (subNav) subNav.style.display = 'flex';
+      const setNav = document.getElementById('nav-settings');
+      if (setNav) setNav.style.display = 'flex';
+    } else {
+      badge.textContent = '🛡️ SUB-ADMIN';
+      badge.className = 'admin-badge-sub';
+      // Sub-admins cannot see super admin settings or manage sub-admins
+      const subNav = document.getElementById('nav-subadmins');
+      if (subNav) subNav.style.display = 'none';
+      const setNav = document.getElementById('nav-settings');
+      if (setNav) setNav.style.display = 'none';
+    }
   }
 
   // Load all data
@@ -288,6 +304,8 @@ async function handleAdminLogout() {
 
 // Tab Switching
 function switchAdminTab(tabName) {
+  if (tabName === 'tickets') tabName = 'triage';
+
   // Update sidebar nav buttons
   document.querySelectorAll('.admin-nav-item').forEach(btn => btn.classList.remove('active'));
   const clicked = Array.from(document.querySelectorAll('.admin-nav-item')).find(b => b.getAttribute('onclick')?.includes(tabName));
@@ -296,7 +314,7 @@ function switchAdminTab(tabName) {
   // Update footer navbar buttons
   document.querySelectorAll('.admin-footer-nav-item').forEach(btn => {
     const btnTab = btn.getAttribute('data-tab');
-    if (btnTab === tabName) {
+    if (btnTab === tabName || (btnTab === 'tickets' && tabName === 'triage')) {
       btn.classList.add('active');
     } else if (btnTab) {
       btn.classList.remove('active');

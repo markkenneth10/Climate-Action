@@ -1600,69 +1600,124 @@ async function fetchReports() {
 }
 
 function renderDashboardData() {
-  if (!state.currentUser) return;
-
-  const userEmail = (state.currentUser.email || '').toLowerCase();
-  const userReports = (state.reports || []).filter(r => ((r.submittedEmail || r.userEmail || '')).toLowerCase() === userEmail);
-
-  // Update 4 Personalized KPI Stat Widgets based on citizen's real reports
-  const total = userReports.length;
-  const pending = userReports.filter(r => r.status === 'Pending' || r.status === 'Submitted').length;
-  const inProgress = userReports.filter(r => r.status === 'In Progress' || r.status === 'Investigating' || r.status === 'Under Review').length;
-  const resolved = userReports.filter(r => r.status === 'Resolved' || r.status === 'Closed').length;
+  const kycPill = document.getElementById('dash-user-kyc-pill');
+  const trendEl = document.getElementById('kpi-user-reports-trend');
 
   const totalEl = document.getElementById('kpi-total-reports') || document.getElementById('kpi-user-total-reports');
   const pendEl = document.getElementById('kpi-pending-reports') || document.getElementById('kpi-user-pending-reports');
   const inProgEl = document.getElementById('kpi-inprogress-reports') || document.getElementById('kpi-user-inprogress-reports');
   const resEl = document.getElementById('kpi-resolved-reports') || document.getElementById('kpi-user-resolved-reports');
-
-  if (totalEl) totalEl.textContent = total;
-  if (pendEl) pendEl.textContent = pending;
-  if (inProgEl) inProgEl.textContent = inProgress;
-  if (resEl) resEl.textContent = resolved;
-
-  // Render My Citizen Activity & Reports Table showing real user reports only
   const tableBody = document.getElementById('dashboard-recent-table-body');
-  if (tableBody) {
-    if (userReports.length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="4" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
-            <div style="margin-bottom: 0.5rem;"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--text-muted);"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></div>
-            <div style="font-weight: 800; color: var(--text-main); font-size: 1.05rem;">No Incident Reports Filed Yet</div>
-            <div style="font-size: 0.85rem; margin-top: 0.35rem; line-height: 1.5; max-width: 480px; margin-left: auto; margin-right: auto;">
-              ${state.currentUser.kycStatus === 'verified'
-                ? 'Your citizen account is verified and fully authorized to report local environmental hazards, flooding, or waste violations.'
-                : 'Under City Ordinance #2026-04, please complete one-time government ID verification to begin filing real-time hazard reports.'}
-            </div>
-            ${state.currentUser.kycStatus === 'verified'
-              ? '<button class="btn-primary" onclick="switchTab(\'report\')" style="margin-top: 1.25rem; font-size: 0.88rem; padding: 0.65rem 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;">Submit Your First Incident Report</button>'
-              : '<button class="btn-primary" onclick="openKycModal()" style="margin-top: 1.25rem; font-size: 0.88rem; padding: 0.65rem 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;">Verify Identity (Government ID)</button>'}
-          </td>
-        </tr>
-      `;
-    } else {
-      tableBody.innerHTML = userReports.map(r => {
-        const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
-        const st = (r.status || 'Submitted');
-        const stClass = st.toLowerCase().replace(' ', '-');
-        const dotHtml = `<span class="status-dot ${stClass}"></span>`;
 
-        return `
-          <tr class="interactive-row" onclick="openReportTimelineModal('${r.id}', '${escapeHtml(r.category || r.title)}', '${escapeHtml(r.barangay || '')}', '${st}')">
-            <td>
-              <div class="report-type-cell">${escapeHtml(r.title || r.category)}</div>
+  if (state.currentUser) {
+    const user = state.currentUser;
+    if (kycPill) {
+      if (user.kycStatus === 'verified') {
+        kycPill.innerHTML = '🛡️ Verified Citizen';
+        kycPill.style.background = '#065F46';
+        kycPill.style.color = '#A7F3D0';
+      } else if (user.kycStatus === 'pending') {
+        kycPill.innerHTML = '⏳ KYC Review Pending';
+        kycPill.style.background = '#854D0E';
+        kycPill.style.color = '#FDE68A';
+      } else {
+        kycPill.innerHTML = '👤 Unverified Account';
+        kycPill.style.background = '#1E3A8A';
+        kycPill.style.color = '#BFDBFE';
+      }
+    }
+    if (trendEl) trendEl.textContent = 'Personal account log';
+
+    const userEmail = (user.email || '').toLowerCase();
+    const userReports = (state.reports || []).filter(r => ((r.submittedEmail || r.userEmail || '')).toLowerCase() === userEmail);
+
+    const total = userReports.length;
+    const pending = userReports.filter(r => r.status === 'Pending' || r.status === 'Submitted').length;
+    const inProgress = userReports.filter(r => r.status === 'In Progress' || r.status === 'Investigating' || r.status === 'Under Review').length;
+    const resolved = userReports.filter(r => r.status === 'Resolved' || r.status === 'Closed').length;
+
+    if (totalEl) totalEl.textContent = total;
+    if (pendEl) pendEl.textContent = pending;
+    if (inProgEl) inProgEl.textContent = inProgress;
+    if (resEl) resEl.textContent = resolved;
+
+    if (tableBody) {
+      if (userReports.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; padding: 2rem 1rem; color: var(--text-muted);">
+              <div style="font-weight: 800; color: var(--text-main); font-size: 1rem;">No Incident Reports Filed Yet</div>
+              <div style="font-size: 0.82rem; margin-top: 0.35rem; color: var(--text-muted); line-height: 1.4;">
+                ${user.kycStatus === 'verified'
+                  ? 'Your account is ready to report local hazards, illegal dumping, or flooding.'
+                  : 'Complete one-time KYC verification to submit certified incident reports.'}
+              </div>
+              <button class="btn-primary" onclick="${user.kycStatus === 'verified' ? "switchTab('report')" : "openKycModal()"}" style="margin-top: 0.85rem; font-size: 0.82rem; padding: 0.5rem 1rem;">
+                ${user.kycStatus === 'verified' ? '+ Submit First Report' : 'Verify Identity Now'}
+              </button>
             </td>
-            <td>${escapeHtml(r.barangay || 'Metro Verde')}</td>
-            <td>
-              <span class="status-badge ${stClass}">
-                ${dotHtml} ${st}
-              </span>
-            </td>
-            <td style="color: var(--text-muted); font-size: 0.78rem;">${dateStr}</td>
           </tr>
         `;
-      }).join('');
+      } else {
+        tableBody.innerHTML = userReports.map(r => {
+          const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+          const st = (r.status || 'Submitted');
+          const stClass = st.toLowerCase().replace(' ', '-');
+          return `
+            <tr class="interactive-row" onclick="openReportTimelineModal('${r.id}', '${escapeHtml(r.category || r.title)}', '${escapeHtml(r.barangay || '')}', '${st}')">
+              <td><div class="report-type-cell">${escapeHtml(r.title || r.category)}</div></td>
+              <td>${escapeHtml(r.barangay || 'Metro Verde')}</td>
+              <td><span class="status-badge ${stClass}"><span class="status-dot ${stClass}"></span> ${st}</span></td>
+              <td style="color: var(--text-muted); font-size: 0.78rem;">${dateStr}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+  } else {
+    // Guest Citizen View: Show Municipal Community Activity and Recent Community Reports
+    if (kycPill) {
+      kycPill.innerHTML = '🌐 Public Community Mode';
+      kycPill.style.background = '#1E293B';
+      kycPill.style.color = '#94A3B8';
+    }
+    if (trendEl) trendEl.textContent = 'Metro Verde Municipality';
+
+    const allReports = state.reports || [];
+    const total = allReports.length;
+    const pending = allReports.filter(r => r.status === 'Pending' || r.status === 'Submitted').length;
+    const inProgress = allReports.filter(r => r.status === 'In Progress' || r.status === 'Investigating' || r.status === 'Under Review').length;
+    const resolved = allReports.filter(r => r.status === 'Resolved' || r.status === 'Closed').length;
+
+    if (totalEl) totalEl.textContent = total;
+    if (pendEl) pendEl.textContent = pending;
+    if (inProgEl) inProgEl.textContent = inProgress;
+    if (resEl) resEl.textContent = resolved;
+
+    if (tableBody) {
+      if (allReports.length > 0) {
+        tableBody.innerHTML = allReports.slice(0, 4).map(r => {
+          const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+          const st = (r.status || 'Submitted');
+          const stClass = st.toLowerCase().replace(' ', '-');
+          return `
+            <tr class="interactive-row" onclick="openReportTimelineModal('${r.id}', '${escapeHtml(r.category || r.title)}', '${escapeHtml(r.barangay || '')}', '${st}')">
+              <td><div class="report-type-cell">${escapeHtml(r.title || r.category)}</div></td>
+              <td>${escapeHtml(r.barangay || 'Metro Verde')}</td>
+              <td><span class="status-badge ${stClass}"><span class="status-dot ${stClass}"></span> ${st}</span></td>
+              <td style="color: var(--text-muted); font-size: 0.78rem;">${dateStr}</td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; padding: 2rem 1rem; color: var(--text-muted);">
+              <div>No community reports submitted yet.</div>
+            </td>
+          </tr>
+        `;
+      }
     }
   }
 
@@ -2291,6 +2346,26 @@ function setupNavigation() {
       }
     });
   });
+}
+
+// Mobile Drawer Controls
+function openMobileDrawer() {
+  const drawer = document.getElementById('mobile-drawer');
+  if (drawer) {
+    drawer.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeMobileDrawer(e) {
+  if (e && e.target && e.target.closest && e.target.closest('.mobile-drawer-panel') && !e.target.closest('.drawer-close-btn') && !e.target.closest('.drawer-nav-btn')) {
+    return;
+  }
+  const drawer = document.getElementById('mobile-drawer');
+  if (drawer) {
+    drawer.classList.remove('active');
+    document.body.style.overflow = '';
+  }
 }
 
 function switchTab(tabName) {
