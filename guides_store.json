@@ -1,0 +1,29 @@
+[
+  {
+    "id": "guide-01",
+    "title": "How to File a Verified Environmental Report",
+    "icon": "",
+    "category": "Reporting",
+    "summary": "Step-by-step checklist to submit geotagged photos that CENRO officers can immediately action.",
+    "content": "1. Log into your citizen account. 2. Select 'Report Incident' in the menu. 3. Select hazard type (Dumping, Tree Felling, Open Burning, Pollution). 4. Attach photo showing scope. 5. Provide landmark (e.g., 'Behind purok basketball court'). 6. Submit and save your Ticket ID (e.g. ECO-2026-1004).",
+    "updatedAt": 1789467840000
+  },
+  {
+    "id": "guide-02",
+    "title": "Understanding the 6-Stage Resolution Lifecycle",
+    "icon": "",
+    "category": "Tracking",
+    "summary": "What happens after you hit submit? Track municipal audit milestones in real-time.",
+    "content": "Stage 1: Submitted (Ticket generated) -> Stage 2: Under Review (CENRO Desk Triage) -> Stage 3: Verified (Field inspection confirmed) -> Stage 4: In Progress (Clean-up or enforcement underway) -> Stage 5: Resolved (Hazard remediated with proof) -> Stage 6: Closed (Audited by citizen & admin).",
+    "updatedAt": 1789467840000
+  },
+  {
+    "id": "guide-03",
+    "title": "Community Environmental Drives",
+    "icon": "",
+    "category": "Participation",
+    "summary": "How reporting environmental violations and joining cleanups helps Metro Verde.",
+    "content": "Participate in local tree-planting drives, river cleanups, and community zero-waste initiatives organized by CENRO and accredited barangay civic groups.",
+    "updatedAt": 1789467840000
+  }
+]

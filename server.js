@@ -28,10 +28,33 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-// Uploads Directory & In-Memory Media Cache
+// Uploads Directory & In-Memory Media Cache with JSON Backup
 const UPLOADS_DIR = path.join(USER_PUBLIC_DIR, 'uploads');
 const TMP_UPLOADS_DIR = path.join('/tmp', 'climate_uploads');
+const MEDIA_BACKUP_FILE = path.join(__dirname, 'uploaded_media_store.json');
 const uploadedFilesCache = new Map();
+
+function saveMediaBackupToDisk() {
+  try {
+    const backupObj = {};
+    uploadedFilesCache.forEach((val, key) => {
+      if (val && val.buffer) {
+        backupObj[key] = {
+          filename: val.filename,
+          url: val.url,
+          category: val.category,
+          contentType: val.contentType,
+          size: val.size,
+          timestamp: val.timestamp,
+          base64: val.buffer.toString('base64')
+        };
+      }
+    });
+    fs.writeFileSync(MEDIA_BACKUP_FILE, JSON.stringify(backupObj), 'utf8');
+  } catch (err) {
+    console.warn('Could not save media backup to disk:', err.message);
+  }
+}
 
 function initUploadsCache() {
   const dirs = [UPLOADS_DIR, TMP_UPLOADS_DIR];
@@ -66,6 +89,35 @@ function initUploadsCache() {
       console.warn('Uploads directory init warning for ' + dir + ':', err.message);
     }
   });
+
+  // Restore any persistent media from MEDIA_BACKUP_FILE if missing on disk
+  try {
+    if (fs.existsSync(MEDIA_BACKUP_FILE)) {
+      const raw = fs.readFileSync(MEDIA_BACKUP_FILE, 'utf8');
+      const backup = JSON.parse(raw);
+      if (backup && typeof backup === 'object') {
+        Object.keys(backup).forEach(urlKey => {
+          const item = backup[urlKey];
+          if (item && item.base64 && !uploadedFilesCache.has(urlKey)) {
+            const buffer = Buffer.from(item.base64, 'base64');
+            uploadedFilesCache.set(urlKey, {
+              filename: item.filename,
+              url: item.url || urlKey,
+              category: item.category || 'media',
+              buffer,
+              contentType: item.contentType || 'image/png',
+              size: buffer.length,
+              timestamp: item.timestamp || Date.now()
+            });
+            try {
+              const diskPath = path.join(UPLOADS_DIR, item.filename);
+              if (!fs.existsSync(diskPath)) fs.writeFileSync(diskPath, buffer);
+            } catch (_) {}
+          }
+        });
+      }
+    }
+  } catch (_) {}
 }
 initUploadsCache();
 
@@ -212,7 +264,7 @@ function isAdminRole(role) {
 // AUTHENTIC IN-MEMORY DATA STORES
 // ==========================================
 
-// 1. Admin Accounts (Default Super Admin, no demo sub-admins)
+// 1. Admin Accounts (Default Super Admin, persistent across server restarts)
 let adminStore = [
   {
     id: "admin-super-01",
@@ -227,6 +279,38 @@ let adminStore = [
     createdAt: Date.now()
   }
 ];
+
+const ADMINS_FILE = path.join(__dirname, 'admins_store.json');
+const TMP_ADMINS_FILE = path.join('/tmp', 'climate_admins_store.json');
+
+function saveAdminsToDisk() {
+  try {
+    const dataStr = JSON.stringify(adminStore, null, 2);
+    try { fs.writeFileSync(ADMINS_FILE, dataStr, 'utf8'); } catch (_) {}
+    try { fs.writeFileSync(TMP_ADMINS_FILE, dataStr, 'utf8'); } catch (_) {}
+  } catch (err) {
+    console.warn('Could not save admins to disk:', err.message);
+  }
+}
+
+function loadAdminsFromDisk() {
+  try {
+    let raw = null;
+    if (fs.existsSync(ADMINS_FILE)) raw = fs.readFileSync(ADMINS_FILE, 'utf8');
+    else if (fs.existsSync(TMP_ADMINS_FILE)) raw = fs.readFileSync(TMP_ADMINS_FILE, 'utf8');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved) && saved.length > 0) {
+        // Ensure super admin always exists
+        const hasSuper = saved.some(a => a.email === 'markkennethulgasan@gmail.com');
+        adminStore = hasSuper ? saved : [adminStore[0], ...saved];
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load admins from disk:', err.message);
+  }
+}
+loadAdminsFromDisk();
 
 // 2. Citizen Users (Registration pool - users register their own accounts with persistence)
 let userStore = [];
@@ -383,6 +467,36 @@ let weatherAdvisory = {
   updatedAt: Date.now()
 };
 
+const WEATHER_FILE = path.join(__dirname, 'weather_store.json');
+const TMP_WEATHER_FILE = path.join('/tmp', 'climate_weather_store.json');
+
+function saveWeatherToDisk() {
+  try {
+    const jsonStr = JSON.stringify(weatherAdvisory, null, 2);
+    try { fs.writeFileSync(WEATHER_FILE, jsonStr, 'utf8'); } catch (_) {}
+    try { fs.writeFileSync(TMP_WEATHER_FILE, jsonStr, 'utf8'); } catch (_) {}
+  } catch (err) {
+    console.warn('Could not save weather to disk:', err.message);
+  }
+}
+
+function loadWeatherFromDisk() {
+  try {
+    let raw = null;
+    if (fs.existsSync(WEATHER_FILE)) raw = fs.readFileSync(WEATHER_FILE, 'utf8');
+    else if (fs.existsSync(TMP_WEATHER_FILE)) raw = fs.readFileSync(TMP_WEATHER_FILE, 'utf8');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved && typeof saved === 'object') {
+        weatherAdvisory = { ...weatherAdvisory, ...saved };
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load weather from disk:', err.message);
+  }
+}
+loadWeatherFromDisk();
+
 // 5. Announcements (Official Municipal Directives)
 let announcementsStore = [
   {
@@ -396,6 +510,36 @@ let announcementsStore = [
     timestamp: Date.now()
   }
 ];
+
+const ANNOUNCEMENTS_FILE = path.join(__dirname, 'announcements_store.json');
+const TMP_ANNOUNCEMENTS_FILE = path.join('/tmp', 'climate_announcements_store.json');
+
+function saveAnnouncementsToDisk() {
+  try {
+    const jsonStr = JSON.stringify(announcementsStore, null, 2);
+    try { fs.writeFileSync(ANNOUNCEMENTS_FILE, jsonStr, 'utf8'); } catch (_) {}
+    try { fs.writeFileSync(TMP_ANNOUNCEMENTS_FILE, jsonStr, 'utf8'); } catch (_) {}
+  } catch (err) {
+    console.warn('Could not save announcements to disk:', err.message);
+  }
+}
+
+function loadAnnouncementsFromDisk() {
+  try {
+    let raw = null;
+    if (fs.existsSync(ANNOUNCEMENTS_FILE)) raw = fs.readFileSync(ANNOUNCEMENTS_FILE, 'utf8');
+    else if (fs.existsSync(TMP_ANNOUNCEMENTS_FILE)) raw = fs.readFileSync(TMP_ANNOUNCEMENTS_FILE, 'utf8');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved)) {
+        announcementsStore = saved;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load announcements from disk:', err.message);
+  }
+}
+loadAnnouncementsFromDisk();
 
 // 6. User Guides (Authentic official guidelines for reporting & laws)
 let userGuidesStore = [
@@ -424,6 +568,100 @@ let userGuidesStore = [
     content: "Participate in local tree-planting drives, river cleanups, and community zero-waste initiatives organized by CENRO and accredited barangay civic groups."
   }
 ];
+
+const GUIDES_FILE = path.join(__dirname, 'guides_store.json');
+const TMP_GUIDES_FILE = path.join('/tmp', 'climate_guides_store.json');
+
+function saveUserGuidesToDisk() {
+  try {
+    const jsonStr = JSON.stringify(userGuidesStore, null, 2);
+    try { fs.writeFileSync(GUIDES_FILE, jsonStr, 'utf8'); } catch (_) {}
+    try { fs.writeFileSync(TMP_GUIDES_FILE, jsonStr, 'utf8'); } catch (_) {}
+  } catch (err) {
+    console.warn('Could not save guides to disk:', err.message);
+  }
+}
+
+function loadUserGuidesFromDisk() {
+  try {
+    let raw = null;
+    if (fs.existsSync(GUIDES_FILE)) raw = fs.readFileSync(GUIDES_FILE, 'utf8');
+    else if (fs.existsSync(TMP_GUIDES_FILE)) raw = fs.readFileSync(TMP_GUIDES_FILE, 'utf8');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved)) {
+        userGuidesStore = saved;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load guides from disk:', err.message);
+  }
+}
+loadUserGuidesFromDisk();
+
+// Community Activities Store
+let activitiesStore = [
+  {
+    id: "act-1",
+    title: "Community Watershed Tree-Planting",
+    date: "Oct 12, 2026 • 7:00 AM",
+    location: "Upper Watershed Forest Reserve",
+    category: "Reforestation",
+    target: "1,200 Hardwood Saplings",
+    registered: 0,
+    max: 150
+  },
+  {
+    id: "act-2",
+    title: "Makilas River Corridor Clean-Up",
+    date: "Oct 18, 2026 • 6:00 AM",
+    location: "Makilas River Corridor Spillway",
+    category: "River Restoration",
+    target: "500 Native Bamboo Saplings & Trash Divert",
+    registered: 0,
+    max: 100
+  },
+  {
+    id: "act-3",
+    title: "Barangay Zero-Waste & Segregation Workshop",
+    date: "Oct 25, 2026 • 9:00 AM",
+    location: "Barangay Malinis Civic Hall",
+    category: "Civic Education",
+    target: "60 Families Certified in Zero-Waste",
+    registered: 0,
+    max: 80
+  }
+];
+
+const ACTIVITIES_FILE = path.join(__dirname, 'activities_store.json');
+const TMP_ACTIVITIES_FILE = path.join('/tmp', 'climate_activities_store.json');
+
+function saveActivitiesToDisk() {
+  try {
+    const jsonStr = JSON.stringify(activitiesStore, null, 2);
+    try { fs.writeFileSync(ACTIVITIES_FILE, jsonStr, 'utf8'); } catch (_) {}
+    try { fs.writeFileSync(TMP_ACTIVITIES_FILE, jsonStr, 'utf8'); } catch (_) {}
+  } catch (err) {
+    console.warn('Could not save activities to disk:', err.message);
+  }
+}
+
+function loadActivitiesFromDisk() {
+  try {
+    let raw = null;
+    if (fs.existsSync(ACTIVITIES_FILE)) raw = fs.readFileSync(ACTIVITIES_FILE, 'utf8');
+    else if (fs.existsSync(TMP_ACTIVITIES_FILE)) raw = fs.readFileSync(TMP_ACTIVITIES_FILE, 'utf8');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved) && saved.length > 0) {
+        activitiesStore = saved;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load activities from disk:', err.message);
+  }
+}
+loadActivitiesFromDisk();
 
 // 7. Incident Reports Store (Real-time citizen incident reports only - no demo data)
 let reportsStore = [];
@@ -738,6 +976,9 @@ const server = http.createServer(async (req, res) => {
       if (user.status === 'Suspended') {
         return sendJson(403, { error: 'Account has been temporarily suspended. Contact CENRO support.' });
       }
+
+      user.lastActiveAt = Date.now();
+      saveUsersToDisk();
 
       const { password, ...safeUser } = user;
       return sendJson(200, {
@@ -1131,13 +1372,13 @@ const server = http.createServer(async (req, res) => {
         return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
       }
       const updates = await parseBody(req);
-      // Retain existing logoImageUrl permanently unless explicitly cleared with removeLogo=true
-      if (!updates.logoImageUrl && websiteConfig.logoImageUrl && updates.removeLogo !== true) {
-        updates.logoImageUrl = websiteConfig.logoImageUrl;
-        updates.logoType = 'image';
-      }
-      if (updates.logoImageUrl) {
-        updates.logoType = 'image';
+      // Handle explicit logo clearing or switching to emoji
+      if (updates.removeLogo === true || (updates.logoType === 'emoji' && updates.logoImageUrl === '')) {
+        websiteConfig.logoImageUrl = '';
+        websiteConfig.logoType = 'emoji';
+      } else if (updates.logoImageUrl) {
+        websiteConfig.logoImageUrl = updates.logoImageUrl;
+        websiteConfig.logoType = 'image';
       }
       websiteConfig = {
         ...websiteConfig,
@@ -1172,6 +1413,7 @@ const server = http.createServer(async (req, res) => {
         ...updates,
         updatedAt: Date.now()
       };
+      saveWeatherToDisk();
       return sendJson(200, {
         success: true,
         message: 'Weather conditions and climate advisory updated',
@@ -1207,6 +1449,7 @@ const server = http.createServer(async (req, res) => {
         timestamp: Date.now()
       };
       announcementsStore.unshift(newAnn);
+      saveAnnouncementsToDisk();
       return sendJson(201, {
         success: true,
         message: 'Announcement published successfully',
@@ -1222,6 +1465,7 @@ const server = http.createServer(async (req, res) => {
       const parts = pathname.split('/');
       const annId = parts[parts.length - 1];
       announcementsStore = announcementsStore.filter(a => a.id !== annId);
+      saveAnnouncementsToDisk();
       return sendJson(200, { success: true, message: 'Announcement deleted' });
     }
 
@@ -1252,6 +1496,7 @@ const server = http.createServer(async (req, res) => {
         updatedAt: Date.now()
       };
       userGuidesStore.push(newGuide);
+      saveUserGuidesToDisk();
       return sendJson(201, { success: true, guide: newGuide });
     }
 
@@ -1262,6 +1507,7 @@ const server = http.createServer(async (req, res) => {
       }
       const guideId = pathname.split('/')[3];
       userGuidesStore = userGuidesStore.filter(g => g.id !== guideId);
+      saveUserGuidesToDisk();
       return sendJson(200, { success: true, message: 'User guide deleted' });
     }
 
@@ -1415,6 +1661,7 @@ const server = http.createServer(async (req, res) => {
         createdAt: Date.now()
       };
       adminStore.push(newSubAdmin);
+      saveAdminsToDisk();
 
       const { password, ...safe } = newSubAdmin;
       return sendJson(201, {
@@ -1443,6 +1690,7 @@ const server = http.createServer(async (req, res) => {
       if (updates.password && updates.password.trim().length >= 4) {
         admin.password = updates.password.trim();
       }
+      saveAdminsToDisk();
 
       const { password, ...safe } = admin;
       return sendJson(200, {
@@ -1463,6 +1711,7 @@ const server = http.createServer(async (req, res) => {
         return sendJson(403, { error: 'Super Admin account cannot be deleted' });
       }
       adminStore = adminStore.filter(a => a.id !== adminId);
+      saveAdminsToDisk();
       return sendJson(200, { success: true, message: 'Sub-admin account removed' });
     }
 
@@ -1507,6 +1756,8 @@ const server = http.createServer(async (req, res) => {
         }
         superAdmin.password = data.newPassword.trim();
       }
+
+      saveAdminsToDisk();
 
       // Sync active session if this admin is currently logged in
       const session = getAdminSession(req);
@@ -1773,14 +2024,16 @@ const server = http.createServer(async (req, res) => {
       const resolved = reportsStore.filter(r => r.status === 'Resolved' || r.status === 'Closed').length;
       const critical = reportsStore.filter(r => r.severity === 'Critical' || r.severity === 'High').length;
       const subAdminCount = adminStore.filter(a => a.role === 'sub_admin').length;
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      const authenticActiveToday = userStore.filter(u => u.lastActiveAt && u.lastActiveAt >= oneDayAgo).length;
 
       return sendJson(200, {
         totalReports: total,
         resolvedReports: resolved,
         criticalReports: critical,
-        resolutionRate: total > 0 ? ((resolved / total) * 100).toFixed(1) + '%' : '100%',
+        resolutionRate: total > 0 ? ((resolved / total) * 100).toFixed(1) + '%' : '0%',
         totalUsers: userStore.length,
-        activeUsersToday: userStore.length > 0 ? Math.floor(userStore.length * 0.75) : 0,
+        activeUsersToday: authenticActiveToday,
         totalSubAdmins: subAdminCount,
         activeAnnouncements: announcementsStore.length,
         weatherAlert: weatherAdvisory.alertLevel

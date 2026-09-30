@@ -174,7 +174,10 @@
           <div class="notif-dropdown-menu" id="notif-dropdown-menu" onclick="event.stopPropagation()">
             <div class="notif-header">
               <span style="font-weight: 800;">Official Alerts & Bulletins</span>
-              <button onclick="markAllNotifsRead()" style="background:none; border:none; color:var(--primary-light); font-size:0.75rem; font-weight:700; cursor:pointer;">Mark Read</button>
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <button onclick="markAllNotifsRead()" style="background:none; border:none; color:var(--primary-light); font-size:0.75rem; font-weight:700; cursor:pointer;">Mark Read</button>
+                <button type="button" onclick="closeNotificationsMenu()" style="background:none; border:none; color:var(--text-muted); font-size:1.2rem; line-height:1; cursor:pointer; padding:0 4px;" aria-label="Close notifications">&times;</button>
+              </div>
             </div>
             <div class="notif-list" id="notif-items-list">
               <!-- Rendered by JS -->
@@ -237,12 +240,13 @@
         <li><button class="drawer-nav-btn" data-tab="guides">Citizen User Guides</button></li>
         <li><button class="drawer-nav-btn" data-tab="activities">Community Activities</button></li>
         <li><button class="drawer-nav-btn" data-tab="profile">Citizen Profile</button></li>
+        <li><button class="drawer-nav-btn" onclick="closeMobileDrawer(); openNotificationsModal();" style="color: var(--amber-dark); font-weight: 700;">🔔 Official Alerts & Bulletins</button></li>
       </ul>
 
       <div class="drawer-footer">
         <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main);">24/7 Disaster Hotlines</div>
-        <div>Rescue: <strong>(02) 8888-ECO</strong></div>
-        <div>DENR Protection: <strong>#911-DENR</strong></div>
+        <div>Rescue: <strong id="cms-display-drawer-rescue-hotline">(02) 8888-ECO</strong></div>
+        <div>DENR Protection: <strong id="cms-display-drawer-denr-hotline">#911-DENR</strong></div>
       </div>
     </div>
   </div>
@@ -390,7 +394,7 @@
       </div>
 
       <!-- ROW 2: "REPORT AN ENVIRONMENTAL INCIDENT" CTA WIDE BANNER -->
-      <div class="report-cta-banner">
+      <div class="report-cta-banner" id="home-report-cta-banner">
         <div class="report-cta-top">
           <div class="report-cta-badge-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
           <div class="report-cta-text-content">
@@ -984,6 +988,62 @@
             Environmental violations are strictly governed by Philippine Environmental Laws including Republic Act 9003 (Ecological Solid Waste Management Act), Republic Act 8749 (Philippine Clean Air Act), Republic Act 9275 (Clean Water Act), and Presidential Decree 705 (Revised Forestry Code). Fines range up to ₱100,000 with criminal liability.
           </p>
         </div>
+
+        <div class="card" style="border-left: 5px solid #F59E0B;">
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Official Incident Reporting Protocol & Evidence Guidelines
+          </h3>
+          <p id="cms-display-reporting-guide" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main);">
+            When filing an environmental incident: (1) Ensure your personal safety first, (2) Capture at least one clear photograph of the hazard, (3) Specify the exact street, landmark, or GPS coordinate, (4) Categorize the severity accurately. CENRO field units are dispatched within 4 hours for Critical tickets.
+          </p>
+        </div>
+      </div>
+
+      <!-- CMS About the System & Institutional Mandate Card -->
+      <div class="card" style="margin-bottom: 2rem; border-top: 4px solid var(--primary);">
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 280px;">
+              <div class="status-badge" style="background: var(--surface-alt); color: var(--primary-dark); font-weight: 800; font-size: 0.72rem; margin-bottom: 0.5rem; display: inline-block;">
+                INSTITUTIONAL MANDATE & GOVERNANCE
+              </div>
+              <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.75rem;">
+                About the Climate Action Infrastructure
+              </h3>
+              <p id="cms-display-about-website" style="font-size: 0.92rem; line-height: 1.65; color: var(--text-main); margin-bottom: 1rem;">
+                Mobile and Web Climate Action Reporting and Information System is an integrated municipal digital infrastructure empowering citizens to document, verify, and resolve real-world environmental violations across Metro Verde. It bridges community observers with CENRO and DENR enforcement units through geospatial transparency.
+              </p>
+            </div>
+            <div id="cms-display-about-img-box" style="display: none; max-width: 320px; width: 100%;">
+              <img id="cms-display-about-img" src="" alt="About System Overview" style="width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border); object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div style="background: var(--surface-alt); padding: 1rem; border-radius: 10px;">
+              <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+                🎯 Mandate & Purpose
+              </h4>
+              <p id="cms-display-why-created" style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted);">
+                Created to drastically shorten the municipal response cycle for ecological hazards from days to hours, eliminate illegal open dumping along riverbanks, curb clandestine deforestation in urban watersheds, and provide scientifically validated local climate intelligence to every resident.
+              </p>
+            </div>
+
+            <div style="background: var(--surface-alt); padding: 1rem; border-radius: 10px;">
+              <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+                👥 System Architect & Partners
+              </h4>
+              <p id="cms-display-who-created" style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted); margin-bottom: 0.5rem;">
+                Architected by Mark Kenneth Ulgasan in collaboration with the Municipal Climate Resilience Taskforce, LGU CENRO Officers, and Academic Environmental Science Advisors.
+              </p>
+              <div style="font-size: 0.78rem; color: var(--primary-dark); font-weight: 700;">Coordinating Agencies:</div>
+              <p id="cms-display-contact-partners" style="font-size: 0.82rem; line-height: 1.5; color: var(--text-muted); margin-top: 0.2rem;">
+                City Environment and Natural Resources Office (CENRO), City Disaster Risk Reduction and Management Office (CDRRMO), Department of Environment and Natural Resources (DENR Region IV-A), and Metro Verde State University.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1rem; color: var(--primary-dark);">
@@ -1456,11 +1516,11 @@
           <div class="brand-icon-box" id="footer-logo-icon" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; font-size: 1.1rem; border-radius: 8px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
           <span id="footer-brand-name">Climate Action</span>
         </div>
-        <p style="line-height: 1.6; margin-bottom: 1rem;">
+        <p id="cms-display-footer-about" style="line-height: 1.6; margin-bottom: 1rem;">
           Mobile and Web Climate Action Reporting and Information System. An integrated municipal platform empowering citizen-driven environmental governance and rapid hazard remediation across Metro Verde.
         </p>
         <div style="font-size: 0.78rem; color: var(--text-muted);">
-          System Architect: <strong>Mark Kenneth Ulgasan</strong>
+          System Architect: <strong id="cms-display-footer-creator">Mark Kenneth Ulgasan</strong>
         </div>
       </div>
 
@@ -1481,9 +1541,9 @@
       <div>
         <div class="footer-column-heading">Municipal Emergency Hotlines</div>
         <p style="line-height: 1.7;">
-          Municipal Disaster Rescue: <strong>(02) 8888-ECO</strong><br>
-          DENR Environmental Protection: <strong>#911-DENR</strong><br>
-          City Health & Heat Helpline: <strong>(02) 8999-CLIMATE</strong><br>
+          Municipal Disaster Rescue: <strong id="cms-display-emergency-hotline">(02) 8888-ECO</strong><br>
+          DENR Environmental Protection: <strong id="cms-display-denr-hotline">#911-DENR</strong><br>
+          City Health & Heat Helpline: <strong id="cms-display-health-hotline">(02) 8999-CLIMATE</strong><br>
           CENRO Inquiries: <strong>cenro@metroverde.gov.ph</strong>
         </p>
       </div>

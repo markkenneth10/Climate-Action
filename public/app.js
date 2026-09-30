@@ -1404,6 +1404,74 @@ function applyConfigUI(c) {
     const el = document.getElementById('cms-display-climate-awareness');
     if (el) el.textContent = c.climateAwarenessInfo;
   }
+  if (c.reportingGuideInfo) {
+    const el = document.getElementById('cms-display-reporting-guide');
+    if (el) el.textContent = c.reportingGuideInfo;
+  }
+
+  // About System, Mandate, Governance, and Creators
+  if (c.aboutWebsite) {
+    const el = document.getElementById('cms-display-about-website');
+    if (el) el.textContent = c.aboutWebsite;
+    const footerAbout = document.getElementById('cms-display-footer-about');
+    if (footerAbout) footerAbout.textContent = c.aboutWebsite;
+  }
+  if (c.whyCreated) {
+    const el = document.getElementById('cms-display-why-created');
+    if (el) el.textContent = c.whyCreated;
+  }
+  if (c.whoCreated) {
+    const el = document.getElementById('cms-display-who-created');
+    if (el) el.textContent = c.whoCreated;
+    const footerCreator = document.getElementById('cms-display-footer-creator');
+    if (footerCreator) footerCreator.textContent = c.whoCreated;
+  }
+  if (c.contactPartners) {
+    const el = document.getElementById('cms-display-contact-partners');
+    if (el) el.textContent = c.contactPartners;
+  }
+
+  // Emergency Hotlines
+  if (c.emergencyHotline) {
+    const el = document.getElementById('cms-display-emergency-hotline');
+    if (el) el.textContent = c.emergencyHotline;
+    const drawerRescue = document.getElementById('cms-display-drawer-rescue-hotline');
+    if (drawerRescue) drawerRescue.textContent = c.emergencyHotline;
+  }
+  if (c.denrHotline) {
+    const el = document.getElementById('cms-display-denr-hotline');
+    if (el) el.textContent = c.denrHotline;
+    const drawerDenr = document.getElementById('cms-display-drawer-denr-hotline');
+    if (drawerDenr) drawerDenr.textContent = c.denrHotline;
+  }
+  if (c.healthHotline) {
+    const el = document.getElementById('cms-display-health-hotline');
+    if (el) el.textContent = c.healthHotline;
+  }
+
+  // Hero Banner image (if provided)
+  const heroBanner = document.getElementById('home-report-cta-banner');
+  if (heroBanner) {
+    if (c.heroImageUrl) {
+      heroBanner.style.backgroundImage = `linear-gradient(rgba(10, 37, 24, 0.88), rgba(10, 37, 24, 0.92)), url('${c.heroImageUrl}')`;
+      heroBanner.style.backgroundSize = 'cover';
+      heroBanner.style.backgroundPosition = 'center';
+    } else {
+      heroBanner.style.backgroundImage = '';
+    }
+  }
+
+  // About Graphic image (if provided)
+  const aboutImg = document.getElementById('cms-display-about-img');
+  const aboutImgBox = document.getElementById('cms-display-about-img-box');
+  if (aboutImg) {
+    if (c.aboutImageUrl) {
+      aboutImg.src = c.aboutImageUrl;
+      if (aboutImgBox) aboutImgBox.style.display = 'block';
+    } else {
+      if (aboutImgBox) aboutImgBox.style.display = 'none';
+    }
+  }
 }
 
 async function fetchWeather() {
@@ -1499,24 +1567,79 @@ function renderAnnouncementsUI(list) {
   if (notifContainer) {
     if (list.length === 0) {
       notifContainer.innerHTML = `
-        <div class="notif-item priority-high">
+        <div class="notif-item priority-high" onclick="openNoticeDetailModal({title: 'Yellow Rainfall Alert Raised', content: 'PAGASA raised alert for river corridor barangays. Please inspect roadside culverts and report bottlenecks.', author: 'PAGASA / CDRRMO', priority: 'high', timestamp: Date.now()})" style="cursor:pointer;">
           <div style="font-weight:700; color:var(--text-main);">Yellow Rainfall Alert Raised</div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">PAGASA raised alert for river corridor barangays. Please report culvert bottlenecks.</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">PAGASA raised alert for river corridor barangays. Click to view directives.</div>
         </div>
-        <div class="notif-item priority-low">
+        <div class="notif-item priority-low" onclick="openNoticeDetailModal({title: 'Upcoming Watershed Tree Planting', content: 'Join the municipal tree planting this Saturday in Sitio Watershed. Volunteers receive seedlings and earn +30 Eco-Points!', author: 'CENRO Taskforce', priority: 'low', timestamp: Date.now()})" style="cursor:pointer;">
           <div style="font-weight:700; color:var(--text-main);">Upcoming Watershed Tree Planting</div>
           <div style="font-size:0.75rem; color:var(--text-muted);">Join the community planting this Saturday. Earn +30 Eco-Points!</div>
         </div>
       `;
     } else {
-      notifContainer.innerHTML = list.map(a => `
-        <div class="notif-item priority-${(a.priority || 'low').toLowerCase()}">
-          <div style="font-weight:700; color:var(--text-main); margin-bottom:0.2rem;">${escapeHtml(a.title)}</div>
+      notifContainer.innerHTML = list.map((a, idx) => `
+        <div class="notif-item priority-${(a.priority || 'low').toLowerCase()}" onclick="openNoticeIndexModal(${idx})" style="cursor:pointer;" title="Click to view bulletin details">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; margin-bottom:0.2rem;">
+            <span style="font-weight:700; color:var(--text-main);">${escapeHtml(a.title)}</span>
+            <span class="status-badge" style="font-size:0.65rem; padding:1px 6px; text-transform:uppercase;">${escapeHtml(a.priority || 'info')}</span>
+          </div>
           <div style="color:var(--text-muted); font-size:0.75rem; line-height:1.4;">${escapeHtml(a.content)}</div>
-          <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">By ${escapeHtml(a.author)} • ${new Date(a.timestamp).toLocaleDateString()}</div>
+          <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">By ${escapeHtml(a.author || 'CENRO')} • ${new Date(a.timestamp || Date.now()).toLocaleDateString()}</div>
         </div>
       `).join('');
     }
+  }
+}
+
+function openNoticeIndexModal(idx) {
+  if (state.announcements && state.announcements[idx]) {
+    openNoticeDetailModal(state.announcements[idx]);
+  }
+}
+
+function openNoticeDetailModal(notice) {
+  closeAllDropdowns();
+  const modal = document.getElementById('incident-modal');
+  const body = document.getElementById('modal-incident-body');
+  if (!modal || !body) return;
+
+  const prio = (notice.priority || 'info').toLowerCase();
+  const prioBg = prio === 'urgent' ? '#EF4444' : prio === 'high' ? '#F59E0B' : '#10B981';
+
+  body.innerHTML = `
+    <div style="border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+      <span class="status-badge" style="background:${prioBg}; color:#fff; font-size:0.7rem; font-weight:800; text-transform:uppercase; padding:3px 10px; border-radius:6px;">
+        ${escapeHtml(notice.priority || 'OFFICIAL BULLETIN')}
+      </span>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-dark); margin-top: 0.5rem;">
+        ${escapeHtml(notice.title || 'Official Climate Advisory')}
+      </h3>
+      <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.25rem;">
+        Issued by <strong>${escapeHtml(notice.author || 'CENRO Command')}</strong> • ${notice.timestamp ? new Date(notice.timestamp).toLocaleString() : 'Recent'}
+      </div>
+    </div>
+    <div style="font-size: 0.92rem; line-height: 1.7; color: var(--text-main); margin-bottom: 1.25rem;">
+      <p style="white-space: pre-wrap;">${escapeHtml(notice.content || '')}</p>
+    </div>
+    <div style="padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+      <span style="font-size: 0.75rem; color: var(--text-muted);">Verified Municipal Advisory</span>
+      <button class="btn-primary" onclick="closeModal('incident-modal')" style="padding: 0.45rem 1.25rem; font-size: 0.85rem;">Dismiss</button>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+function openNotificationsModal() {
+  const notifMenu = document.getElementById('notif-dropdown-menu');
+  if (notifMenu) {
+    notifMenu.classList.add('active');
+  }
+}
+
+function closeNotificationsMenu() {
+  const notifMenu = document.getElementById('notif-dropdown-menu');
+  if (notifMenu) {
+    notifMenu.classList.remove('active');
   }
 }
 

@@ -804,6 +804,7 @@ function handleRemoveLogoImage() {
       body: JSON.stringify({
         logoType: 'emoji',
         logoImageUrl: '',
+        removeLogo: true,
         websiteLogo: currentEmoji
       })
     });
@@ -1104,6 +1105,8 @@ async function handleSaveCMS(e) {
 
       // Broadcast changes across browser tabs immediately
       try {
+        localStorage.setItem('climate_site_config', JSON.stringify(updates));
+        localStorage.setItem('climate_config_updated', String(Date.now()));
         localStorage.setItem('climate_brand_logo_updated', JSON.stringify({
           logoType: updates.logoType,
           logoImageUrl: updates.logoImageUrl,
