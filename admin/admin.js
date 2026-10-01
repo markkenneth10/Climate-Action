@@ -593,8 +593,9 @@ function updateAdminFavicon(config) {
 function updateAdminAuthCardLogo(config) {
   const authLogoEl = document.getElementById('admin-auth-logo');
   if (!authLogoEl) return;
-  const isImageMode = Boolean(config.logoImageUrl && (config.logoType === 'image' || !config.logoType || config.logoType !== 'emoji'));
-  if (isImageMode) {
+  const logoUrl = config.logoImageUrl || '/assets/ic_climate_app_icon.jpg';
+  const isImageMode = Boolean(config.logoImageUrl && config.logoType !== 'emoji');
+  if (isImageMode || logoUrl) {
     authLogoEl.style.background = 'transparent';
     authLogoEl.style.boxShadow = 'none';
     authLogoEl.style.border = 'none';
@@ -603,17 +604,17 @@ function updateAdminAuthCardLogo(config) {
     authLogoEl.style.maxWidth = '220px';
     authLogoEl.style.height = '72px';
     authLogoEl.style.overflow = 'visible';
-    authLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" style="width:auto!important; height:100%!important; max-width:220px!important; max-height:72px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; box-shadow:none!important; border:none!important; border-radius:0!important;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #10b981, #059669)'; this.parentElement.style.boxShadow='0 0 20px rgba(16,185,129,0.3)'; this.parentElement.style.width='64px'; this.parentElement.style.height='64px'; this.parentElement.style.borderRadius='16px'; this.parentElement.textContent='🛡️';">`;
+    authLogoEl.innerHTML = `<img src="${logoUrl}" alt="Logo" style="width:auto!important; height:100%!important; max-width:220px!important; max-height:72px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; box-shadow:none!important; border:none!important; border-radius:0!important;" onerror="this.onerror=null; this.src='/assets/ic_climate_app_icon.jpg';">`;
   } else {
-    authLogoEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-    authLogoEl.style.boxShadow = '0 0 20px rgba(16,185,129,0.3)';
+    authLogoEl.style.background = 'linear-gradient(135deg, #16A34A, #15803D)';
+    authLogoEl.style.boxShadow = '0 0 20px rgba(22,163,74,0.3)';
     authLogoEl.style.border = '';
     authLogoEl.style.borderRadius = '16px';
     authLogoEl.style.width = '64px';
     authLogoEl.style.height = '64px';
     authLogoEl.style.maxWidth = '';
     authLogoEl.style.overflow = 'hidden';
-    authLogoEl.textContent = '🛡️';
+    authLogoEl.innerHTML = '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#fff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
   }
 }
 
@@ -643,9 +644,9 @@ function updateAdminHeaderLogo(config) {
   const headerLogoEl = document.getElementById('admin-header-logo');
   if (!headerLogoEl) return;
 
-  const isImageMode = Boolean(config.logoImageUrl && (config.logoType === 'image' || !config.logoType || config.logoType !== 'emoji'));
-  if (isImageMode) {
-    const fallbackEmoji = config.websiteLogo || '🌱';
+  const logoUrl = config.logoImageUrl || '/assets/ic_climate_app_icon.jpg';
+  const isImageMode = Boolean(config.logoImageUrl && config.logoType !== 'emoji');
+  if (isImageMode || logoUrl) {
     headerLogoEl.classList.add('has-image');
     headerLogoEl.style.background = 'transparent';
     headerLogoEl.style.backgroundImage = 'none';
@@ -657,9 +658,9 @@ function updateAdminHeaderLogo(config) {
     headerLogoEl.style.width = 'auto';
     headerLogoEl.style.maxWidth = '200px';
     headerLogoEl.style.height = '44px';
-    headerLogoEl.innerHTML = `<img src="${config.logoImageUrl}" alt="Logo" class="admin-logo-img" style="height:100%!important; max-height:44px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.classList.remove('has-image'); this.parentElement.style.background=''; this.parentElement.style.backgroundImage=''; this.parentElement.style.boxShadow=''; this.parentElement.style.border=''; this.parentElement.style.padding=''; this.parentElement.style.borderRadius=''; this.parentElement.style.overflow=''; this.parentElement.style.width=''; this.parentElement.style.maxWidth=''; this.parentElement.style.height=''; this.parentElement.textContent='${fallbackEmoji}';">`;
+    headerLogoEl.innerHTML = `<img src="${logoUrl}" alt="Logo" class="admin-logo-img" style="height:100%!important; max-height:44px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="this.onerror=null; this.src='/assets/ic_climate_app_icon.jpg';">`;
   } else {
-    headerLogoEl.textContent = config.websiteLogo || '🌱';
+    headerLogoEl.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
     headerLogoEl.classList.remove('has-image');
     headerLogoEl.style.background = '';
     headerLogoEl.style.backgroundImage = '';

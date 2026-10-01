@@ -5,12 +5,19 @@
 
 const CITIZEN_STORAGE_KEY = 'climate_citizen_session';
 
+const DEFAULT_LOGO_IMAGE_URL = '/assets/ic_climate_app_icon.jpg';
+
 // Global Application State
 const state = {
   activeTab: 'dashboard',
   currentUser: null,
   reports: [],
-  config: {},
+  config: {
+    websiteName: 'Climate Action',
+    websiteSubtitle: 'Reporting & Information System • Metro Verde',
+    logoImageUrl: DEFAULT_LOGO_IMAGE_URL,
+    logoType: 'image'
+  },
   weather: {},
   announcements: [],
   userGuides: [],
@@ -228,11 +235,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Preload cached site branding and permanent logo instantly before network request
   try {
     const cachedConfig = JSON.parse(localStorage.getItem('climate_site_config') || localStorage.getItem('climate_brand_logo_updated') || '{}');
-    if (cachedConfig && (cachedConfig.logoImageUrl || cachedConfig.websiteName)) {
+    if (cachedConfig) {
+      if (!cachedConfig.logoImageUrl) {
+        cachedConfig.logoImageUrl = DEFAULT_LOGO_IMAGE_URL;
+        cachedConfig.logoType = 'image';
+      }
       state.config = { ...state.config, ...cachedConfig };
-      applyConfigUI(state.config);
     }
   } catch (_) {}
+  applyConfigUI(state.config);
 
   initCitizenSession();
   setupNavigation();
@@ -390,6 +401,10 @@ function updateAuthUI() {
               <button class="dropdown-item-link" onclick="switchTab('activities'); closeAllDropdowns();">
                 Community Activities
               </button>
+              <a href="/admin" target="_blank" class="dropdown-item-link" style="color: var(--primary); font-weight: 700; text-decoration: none; border-top: 1px solid var(--border); margin-top: 0.25rem; padding-top: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <span>CENRO Officer / Admin</span>
+                <span style="font-size: 0.75rem;">&rarr;</span>
+              </a>
               <button class="dropdown-item-link text-danger" onclick="handleCitizenLogout(); closeAllDropdowns();">
                 Sign Out
               </button>
@@ -1267,13 +1282,10 @@ async function fetchConfig() {
     const res = await fetch('/api/config?_t=' + Date.now(), { cache: 'no-store' });
     const data = await res.json();
     const newConfig = data.config || {};
-    // Permanent Logo Guarantee: Never erase logoImageUrl if one was previously configured
-    if ((!newConfig.logoImageUrl || newConfig.logoImageUrl === '/assets/ic_climate_app_icon.jpg') && state.config && state.config.logoImageUrl && state.config.logoImageUrl !== '/assets/ic_climate_app_icon.jpg') {
-      newConfig.logoImageUrl = state.config.logoImageUrl;
-      newConfig.logoType = state.config.logoType || 'image';
-    } else if (!newConfig.logoImageUrl && state.config && state.config.logoImageUrl) {
-      newConfig.logoImageUrl = state.config.logoImageUrl;
-      newConfig.logoType = state.config.logoType || 'image';
+    // Ensure logoImageUrl is never blank
+    if (!newConfig.logoImageUrl) {
+      newConfig.logoImageUrl = state.config.logoImageUrl || DEFAULT_LOGO_IMAGE_URL;
+      newConfig.logoType = 'image';
     }
     state.config = { ...state.config, ...newConfig };
     try {
@@ -1287,12 +1299,13 @@ async function fetchConfig() {
 
 function renderBrandLogoElement(el, c, size = 44) {
   if (!el) return;
-  const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
-  const fallback = c.websiteLogo && c.websiteLogo !== '🌱' ? c.websiteLogo : '';
-  if (isImage) {
+  const logoUrl = (c && c.logoImageUrl) ? c.logoImageUrl : DEFAULT_LOGO_IMAGE_URL;
+  const isEmoji = Boolean(c && c.logoType === 'emoji' && !c.logoImageUrl);
+
+  if (!isEmoji && logoUrl) {
     // If element already contains the identical logo image, DO NOT destroy and recreate the DOM node!
     const existingImg = el.querySelector('img.brand-logo-img');
-    if (existingImg && existingImg.getAttribute('src') === c.logoImageUrl && el.classList.contains('has-image')) {
+    if (existingImg && existingImg.getAttribute('src') === logoUrl && el.classList.contains('has-image')) {
       return; // Already actively rendered, prevent flicker
     }
 
@@ -1307,13 +1320,13 @@ function renderBrandLogoElement(el, c, size = 44) {
     el.style.width = 'auto';
     el.style.maxWidth = '200px';
     el.style.height = `${size}px`;
-    el.innerHTML = `<img src="${c.logoImageUrl}" alt="Official Logo" class="brand-logo-img" style="height:100%!important; max-height:${size}px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="console.warn('Logo image load error, retrying...'); setTimeout(() => { this.src = '${c.logoImageUrl}' + (('${c.logoImageUrl}'.includes('?') ? '&' : '?') + 'r=' + Date.now()); }, 2000);">`;
+    el.innerHTML = `<img src="${logoUrl}" alt="Official Logo" class="brand-logo-img" style="height:100%!important; max-height:${size}px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="this.onerror=null; this.src='${DEFAULT_LOGO_IMAGE_URL}';">`;
   } else {
     // Only revert if there is no image configured at all
-    if (el.querySelector('img.brand-logo-img') && c.logoImageUrl) {
+    if (el.querySelector('img.brand-logo-img') && logoUrl) {
       return;
     }
-    el.innerHTML = fallback ? escapeHtml(fallback) : '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+    el.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
     el.classList.remove('has-image');
     el.style.background = '';
     el.style.backgroundImage = '';
@@ -1331,7 +1344,7 @@ function renderBrandLogoElement(el, c, size = 44) {
 // Updates browser tab favicon dynamically for user website
 function updateSiteFavicon(c) {
   if (!c) return;
-  const isImage = Boolean(c.logoImageUrl && (c.logoType === 'image' || !c.logoType || c.logoType !== 'emoji'));
+  const isImage = Boolean(c.logoImageUrl && c.logoType !== 'emoji');
 
   // Remove existing icon links to force browser tab refresh
   const existingLinks = document.querySelectorAll("link[rel*='icon']");
@@ -1341,16 +1354,10 @@ function updateSiteFavicon(c) {
   newLink.id = 'site-favicon';
   newLink.rel = 'icon';
 
-  if (isImage) {
-    newLink.type = 'image/png';
-    const cacheBuster = (c.logoImageUrl.includes('?') ? '&' : '?') + 'fav=' + (c.updatedAt || Date.now());
-    newLink.href = c.logoImageUrl + cacheBuster;
-  } else {
-    const emoji = c.websiteLogo && c.websiteLogo !== '🌱' ? c.websiteLogo : '';
-    newLink.type = 'image/svg+xml';
-    newLink.href = emoji ? `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>` : `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230B4D2B'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>`;
-  }
-
+  const favUrl = isImage ? c.logoImageUrl : DEFAULT_LOGO_IMAGE_URL;
+  newLink.type = 'image/png';
+  const cacheBuster = (favUrl.includes('?') ? '&' : '?') + 'fav=' + (c.updatedAt || Date.now());
+  newLink.href = favUrl + cacheBuster;
   document.head.appendChild(newLink);
 }
 
@@ -1736,15 +1743,15 @@ function renderDashboardData() {
     const user = state.currentUser;
     if (kycPill) {
       if (user.kycStatus === 'verified') {
-        kycPill.innerHTML = '🛡️ Verified Citizen';
+        kycPill.innerHTML = 'Verified Citizen';
         kycPill.style.background = '#065F46';
         kycPill.style.color = '#A7F3D0';
       } else if (user.kycStatus === 'pending') {
-        kycPill.innerHTML = '⏳ KYC Review Pending';
+        kycPill.innerHTML = 'KYC Review Pending';
         kycPill.style.background = '#854D0E';
         kycPill.style.color = '#FDE68A';
       } else {
-        kycPill.innerHTML = '👤 Unverified Account';
+        kycPill.innerHTML = 'Unverified Account';
         kycPill.style.background = '#1E3A8A';
         kycPill.style.color = '#BFDBFE';
       }
@@ -1800,7 +1807,7 @@ function renderDashboardData() {
   } else {
     // Guest Citizen View: Show Municipal Community Activity and Recent Community Reports
     if (kycPill) {
-      kycPill.innerHTML = '🌐 Public Community Mode';
+      kycPill.innerHTML = 'Public Community Mode';
       kycPill.style.background = '#1E293B';
       kycPill.style.color = '#94A3B8';
     }

@@ -5,14 +5,15 @@
    ========================================================================== */
 
 :root {
-  /* Primary Climate Palette */
-  --primary-dark: #0B4D2B;       /* Deep Forest Green */
-  --primary: #0D5C34;            /* Rich Forest Green */
-  --primary-light: #16A765;      /* Emerald Green */
-  --primary-tint: #E8F7EE;       /* Mint tint */
-  --emerald: #16A765;            /* Secondary Emerald */
-  --emerald-dark: #128952;
-  --emerald-light: #34D399;
+  /* Primary Climate Palette (Modern, lighter, vibrant eco-green) */
+  --primary-dark: #15803D;       /* Modern Forest Green (was murky #0B4D2B) */
+  --primary: #16A34A;            /* Vivid Emerald Green (was dark #0D5C34) */
+  --primary-light: #22C55E;      /* Bright Fresh Green (was #16A765) */
+  --primary-tint: #DCFCE7;       /* Soft Fresh Mint Tint (was #E8F7EE) */
+  --primary-subtle: #F0FDF4;     /* Crisp Lightest Green */
+  --emerald: #16A34A;            /* Secondary Emerald */
+  --emerald-dark: #15803D;
+  --emerald-light: #4ADE80;
   --teal: #0EA5A8;               /* Information Sky/Teal */
   --teal-dark: #0A7C7E;
   --teal-light: #CCFBF1;
@@ -56,10 +57,10 @@
   --radius-xl: 18px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 2px 4px rgba(11, 77, 43, 0.04);
-  --shadow-md: 0 4px 14px rgba(11, 77, 43, 0.06);
-  --shadow-lg: 0 10px 28px rgba(11, 77, 43, 0.08);
-  --shadow-hover: 0 12px 32px rgba(11, 77, 43, 0.12);
+  --shadow-sm: 0 2px 4px rgba(21, 128, 61, 0.05);
+  --shadow-md: 0 4px 14px rgba(21, 128, 61, 0.08);
+  --shadow-lg: 0 10px 28px rgba(21, 128, 61, 0.10);
+  --shadow-hover: 0 12px 32px rgba(21, 128, 61, 0.15);
 
   /* Layout Consts */
   --header-height-mobile: 52px;
@@ -108,7 +109,7 @@ button, input, select, textarea, a {
    Header & Navigation
    ========================================================================== */
 .header-nav {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #15803D 0%, #16A34A 100%);
   color: #fff;
   position: sticky;
   top: 0;
@@ -143,7 +144,7 @@ button, input, select, textarea, a {
   max-width: 38px;
   min-height: 38px;
   max-height: 38px;
-  background: linear-gradient(135deg, #16A765, #0D5C34);
+  background: linear-gradient(135deg, #22C55E, #16A34A);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -515,8 +516,8 @@ button, input, select, textarea, a {
 
 /* Navigation Sub-Bar (Desktop Sticky Tab Row) */
 .nav-sub-bar {
-  background: #083B20;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #14532D;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .nav-tabs-wrapper {
@@ -597,7 +598,7 @@ button, input, select, textarea, a {
 }
 
 .drawer-header {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #15803D 0%, #16A34A 100%);
   color: #fff;
   padding: 1.5rem 1.25rem;
   display: flex;
@@ -723,7 +724,7 @@ button, input, select, textarea, a {
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #16A765 0%, #0B4D2B 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   color: #FFFFFF;
   display: flex;
   align-items: center;
@@ -800,7 +801,7 @@ button, input, select, textarea, a {
 
 /* TODAY'S CLIMATE STATUS CARD */
 .climate-status-card {
-  background: linear-gradient(135deg, #0B4D2B 0%, #166534 60%, #16A765 100%);
+  background: linear-gradient(135deg, #15803D 0%, #16A34A 55%, #22C55E 100%);
   border-radius: var(--radius-lg);
   padding: 1.15rem 1.25rem;
   color: #FFFFFF;
@@ -1077,7 +1078,7 @@ button, input, select, textarea, a {
    HOMEPAGE: 2. "REPORT AN ENVIRONMENTAL INCIDENT" CTA Wide Banner
    ========================================================================== */
 .report-cta-banner {
-  background: linear-gradient(135deg, #07351D 0%, #0B4D2B 50%, #166534 100%);
+  background: linear-gradient(135deg, #166534 0%, #15803D 55%, #16A34A 100%);
   border-radius: var(--radius-lg);
   padding: 1.15rem 1.35rem;
   color: #FFFFFF;
@@ -1088,16 +1089,6 @@ button, input, select, textarea, a {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-}
-
-.report-cta-banner::after {
-  content: '🌿';
-  position: absolute;
-  right: -10px;
-  bottom: -35px;
-  font-size: 12rem;
-  opacity: 0.08;
-  pointer-events: none;
 }
 
 .report-cta-top {
@@ -1431,7 +1422,7 @@ button, input, select, textarea, a {
   width: 100%;
   position: relative;
   overflow: hidden;
-  background: #1B4D3E;
+  background: #15803D;
 }
 .info-card-img {
   width: 100%;
@@ -1777,7 +1768,7 @@ button, input, select, textarea, a {
 
 /* OFFICIAL MUNICIPAL VERIFICATION CARD */
 .brand-verification-card {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #166534 0%, #15803D 100%);
   color: #FFFFFF;
   border-radius: var(--radius-xl);
   padding: 1.5rem;
@@ -2659,7 +2650,7 @@ textarea.form-control {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(11, 77, 43, 0.85);
+  background: rgba(22, 101, 52, 0.85);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: 10000;

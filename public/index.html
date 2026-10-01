@@ -23,14 +23,16 @@
     (function() {
       try {
         var raw = localStorage.getItem('climate_site_config') || localStorage.getItem('climate_brand_logo_updated');
+        var logoUrl = '/assets/ic_climate_app_icon.jpg';
         if (raw) {
           var cfg = JSON.parse(raw);
-          var logoUrl = cfg.logoImageUrl || (cfg.config && cfg.config.logoImageUrl);
-          if (logoUrl) {
-            window.__permanentLogoUrl = logoUrl;
-          }
+          var stored = cfg.logoImageUrl || (cfg.config && cfg.config.logoImageUrl);
+          if (stored) logoUrl = stored;
         }
-      } catch (e) {}
+        window.__permanentLogoUrl = logoUrl;
+      } catch (e) {
+        window.__permanentLogoUrl = '/assets/ic_climate_app_icon.jpg';
+      }
     })();
   </script>
 </head>
@@ -126,6 +128,14 @@
             * Guest users can view weather & advisories. Incident reporting requires a registered & verified citizen account.
           </div>
         </div>
+
+        <!-- CENRO Admin Portal Access -->
+        <div style="margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); text-align: center;">
+          <a href="/admin" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 700; background: rgba(5,150,105,0.08); padding: 0.45rem 0.85rem; border-radius: 6px; border: 1px solid rgba(5,150,105,0.25);">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>CENRO Officer & Admin Login &rarr;</span>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -138,14 +148,14 @@
     <div class="nav-top-row">
       <!-- Left: Logo & Branding -->
       <div class="brand-wrapper" onclick="switchTab('dashboard')" role="button" aria-label="Go to Dashboard">
-        <div class="brand-icon-box" id="site-logo-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="brand-icon-box has-image" id="site-logo-icon">
+          <img src="/assets/ic_climate_app_icon.jpg" alt="Official Logo" class="brand-logo-img">
+        </div>
         <script>
-          if (window.__permanentLogoUrl) {
+          if (window.__permanentLogoUrl && window.__permanentLogoUrl !== '/assets/ic_climate_app_icon.jpg') {
             var el = document.getElementById('site-logo-icon');
-            if (el) {
-              el.classList.add('has-image');
-              el.innerHTML = '<img src="' + window.__permanentLogoUrl + '" alt="Official Logo" class="brand-logo-img">';
-            }
+            var img = el ? el.querySelector('img') : null;
+            if (img) img.src = window.__permanentLogoUrl;
           }
         </script>
         <div class="brand-text-block">
@@ -220,7 +230,9 @@
       <div class="drawer-header">
         <button class="drawer-close-btn" onclick="closeMobileDrawer()">&times;</button>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div class="brand-icon-box" id="drawer-logo-icon" style="width: 36px; height: 36px; min-width: 36px; min-height: 36px; font-size: 1.2rem;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="brand-icon-box has-image" id="drawer-logo-icon" style="width: 36px; height: 36px; min-width: 36px; min-height: 36px;">
+            <img src="/assets/ic_climate_app_icon.jpg" alt="Official Logo" class="brand-logo-img">
+          </div>
           <div>
             <div style="font-weight: 800; font-size: 1.05rem;" id="drawer-brand-name">Climate Action</div>
             <div style="font-size: 0.7rem; color: rgba(255,255,255,0.8);" id="drawer-brand-sub">Metro Verde Citizen Portal</div>
@@ -240,7 +252,16 @@
         <li><button class="drawer-nav-btn" data-tab="guides">Citizen User Guides</button></li>
         <li><button class="drawer-nav-btn" data-tab="activities">Community Activities</button></li>
         <li><button class="drawer-nav-btn" data-tab="profile">Citizen Profile</button></li>
-        <li><button class="drawer-nav-btn" onclick="closeMobileDrawer(); openNotificationsModal();" style="color: var(--amber-dark); font-weight: 700;">🔔 Official Alerts & Bulletins</button></li>
+        <li><button class="drawer-nav-btn" onclick="closeMobileDrawer(); openNotificationsModal();" style="color: var(--amber-dark); font-weight: 700;"><svg class="icon-svg-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> Official Alerts & Bulletins</button></li>
+        <li style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+          <a href="/admin" target="_blank" class="drawer-nav-btn" style="text-decoration: none; color: var(--primary); font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+            <span style="display: flex; align-items: center; gap: 0.5rem;">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              CENRO Officer / Admin Portal
+            </span>
+            <span style="font-size: 0.75rem;">&rarr;</span>
+          </a>
+        </li>
       </ul>
 
       <div class="drawer-footer">
@@ -1023,7 +1044,7 @@
           <div class="grid-2" style="gap: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
             <div style="background: var(--surface-alt); padding: 1rem; border-radius: 10px;">
               <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
-                🎯 Mandate & Purpose
+                <svg class="icon-svg-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg> Mandate & Purpose
               </h4>
               <p id="cms-display-why-created" style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted);">
                 Created to drastically shorten the municipal response cycle for ecological hazards from days to hours, eliminate illegal open dumping along riverbanks, curb clandestine deforestation in urban watersheds, and provide scientifically validated local climate intelligence to every resident.
@@ -1032,7 +1053,7 @@
 
             <div style="background: var(--surface-alt); padding: 1rem; border-radius: 10px;">
               <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
-                👥 System Architect & Partners
+                <svg class="icon-svg-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> System Architect & Partners
               </h4>
               <p id="cms-display-who-created" style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted); margin-bottom: 0.5rem;">
                 Architected by Mark Kenneth Ulgasan in collaboration with the Municipal Climate Resilience Taskforce, LGU CENRO Officers, and Academic Environmental Science Advisors.
@@ -1355,6 +1376,14 @@
           Create Citizen Account
         </button>
       </form>
+
+      <!-- Staff & Admin Access -->
+      <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px dashed var(--border); text-align: center;">
+        <a href="/admin" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 700;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span>Are you a CENRO Officer or Admin? Open Admin Portal &rarr;</span>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -1513,7 +1542,9 @@
       <!-- Col 1: System Brand & Description -->
       <div>
         <div class="footer-brand-title" style="display: flex; align-items: center; gap: 0.5rem;">
-          <div class="brand-icon-box" id="footer-logo-icon" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; font-size: 1.1rem; border-radius: 8px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="brand-icon-box has-image" id="footer-logo-icon" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 8px;">
+            <img src="/assets/ic_climate_app_icon.jpg" alt="Official Logo" class="brand-logo-img">
+          </div>
           <span id="footer-brand-name">Climate Action</span>
         </div>
         <p id="cms-display-footer-about" style="line-height: 1.6; margin-bottom: 1rem;">
@@ -1560,6 +1591,10 @@
             <strong>Official Municipal Data</strong><br>
             <span>Synchronized with CENRO, CDRRMO, and PAGASA bulletins.</span>
           </div>
+          <a href="/admin" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(5, 150, 105, 0.12); color: var(--primary); border: 1px solid rgba(5, 150, 105, 0.35); padding: 0.55rem 0.9rem; border-radius: 8px; font-weight: 700; font-size: 0.8rem; text-decoration: none; margin-top: 0.25rem;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>CENRO Officer & Admin Login &rarr;</span>
+          </a>
         </div>
       </div>
     </div>
