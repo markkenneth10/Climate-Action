@@ -84,7 +84,7 @@ fun QuizDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.AutoStories, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(22.dp))
+                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.Close, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
@@ -122,7 +122,7 @@ fun QuizDialog(
                                 .background(EcoMint),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Star, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFD97706), modifier = Modifier.size(36.dp))
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Close, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFD97706), modifier = Modifier.size(36.dp))
                         }
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(

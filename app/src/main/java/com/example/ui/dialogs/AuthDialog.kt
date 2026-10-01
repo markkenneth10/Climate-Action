@@ -249,7 +249,7 @@ fun AuthDialog(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Description, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Lock, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "City Ordinance #2026-04 requires citizens to register and complete one-time government ID verification (KYC) before filing environmental incident reports.",
@@ -272,7 +272,7 @@ fun AuthDialog(
                                 modifier = Modifier.padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(imageVector = androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(16.dp))
+                                Icon(imageVector = androidx.compose.material.icons.Icons.Default.Lock, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = errorText,

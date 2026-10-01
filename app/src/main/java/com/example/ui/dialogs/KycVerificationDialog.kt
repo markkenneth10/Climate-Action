@@ -226,7 +226,7 @@ fun KycVerificationDialog(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(20.dp))
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Shield, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "Under City Ordinance #2026-04, all environmental incident reports submitted to CENRO require verified citizen identity to prevent spam, false alerts, and malicious reporting.",
@@ -249,7 +249,7 @@ fun KycVerificationDialog(
                                 modifier = Modifier.padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(imageVector = androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(16.dp))
+                                Icon(imageVector = androidx.compose.material.icons.Icons.Default.Shield, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = errorText,

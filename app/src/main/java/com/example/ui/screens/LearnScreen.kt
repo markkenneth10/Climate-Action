@@ -166,7 +166,7 @@ fun LearnScreen(
                             .background(Color(0xFF3B82F6)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.AutoStories, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(24.dp))
+                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.Book, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(24.dp))
                     }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {

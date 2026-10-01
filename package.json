@@ -1,22 +1,30 @@
 {
-  "name": "climate-action-web-portal",
+  "name": "climate-action",
+  "private": true,
   "version": "1.0.0",
-  "description": "Web Portal for Mobile Climate Action Reporting and Information System",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build": "tsc && vite build",
+    "preview": "vite preview --port 3000"
   },
-  "keywords": [
-    "climate-action",
-    "reporting-system",
-    "gis",
-    "android",
-    "web"
-  ],
-  "author": "Climate Action Project Team",
-  "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0",
-    "pg": "^8.23.0"
+    "canvas-confetti": "^1.9.4",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.16.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/leaflet": "^1.9.16",
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.1.0"
   }
 }

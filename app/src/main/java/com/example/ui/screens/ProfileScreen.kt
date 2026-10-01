@@ -127,7 +127,7 @@ fun ProfileScreen(
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
-                                            imageVector = Icons.Default.Person,
+                                            imageVector = Icons.Default.LocationOn,
                                             contentDescription = null,
                                             tint = EcoForestGreen,
                                             modifier = Modifier.size(28.dp)

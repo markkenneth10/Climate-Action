@@ -289,7 +289,7 @@ fun HomeScreen(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Person, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.LocationOn, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -453,7 +453,7 @@ fun HomeScreen(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.Map, contentDescription = null, tint = EcoSkyBlue, modifier = Modifier.size(22.dp))
+                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.LocationOn, contentDescription = null, tint = EcoSkyBlue, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
@@ -484,7 +484,7 @@ fun HomeScreen(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.AutoStories, contentDescription = null, tint = EcoEmerald, modifier = Modifier.size(22.dp))
+                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.Notifications, contentDescription = null, tint = EcoEmerald, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
