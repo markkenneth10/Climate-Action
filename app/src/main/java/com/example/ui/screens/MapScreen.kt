@@ -224,7 +224,7 @@ fun MapScreen(
                 )
 
                 Text(
-                    text = "💡 Tap any pin on the map to inspect location, category, severity, and workflow status.",
+                    text = "Tap any pin on the map to inspect location, category, severity, and workflow status.",
                     fontSize = 10.sp,
                     color = EcoTextMuted,
                     modifier = Modifier.padding(top = 4.dp)

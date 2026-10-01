@@ -13,8 +13,19 @@ import com.example.data.model.UserEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 class ClimateRepository(private val db: AppDatabase) {
+
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(6, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS)
+        .build()
 
     val allReports: Flow<List<ReportEntity>> = db.reportDao().getAllReports()
     val allArticles: Flow<List<ClimateArticleEntity>> = db.articleDao().getAllArticles()
@@ -109,6 +120,41 @@ class ClimateRepository(private val db: AppDatabase) {
             )
         )
 
+        // Push new report to live backend / website database
+        try {
+            val candidateUrls = listOf(
+                "https://ais-dev-f5odrqogsjxmxcco4652hh-662791830333.asia-southeast1.run.app",
+                "http://10.0.2.2:3000",
+                "http://10.0.2.2:8080"
+            )
+            val jsonPayload = JSONObject().apply {
+                put("id", "ECO-2026-$reportId")
+                put("title", title)
+                put("category", category)
+                put("description", description)
+                put("authorName", authorName)
+                put("barangay", barangay)
+                put("municipality", municipality)
+                put("province", province)
+                put("severity", severity)
+                put("status", "Submitted")
+                put("latitude", latitude)
+                put("longitude", longitude)
+                if (photoUri != null) put("photoUri", photoUri)
+            }
+            val body = jsonPayload.toString().toRequestBody("application/json".toMediaTypeOrNull())
+            for (base in candidateUrls) {
+                try {
+                    val req = Request.Builder()
+                        .url("${base.trimEnd('/')}/api/app/reports")
+                        .post(body)
+                        .build()
+                    httpClient.newCall(req).execute().close()
+                    break
+                } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
+
         reportId
     }
 
@@ -139,6 +185,31 @@ class ClimateRepository(private val db: AppDatabase) {
                 type = "Report"
             )
         )
+
+        // Push status update to live backend / website database
+        try {
+            val candidateUrls = listOf(
+                "https://ais-dev-f5odrqogsjxmxcco4652hh-662791830333.asia-southeast1.run.app",
+                "http://10.0.2.2:3000",
+                "http://10.0.2.2:8080"
+            )
+            val updateJson = JSONObject().apply {
+                put("status", newStatus)
+                put("adminRemarks", remarks)
+                if (assignedOfficer != null) put("assignedOfficer", assignedOfficer)
+            }
+            val body = updateJson.toString().toRequestBody("application/json".toMediaTypeOrNull())
+            for (base in candidateUrls) {
+                try {
+                    val req = Request.Builder()
+                        .url("${base.trimEnd('/')}/api/app/reports/$reportId/status")
+                        .post(body)
+                        .build()
+                    httpClient.newCall(req).execute().close()
+                    break
+                } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
     }
 
     suspend fun toggleActivityRegistration(activityId: Long, currentStatus: Boolean, activityTitle: String, userId: Int) = withContext(Dispatchers.IO) {
@@ -252,7 +323,7 @@ class ClimateRepository(private val db: AppDatabase) {
         db.notificationDao().insertNotification(
             NotificationEntity(
                 userId = insertedId,
-                title = "Welcome to Metro Verde Climate Portal! 🌱",
+                title = "Welcome to Metro Verde Climate Portal!",
                 message = "Account created! Verify your government ID (KYC) to unlock environmental hazard reporting.",
                 type = "Account"
             )
@@ -296,12 +367,163 @@ class ClimateRepository(private val db: AppDatabase) {
         db.notificationDao().insertNotification(
             NotificationEntity(
                 userId = userId,
-                title = "Identity Verified (KYC) 🛡️",
+                title = "Identity Verified (KYC)",
                 message = "Your government ID was verified! Reporting environmental incidents is now fully unlocked. +$bonus pts awarded.",
                 type = "Verification"
             )
         )
 
         Result.success(Unit)
+    }
+
+    suspend fun syncWithBackend(baseUrl: String = "https://ais-dev-f5odrqogsjxmxcco4652hh-662791830333.asia-southeast1.run.app"): Result<String> = withContext(Dispatchers.IO) {
+        val candidateUrls = listOf(
+            baseUrl,
+            "http://10.0.2.2:3000",
+            "http://10.0.2.2:8080",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
+        )
+
+        var lastError: Exception? = null
+
+        for (base in candidateUrls) {
+            try {
+                val url = "${base.trimEnd('/')}/api/app/sync"
+                val request = Request.Builder()
+                    .url(url)
+                    .header("Accept", "application/json")
+                    .get()
+                    .build()
+
+                httpClient.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val body = response.body?.string()
+                        if (!body.isNullOrBlank()) {
+                            val json = JSONObject(body)
+
+                            // Sync Reports from server
+                            if (json.has("reports")) {
+                                val reportsArray = json.getJSONArray("reports")
+                                val reportsList = mutableListOf<ReportEntity>()
+                                for (i in 0 until reportsArray.length()) {
+                                    val r = reportsArray.getJSONObject(i)
+                                    val idNum = r.optString("id").replace(Regex("[^0-9]"), "").toLongOrNull() ?: (i + 100L)
+                                    reportsList.add(
+                                        ReportEntity(
+                                            id = idNum,
+                                            userId = r.optInt("userId", 1),
+                                            authorName = r.optString("authorName", r.optString("reporterName", "Citizen Reporter")),
+                                            title = r.optString("title", "Environmental Incident"),
+                                            category = r.optString("category", "General"),
+                                            categoryIcon = r.optString("categoryIcon", "General"),
+                                            description = r.optString("description", ""),
+                                            photoUri = if (r.has("imageUrl") && !r.isNull("imageUrl")) r.getString("imageUrl") else null,
+                                            latitude = r.optDouble("latitude", 14.5995),
+                                            longitude = r.optDouble("longitude", 120.9842),
+                                            barangay = r.optString("barangay", "Metro Verde"),
+                                            municipality = r.optString("municipality", "Metro Verde"),
+                                            province = r.optString("province", "Eco Province"),
+                                            severity = r.optString("severity", "Moderate"),
+                                            status = r.optString("status", "Submitted"),
+                                            adminRemarks = if (r.has("adminRemarks") && !r.isNull("adminRemarks")) r.optString("adminRemarks") else null,
+                                            assignedOfficer = if (r.has("assignedOfficer") && !r.isNull("assignedOfficer")) r.optString("assignedOfficer") else null,
+                                            timestamp = r.optLong("timestamp", System.currentTimeMillis())
+                                        )
+                                    )
+                                }
+                                if (reportsList.isNotEmpty()) {
+                                    db.reportDao().insertReports(reportsList)
+                                }
+                            }
+
+                            // Sync Activities from server
+                            if (json.has("activities")) {
+                                val actArray = json.getJSONArray("activities")
+                                val actList = mutableListOf<ActivityEntity>()
+                                for (i in 0 until actArray.length()) {
+                                    val a = actArray.getJSONObject(i)
+                                    val idNum = a.optString("id").replace(Regex("[^0-9]"), "").toLongOrNull() ?: (i + 1L)
+                                    actList.add(
+                                        ActivityEntity(
+                                            id = idNum,
+                                            title = a.optString("title", "Community Eco Activity"),
+                                            category = a.optString("category", "Community Action"),
+                                            icon = a.optString("category", "Action"),
+                                            description = a.optString("target", "Community ecological drive"),
+                                            location = a.optString("location", "Metro Verde"),
+                                            barangay = a.optString("location", "Metro Verde"),
+                                            dateText = a.optString("date", "Upcoming"),
+                                            timeText = "07:00 AM",
+                                            rewardPoints = 25,
+                                            maxParticipants = a.optInt("max", 100),
+                                            currentParticipants = a.optInt("registered", 0),
+                                            isRegistered = false,
+                                            isCompleted = false
+                                        )
+                                    )
+                                }
+                                if (actList.isNotEmpty()) {
+                                    db.activityDao().insertActivities(actList)
+                                }
+                            }
+
+                            // Sync Announcements into Notifications
+                            if (json.has("announcements")) {
+                                val annArray = json.getJSONArray("announcements")
+                                val notifs = mutableListOf<NotificationEntity>()
+                                for (i in 0 until annArray.length()) {
+                                    val ann = annArray.getJSONObject(i)
+                                    notifs.add(
+                                        NotificationEntity(
+                                            userId = 1,
+                                            title = ann.optString("title", "Official Advisory"),
+                                            message = ann.optString("content", ann.optString("summary", "New official municipal notice issued.")),
+                                            type = "Announcement",
+                                            timestamp = ann.optLong("timestamp", System.currentTimeMillis()),
+                                            isRead = false
+                                        )
+                                    )
+                                }
+                                if (notifs.isNotEmpty()) {
+                                    db.notificationDao().insertNotifications(notifs)
+                                }
+                            }
+
+                            // Sync User Guides / Articles from server
+                            if (json.has("guides")) {
+                                val guidesArray = json.getJSONArray("guides")
+                                val guidesList = mutableListOf<ClimateArticleEntity>()
+                                for (i in 0 until guidesArray.length()) {
+                                    val g = guidesArray.getJSONObject(i)
+                                    val idNum = g.optString("id").replace(Regex("[^0-9]"), "").toLongOrNull() ?: (i + 1L)
+                                    guidesList.add(
+                                        ClimateArticleEntity(
+                                            id = idNum,
+                                            title = g.optString("title", "Environmental Guide"),
+                                            category = g.optString("category", "Guide"),
+                                            icon = "Article",
+                                            summary = g.optString("summary", ""),
+                                            content = g.optString("content", ""),
+                                            actionTips = "Follow municipal regulations\nParticipate in local cleanups\nReport hazards with photo evidence",
+                                            references = "CENRO Environmental Code & Republic Act 9003",
+                                            readTimeMinutes = 3
+                                        )
+                                    )
+                                }
+                                if (guidesList.isNotEmpty()) {
+                                    db.articleDao().insertArticles(guidesList)
+                                }
+                            }
+
+                            return@withContext Result.success("Synced successfully with $base")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                lastError = e
+            }
+        }
+        Result.failure(lastError ?: Exception("Could not connect to server"))
     }
 }

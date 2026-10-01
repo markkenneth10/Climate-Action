@@ -336,7 +336,7 @@ fun IncidentLocationPickerMiniMap(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "📍 $selectedBarangay (${"%.4f".format(currentLatitude)}, ${"%.4f".format(currentLongitude)})",
+                        text = "$selectedBarangay (${"%.4f".format(currentLatitude)}, ${"%.4f".format(currentLongitude)})",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -361,7 +361,7 @@ fun IncidentLocationPickerMiniMap(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "🌐 Lat: ${"%.4f".format(currentLatitude)} • Lon: ${"%.4f".format(currentLongitude)}",
+                        text = "Lat: ${"%.4f".format(currentLatitude)} • Lon: ${"%.4f".format(currentLongitude)}",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = EcoForestGreen
@@ -379,7 +379,7 @@ fun IncidentLocationPickerMiniMap(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "✓ GPS Locked (±3m)",
+                        text = "GPS Locked (±3m)",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF15803D)
@@ -420,7 +420,7 @@ fun IncidentLocationPickerMiniMap(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (isSelected) "📍 ${bgy.first}" else bgy.first,
+                            text = bgy.first,
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (isSelected) Color.White else EcoTextPrimary

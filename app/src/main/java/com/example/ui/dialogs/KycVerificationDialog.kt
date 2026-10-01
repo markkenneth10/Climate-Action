@@ -133,7 +133,7 @@ fun KycVerificationDialog(
                                 modifier = Modifier.size(38.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(text = "🛡️", fontSize = 20.sp)
+                                    Icon(imageVector = androidx.compose.material.icons.Icons.Default.Shield, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
                                 }
                             }
                             Spacer(modifier = Modifier.width(10.dp))
@@ -226,7 +226,7 @@ fun KycVerificationDialog(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "⚠️", fontSize = 20.sp)
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "Under City Ordinance #2026-04, all environmental incident reports submitted to CENRO require verified citizen identity to prevent spam, false alerts, and malicious reporting.",
@@ -249,7 +249,7 @@ fun KycVerificationDialog(
                                 modifier = Modifier.padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "⚠️", fontSize = 16.sp)
+                                Icon(imageVector = androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = errorText,
@@ -353,7 +353,7 @@ fun KycVerificationDialog(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = if (frontPhotoSelected) "✅" else "📷",
+                                    text = if (frontPhotoSelected) "Attached" else "Upload",
                                     fontSize = 22.sp
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -386,7 +386,7 @@ fun KycVerificationDialog(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = if (backPhotoSelected) "✅" else "📷",
+                                    text = if (backPhotoSelected) "Attached" else "Upload",
                                     fontSize = 22.sp
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -419,7 +419,7 @@ fun KycVerificationDialog(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = if (selfiePhotoSelected) "✅" else "🤳",
+                                    text = if (selfiePhotoSelected) "Attached" else "Selfie",
                                     fontSize = 22.sp
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -491,7 +491,7 @@ fun KycVerificationDialog(
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                         } else {
                             Text(
-                                text = "🛡️ Verify Identity & Activate Reporting (+25 pts)",
+                                text = "Verify Identity & Activate Reporting (+25 pts)",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             )

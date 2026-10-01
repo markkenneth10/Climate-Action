@@ -84,7 +84,7 @@ fun QuizDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "🧠", fontSize = 22.sp)
+                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.AutoStories, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
@@ -122,7 +122,7 @@ fun QuizDialog(
                                 .background(EcoMint),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = "🏆", fontSize = 36.sp)
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Star, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFD97706), modifier = Modifier.size(36.dp))
                         }
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
@@ -147,7 +147,7 @@ fun QuizDialog(
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "🎉", fontSize = 16.sp)
+                                Spacer(modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "+10 Climate Points Added to Your Profile",
@@ -279,7 +279,7 @@ fun QuizDialog(
                             ) {
                                 Column(modifier = Modifier.padding(10.dp)) {
                                     Text(
-                                        text = if (selectedOption == currentQ.correctAnswerIndex) "✓ Correct Answer!" else "✕ Incorrect",
+                                        text = if (selectedOption == currentQ.correctAnswerIndex) "Correct Answer!" else "Incorrect",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         color = if (selectedOption == currentQ.correctAnswerIndex) EcoForestGreen else SeverityCritical
@@ -315,7 +315,7 @@ fun QuizDialog(
                                 colors = ButtonDefaults.buttonColors(containerColor = EcoTeal)
                             ) {
                                 Text(
-                                    text = if (currentIndex + 1 < total) "Next Question →" else "Finish & Claim Points 🏆",
+                                    text = if (currentIndex + 1 < total) "Next Question →" else "Finish & Claim Points",
                                     fontWeight = FontWeight.Bold
                                 )
                             }

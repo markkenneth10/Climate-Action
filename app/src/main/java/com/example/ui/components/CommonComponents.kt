@@ -105,12 +105,6 @@ fun getStatusColor(status: String): Color = when (status) {
 fun SeverityBadge(severity: String, modifier: Modifier = Modifier) {
     val color = getSeverityColor(severity)
     val bg = getSeverityBgColor(severity)
-    val iconEmoji = when (severity) {
-        "Critical" -> "🔴"
-        "High" -> "🟠"
-        "Moderate" -> "🟡"
-        else -> "🟢"
-    }
 
     Surface(
         modifier = modifier,
@@ -121,8 +115,13 @@ fun SeverityBadge(severity: String, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = iconEmoji, fontSize = 10.sp)
-            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = severity.uppercase(),
                 color = color,
@@ -167,7 +166,7 @@ fun StatusBadge(status: String, modifier: Modifier = Modifier) {
 fun StatCard(
     title: String,
     value: String,
-    iconEmoji: String,
+    iconEmoji: String = "",
     modifier: Modifier = Modifier,
     accentColor: Color = EcoForestGreen,
     subtitle: String? = null
@@ -196,7 +195,12 @@ fun StatCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(text = iconEmoji, fontSize = 18.sp)
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(accentColor)
+                )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(

@@ -136,7 +136,7 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
                 _currentUserId.value = user.id
                 prefs.edit().putInt("logged_in_user_id", user.id).apply()
                 showAuthDialog.value = false
-                showSuccessSnackbar.value = "🌱 Account created! Welcome, ${user.name} (+50 pts). Complete KYC to report."
+                showSuccessSnackbar.value = "Account created! Welcome, ${user.name} (+50 pts). Complete KYC to report."
                 onSuccess()
             }.onFailure { err ->
                 onError(err.message ?: "Registration failed")
@@ -185,7 +185,7 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
             val result = repository.verifyKyc(user.id, idType, idNumber)
             result.onSuccess {
                 showKycDialog.value = false
-                showSuccessSnackbar.value = "🛡️ Identity Verified! Environmental reporting unlocked (+25 pts)."
+                showSuccessSnackbar.value = "Identity Verified! Environmental reporting unlocked (+25 pts)."
                 onSuccess()
             }.onFailure { err ->
                 onError(err.message ?: "Verification failed")
@@ -203,6 +203,17 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
     init {
         viewModelScope.launch {
             repository.seedDatabaseIfEmpty()
+            // Automatically synchronize with the live website & admin backend
+            repository.syncWithBackend()
+        }
+    }
+
+    fun syncFromBackend() {
+        viewModelScope.launch {
+            val res = repository.syncWithBackend()
+            res.onSuccess {
+                showSuccessSnackbar.value = "App synchronized with latest website & admin updates."
+            }
         }
     }
 
@@ -248,12 +259,12 @@ class ClimateViewModel(application: Application) : AndroidViewModel(application)
     ) {
         val user = currentUser.value
         if (user == null) {
-            showSuccessSnackbar.value = "⚠️ Please sign in or create an account to submit reports."
+            showSuccessSnackbar.value = "Please sign in or create an account to submit reports."
             openAuthDialog("login")
             return
         }
         if (!user.isVerified || user.kycStatus != "verified") {
-            showSuccessSnackbar.value = "🛡️ Government ID verification (KYC) required before submitting reports."
+            showSuccessSnackbar.value = "Government ID verification (KYC) required before submitting reports."
             openKycDialog()
             return
         }

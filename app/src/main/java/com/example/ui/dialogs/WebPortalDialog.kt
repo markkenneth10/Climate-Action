@@ -289,25 +289,25 @@ fun WebPortalDialog(
                             )
 
                             WebFeatureItem(
-                                icon = "🖥️",
+                                icon = "Web",
                                 title = "Desktop & Laptop Access",
                                 desc = "Optimized for municipal offices, universities, and schools to submit and audit high-volume climate reports."
                             )
 
                             WebFeatureItem(
-                                icon = "🗺️",
+                                icon = "GIS",
                                 title = "Interactive Leaflet GIS Map",
                                 desc = "Full-screen GIS cartography with color-coded severity markers, barangay risk zones, and live hotspot inspection."
                             )
 
                             WebFeatureItem(
-                                icon = "🛡️",
+                                icon = "Admin",
                                 title = "LGU CENRO Dispatch Console",
                                 desc = "Web-based administration table to triage tickets, assign inspection units, and log field remarks."
                             )
 
                             WebFeatureItem(
-                                icon = "📄",
+                                icon = "Docs",
                                 title = "Thesis Academic Report Exporter",
                                 desc = "Instant generation and printing of executive project statistics for thesis presentation and panel defense."
                             )
@@ -413,12 +413,12 @@ private fun ParityRow(feature: String, mobile: String, web: String) {
             Spacer(modifier = Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "📱 Mobile App", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = EcoTextMuted)
+                    Text(text = "Mobile App", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = EcoTextMuted)
                     Text(text = mobile, fontSize = 11.sp, color = EcoTextPrimary)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "🌐 Web Portal", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = EcoTextMuted)
+                    Text(text = "Web Portal", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = EcoTextMuted)
                     Text(text = web, fontSize = 11.sp, color = EcoTextPrimary)
                 }
             }

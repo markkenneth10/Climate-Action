@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
@@ -83,7 +84,8 @@ import com.example.ui.viewmodel.ClimateViewModel
 @Composable
 fun AdminDashboardScreen(
     viewModel: ClimateViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null
 ) {
     val reports by viewModel.allReports.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
@@ -176,6 +178,33 @@ fun AdminDashboardScreen(
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (onBack != null) {
+                            OutlinedButton(
+                                onClick = onBack,
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                            ) {
+                                Text("← Return", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { viewModel.syncFromBackend() },
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("admin_sync_button"),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("Sync", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+
                         OutlinedButton(
                             onClick = { viewModel.showWebPortalDialog.value = true },
                             shape = RoundedCornerShape(10.dp),
@@ -183,7 +212,7 @@ fun AdminDashboardScreen(
                             modifier = Modifier.testTag("admin_web_portal_button"),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                         ) {
-                            Text("🌐 Web", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("Web Portal", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
 
                         Button(
@@ -249,7 +278,7 @@ fun AdminDashboardScreen(
                     StatCard(
                         title = "Pending Review",
                         value = "$pendingReviewCount",
-                        iconEmoji = "⏳",
+                        iconEmoji = "",
                         modifier = Modifier.weight(1f),
                         accentColor = SeverityHigh,
                         subtitle = "Needs verification"
@@ -257,7 +286,7 @@ fun AdminDashboardScreen(
                     StatCard(
                         title = "In Progress",
                         value = "$inProgressCount",
-                        iconEmoji = "🛠️",
+                        iconEmoji = "",
                         modifier = Modifier.weight(1f),
                         accentColor = EcoSkyBlue,
                         subtitle = "Teams dispatched"
@@ -265,7 +294,7 @@ fun AdminDashboardScreen(
                     StatCard(
                         title = "Resolved",
                         value = "$resolvedCount",
-                        iconEmoji = "✅",
+                        iconEmoji = "",
                         modifier = Modifier.weight(1f),
                         accentColor = EcoEmerald,
                         subtitle = "Action complete"

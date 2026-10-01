@@ -257,10 +257,10 @@ fun ActivityDetailDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
-                        Text(text = "📅 Date: ${activity.dateText}", fontSize = 11.sp, color = EcoTextPrimary)
-                        Text(text = "📍 Location: ${activity.barangay}", fontSize = 11.sp, color = EcoTextPrimary)
-                        Text(text = "👥 Capacity: ${activity.currentParticipants}/${activity.maxParticipants} participants", fontSize = 11.sp, color = EcoTextPrimary)
-                        Text(text = "🏆 Reward: +${activity.rewardPoints} Climate Points", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+                        Text(text = "Date: ${activity.dateText}", fontSize = 11.sp, color = EcoTextPrimary)
+                        Text(text = "Location: ${activity.barangay}", fontSize = 11.sp, color = EcoTextPrimary)
+                        Text(text = "Capacity: ${activity.currentParticipants}/${activity.maxParticipants} participants", fontSize = 11.sp, color = EcoTextPrimary)
+                        Text(text = "Reward: +${activity.rewardPoints} Climate Points", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
                     }
                 }
 
@@ -393,7 +393,7 @@ fun ThesisSummaryDialog(
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
-                                text = "📊 Quantitative Evaluation Metrics",
+                                text = "Quantitative Evaluation Metrics",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = EcoForestGreen
@@ -417,7 +417,7 @@ fun ThesisSummaryDialog(
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
-                                text = "🌱 Thesis Findings & Impact",
+                                text = "Thesis Findings & Impact",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = EcoForestGreen

@@ -725,7 +725,7 @@ async function syncWithSupabase() {
   try {
     const status = await supabaseClient.testConnection();
     if (status.connected) {
-      console.log('🟢 Supabase Database & Cloud Services connected successfully.');
+      console.log('[Supabase] Database & Cloud Services connected successfully.');
       
       // 1. Sync Configuration
       const remoteConfig = await supabaseClient.fetchConfigFromSupabase();
@@ -846,8 +846,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       // Default fallback SVG icon
-      const emoji = websiteConfig.websiteLogo || '🌱';
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${emoji}</text></svg>`;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="45" fill="#2E7D32"/><path d="M50 20 C35 35 30 55 50 80 C70 55 65 35 50 20 Z" fill="#A5D6A7"/></svg>`;
       res.writeHead(200, {
         'Content-Type': 'image/svg+xml',
         'Cache-Control': 'no-cache, must-revalidate'
@@ -1488,7 +1487,7 @@ const server = http.createServer(async (req, res) => {
       const newGuide = {
         id: `guide-${Date.now().toString().slice(-4)}`,
         title: data.title,
-        icon: data.icon || '📖',
+        icon: data.icon || 'guide',
         category: data.category || 'General',
         summary: data.summary || '',
         content: data.content,
@@ -1509,6 +1508,99 @@ const server = http.createServer(async (req, res) => {
       userGuidesStore = userGuidesStore.filter(g => g.id !== guideId);
       saveUserGuidesToDisk();
       return sendJson(200, { success: true, message: 'User guide deleted' });
+    }
+
+    // ------------------------------------------
+    // 6.5. Community Activities & App Sync API
+    // ------------------------------------------
+    if (pathname === '/api/activities' && req.method === 'GET') {
+      loadActivitiesFromDisk();
+      return sendJson(200, { activities: activitiesStore });
+    }
+
+    if (pathname === '/api/activities' && req.method === 'POST') {
+      const session = getAdminSession(req);
+      if (!session || !isAdminRole(session.role)) {
+        return sendJson(401, { error: 'Unauthorized: Active administrative session required' });
+      }
+      const data = await parseBody(req);
+      const newAct = {
+        id: data.id || `act-${Date.now().toString().slice(-4)}`,
+        title: data.title || 'Community Eco Activity',
+        date: data.date || 'TBA',
+        location: data.location || 'Metro Verde',
+        category: data.category || 'Environmental',
+        target: data.target || 'Community Action',
+        registered: 0,
+        max: data.max || 100
+      };
+      activitiesStore.push(newAct);
+      saveActivitiesToDisk();
+      return sendJson(201, { success: true, activity: newAct });
+    }
+
+    // Consolidated App Data Sync (Keeps downloaded/installed app 100% updated with website & admin)
+    if (pathname === '/api/app/sync' && req.method === 'GET') {
+      loadWebsiteConfigFromDisk();
+      loadReportsFromDisk();
+      loadAnnouncementsFromDisk();
+      loadUserGuidesFromDisk();
+      loadActivitiesFromDisk();
+      loadWeatherFromDisk();
+      return sendJson(200, {
+        config: websiteConfig,
+        reports: reportsStore,
+        announcements: announcementsStore,
+        guides: userGuidesStore,
+        activities: activitiesStore,
+        weather: weatherStore,
+        timestamp: Date.now()
+      });
+    }
+
+    // App Report Status Sync (Allows updates from App Admin / Triage to reflect instantly in web & disk)
+    if (pathname.startsWith('/api/app/reports/') && pathname.endsWith('/status') && req.method === 'POST') {
+      const parts = pathname.split('/');
+      const reportId = parts[4];
+      const updateData = await parseBody(req);
+      const report = reportsStore.find(r => String(r.id) === String(reportId) || String(r.id).replace(/\D/g, '') === String(reportId));
+      if (report) {
+        if (updateData.status) report.status = updateData.status;
+        if (updateData.adminRemarks) report.adminRemarks = updateData.adminRemarks;
+        if (updateData.assignedOfficer) report.assignedOfficer = updateData.assignedOfficer;
+        report.updatedAt = Date.now();
+        saveReportsToDisk();
+        supabaseClient.updateReportInSupabase(report.id, report).catch(() => {});
+        return sendJson(200, { success: true, report });
+      }
+      return sendJson(404, { error: 'Report not found' });
+    }
+
+    // App Report Submission Sync
+    if (pathname === '/api/app/reports' && req.method === 'POST') {
+      const repData = await parseBody(req);
+      const newRep = {
+        id: repData.id || `ECO-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        title: repData.title || 'Environmental Incident',
+        category: repData.category || 'General',
+        description: repData.description || '',
+        reporterName: repData.authorName || repData.reporterName || 'Citizen Reporter',
+        submittedBy: repData.authorName || repData.reporterName || 'Citizen Reporter',
+        submittedEmail: repData.submittedEmail || '',
+        barangay: repData.barangay || 'Metro Verde',
+        municipality: repData.municipality || 'Metro Verde',
+        province: repData.province || 'Eco Province',
+        severity: repData.severity || 'Moderate',
+        status: repData.status || 'Submitted',
+        latitude: repData.latitude || 14.5995,
+        longitude: repData.longitude || 120.9842,
+        imageUrl: repData.photoUri || null,
+        timestamp: repData.timestamp || Date.now()
+      };
+      reportsStore.unshift(newRep);
+      saveReportsToDisk();
+      supabaseClient.saveReportToSupabase(newRep).catch(() => {});
+      return sendJson(201, { success: true, report: newRep });
     }
 
     // ------------------------------------------
@@ -2284,6 +2376,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🌱 ClimateAction Full-Stack Server listening on port ${PORT}`);
-  console.log(`🔒 Session-based Administrative Console active at /admin`);
+  console.log(`[Server] ClimateAction Full-Stack Server listening on port ${PORT}`);
+  console.log(`[Admin] Session-based Administrative Console active at /admin`);
 });

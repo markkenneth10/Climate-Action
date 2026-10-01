@@ -151,7 +151,7 @@ fun ArticleDetailDialog(
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
-                                text = "🌱 Practical Climate Action Tips",
+                                text = "Practical Climate Action Tips",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = EcoForestGreen

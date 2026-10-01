@@ -35,6 +35,14 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Star
 import com.example.data.model.UserEntity
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -94,18 +102,18 @@ import java.util.Date
 import java.util.Locale
 
 val ClimateCategories = listOf(
-    "🌳" to "Illegal cutting of trees",
-    "🗑️" to "Improper waste disposal",
-    "🔥" to "Open burning",
-    "💧" to "Water pollution",
-    "🌊" to "Flooding",
-    "🌡️" to "Extreme heat",
-    "🌪️" to "Storm-related damage",
-    "🌱" to "Lack of vegetation",
-    "🚰" to "Water shortage",
-    "🏭" to "Air pollution",
-    "🐟" to "Environmental destruction",
-    "⚠️" to "Other environmental concerns"
+    "Forestry" to "Illegal cutting of trees",
+    "Waste" to "Improper waste disposal",
+    "Burning" to "Open burning",
+    "Water" to "Water pollution",
+    "Flooding" to "Flooding",
+    "Heat" to "Extreme heat",
+    "Storm" to "Storm-related damage",
+    "Vegetation" to "Lack of vegetation",
+    "Shortage" to "Water shortage",
+    "Emissions" to "Air pollution",
+    "Ecosystem" to "Environmental destruction",
+    "General" to "Other environmental concerns"
 )
 
 val MetroVerdeBarangays = listOf(
@@ -212,7 +220,7 @@ fun ReportScreen(
                         color = if (selectedSubTab == 0) Color.White else Color.Transparent
                     ) {
                         Text(
-                            text = "✍️ Submit Report",
+                            text = "Submit Report",
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
@@ -230,7 +238,7 @@ fun ReportScreen(
                         color = if (selectedSubTab == 1) Color.White else Color.Transparent
                     ) {
                         Text(
-                            text = "📊 Track Submissions (${userReports.size})",
+                            text = "Track Submissions (${userReports.size})",
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
@@ -274,7 +282,12 @@ fun ReportScreen(
                                 modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "📌", fontSize = 20.sp)
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = EcoForestGreen,
+                                    modifier = Modifier.size(18.dp)
+                                )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
                                     text = "Take Photo → Select Location → Describe Problem → Submit Report (+10 Points)",
@@ -397,15 +410,13 @@ fun ReportScreen(
                                             modifier = Modifier.padding(vertical = 8.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            Text(
-                                                text = when (sev) {
-                                                    "Critical" -> "🔴"
-                                                    "High" -> "🟠"
-                                                    "Moderate" -> "🟡"
-                                                    else -> "🟢"
-                                                },
-                                                fontSize = 12.sp
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (isSelected) Color.White else sevColor)
                                             )
+                                            Spacer(modifier = Modifier.height(4.dp))
                                             Text(
                                                 text = sev,
                                                 fontSize = 11.sp,
@@ -458,7 +469,7 @@ fun ReportScreen(
                                         color = Color.Black.copy(alpha = 0.6f)
                                     ) {
                                         Text(
-                                            text = "✕",
+                                            text = "X",
                                             color = Color.White,
                                             fontSize = 12.sp,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -501,7 +512,7 @@ fun ReportScreen(
                                         shape = RoundedCornerShape(10.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = EcoTeal)
                                     ) {
-                                        Text("📷 Quick Evidence", fontSize = 12.sp)
+                                        Text("Quick Evidence", fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -682,7 +693,7 @@ fun ReportScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
                     ) {
                         Text(
-                            text = "🚀 Submit Environmental Report (+10 pts)",
+                            text = "Submit Environmental Report (+10 pts)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
@@ -739,7 +750,12 @@ fun ReportScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "📭", fontSize = 40.sp)
+                            Icon(
+                                imageVector = Icons.Default.Inbox,
+                                contentDescription = null,
+                                tint = EcoTextMuted,
+                                modifier = Modifier.size(40.dp)
+                            )
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
                                 text = "No reports found in this category",
@@ -845,7 +861,12 @@ fun ReportScreen(
                                                 modifier = Modifier.padding(8.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Text(text = "💬", fontSize = 12.sp)
+                                                Icon(
+                                                    imageVector = Icons.Default.Comment,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF64748B),
+                                                    modifier = Modifier.size(14.dp)
+                                                )
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Text(
                                                     text = "Admin: ${rep.adminRemarks}",
@@ -902,7 +923,12 @@ fun CitizenAccountRequiredGate(
                     modifier = Modifier.size(64.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(text = "🌱", fontSize = 32.sp)
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = EcoForestGreen,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
                 }
 
@@ -945,7 +971,12 @@ fun CitizenAccountRequiredGate(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "📍", fontSize = 16.sp)
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = EcoForestGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Geotagged routing to Barangay & CENRO taskforces",
@@ -954,7 +985,12 @@ fun CitizenAccountRequiredGate(
                             )
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🔔", fontSize = 16.sp)
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = EcoForestGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Real-time updates as officers validate and resolve issues",
@@ -963,7 +999,12 @@ fun CitizenAccountRequiredGate(
                             )
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🏆", fontSize = 16.sp)
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "+50 Welcome Points on signup, +10 points per report",
@@ -986,7 +1027,7 @@ fun CitizenAccountRequiredGate(
                     colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
                 ) {
                     Text(
-                        text = "🌱 Create Citizen Account",
+                        text = "Create Citizen Account",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
@@ -1001,7 +1042,7 @@ fun CitizenAccountRequiredGate(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "🔑 Sign In to Existing Account",
+                        text = "Sign In to Existing Account",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         color = EcoForestGreen
@@ -1045,7 +1086,12 @@ fun CitizenKycRequiredGate(
                     modifier = Modifier.size(64.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(text = "🛡️", fontSize = 32.sp)
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = null,
+                            tint = EcoForestGreen,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
                 }
 
@@ -1088,7 +1134,12 @@ fun CitizenKycRequiredGate(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🪪", fontSize = 16.sp)
+                            Icon(
+                                imageVector = Icons.Default.Badge,
+                                contentDescription = null,
+                                tint = EcoForestGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Accepted: PhilSys, Driver's License, Passport, UMID",
@@ -1097,7 +1148,12 @@ fun CitizenKycRequiredGate(
                             )
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "⚡", fontSize = 16.sp)
+                            Icon(
+                                imageVector = Icons.Default.Speed,
+                                contentDescription = null,
+                                tint = EcoForestGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Instant verification approval in seconds",
@@ -1106,7 +1162,12 @@ fun CitizenKycRequiredGate(
                             )
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🎁", fontSize = 16.sp)
+                            Icon(
+                                imageVector = Icons.Default.CardGiftcard,
+                                contentDescription = null,
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Earn +25 Bonus Climate Points upon verification",
@@ -1129,7 +1190,7 @@ fun CitizenKycRequiredGate(
                     colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
                 ) {
                     Text(
-                        text = "🛡️ Verify Government ID (KYC)",
+                        text = "Verify Government ID (KYC)",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )

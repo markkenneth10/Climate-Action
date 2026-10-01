@@ -2,6 +2,7 @@ package com.example
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -56,6 +57,7 @@ import com.example.ui.dialogs.NotificationsDialog
 import com.example.ui.dialogs.QuizDialog
 import com.example.ui.dialogs.ReportDetailDialog
 import com.example.ui.dialogs.ThesisSummaryDialog
+import com.example.ui.screens.AdminDashboardScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LearnScreen
 import com.example.ui.screens.MapScreen
@@ -110,6 +112,12 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
     val snackbarMessage by viewModel.showSuccessSnackbar.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    if (activeTab != "Home") {
+        BackHandler {
+            viewModel.setActiveTab(if (activeTab == "Admin") "Profile" else "Home")
+        }
+    }
 
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
@@ -316,6 +324,10 @@ fun MainAppScreen(viewModel: ClimateViewModel) {
                     "Map" -> MapScreen(viewModel = viewModel)
                     "Learn" -> LearnScreen(viewModel = viewModel)
                     "Profile" -> ProfileScreen(viewModel = viewModel)
+                    "Admin" -> AdminDashboardScreen(
+                        viewModel = viewModel,
+                        onBack = { viewModel.setActiveTab("Profile") }
+                    )
                     else -> HomeScreen(viewModel = viewModel)
                 }
             }

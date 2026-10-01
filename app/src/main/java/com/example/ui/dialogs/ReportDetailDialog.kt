@@ -236,7 +236,7 @@ fun ReportDetailDialog(
                                 color = Color.Black.copy(alpha = 0.65f)
                             ) {
                                 Text(
-                                    text = "📸 Geotagged Photographic Evidence",
+                                    text = "Geotagged Photographic Evidence",
                                     color = Color.White,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -388,7 +388,7 @@ fun ReportDetailDialog(
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Text(
-                                    text = "🛡️ Administrative Action & Assignment",
+                                    text = "Administrative Action & Assignment",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = EcoGreenDark

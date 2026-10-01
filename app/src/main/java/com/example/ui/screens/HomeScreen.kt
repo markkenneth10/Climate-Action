@@ -164,9 +164,9 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     text = when {
-                                        currentUser == null -> "🌱 Join / Sign In"
-                                        !currentUser!!.isVerified || currentUser!!.kycStatus != "verified" -> "⚠️ Verify ID"
-                                        else -> "🛡️ Verified Citizen"
+                                        currentUser == null -> "Join / Sign In"
+                                        !currentUser!!.isVerified || currentUser!!.kycStatus != "verified" -> "Verify ID"
+                                        else -> "Verified Citizen"
                                     },
                                     color = Color.White,
                                     fontSize = 11.sp,
@@ -258,7 +258,7 @@ fun HomeScreen(
                                 modifier = Modifier.testTag("report_issue_hero_button")
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "📸 Report an Issue", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text(text = "Report an Issue", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
                             }
                         }
@@ -289,7 +289,7 @@ fun HomeScreen(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "🌱", fontSize = 20.sp)
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Person, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -326,7 +326,7 @@ fun HomeScreen(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "🛡️", fontSize = 20.sp)
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Shield, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -372,14 +372,14 @@ fun HomeScreen(
                     StatCard(
                         title = "My Reports",
                         value = "${myReports.size}",
-                        iconEmoji = "📋",
+                        iconEmoji = "",
                         modifier = Modifier.weight(1f),
                         subtitle = "${myReports.count { it.status == "In Progress" || it.status == "Submitted" }} active cases"
                     )
                     StatCard(
                         title = "Resolved",
                         value = "$myResolved",
-                        iconEmoji = "✅",
+                        iconEmoji = "",
                         modifier = Modifier.weight(1f),
                         accentColor = EcoEmerald,
                         subtitle = "Verified solved"
@@ -387,7 +387,7 @@ fun HomeScreen(
                     StatCard(
                         title = "Eco Points",
                         value = "$userPoints",
-                        iconEmoji = "🏆",
+                        iconEmoji = "",
                         modifier = Modifier.weight(1f),
                         accentColor = EcoSkyBlue,
                         subtitle = "Rank #1"
@@ -412,7 +412,7 @@ fun HomeScreen(
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "⚠️", fontSize = 22.sp)
+                    Icon(imageVector = androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(22.dp))
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
@@ -453,7 +453,7 @@ fun HomeScreen(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "🗺️", fontSize = 22.sp)
+                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.Map, contentDescription = null, tint = EcoSkyBlue, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
@@ -484,7 +484,7 @@ fun HomeScreen(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "🧠", fontSize = 22.sp)
+                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.AutoStories, contentDescription = null, tint = EcoEmerald, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(

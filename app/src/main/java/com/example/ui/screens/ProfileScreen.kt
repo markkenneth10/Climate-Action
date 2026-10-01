@@ -126,7 +126,12 @@ fun ProfileScreen(
                                     modifier = Modifier.size(54.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Text(text = "🌱", fontSize = 24.sp)
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            tint = EcoForestGreen,
+                                            modifier = Modifier.size(28.dp)
+                                        )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
@@ -165,7 +170,7 @@ fun ProfileScreen(
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
                                 ) {
-                                    Text("🌱 Create Account", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Create Account", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
 
                                 OutlinedButton(
@@ -176,7 +181,7 @@ fun ProfileScreen(
                                         .testTag("btn_profile_sign_in"),
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Text("🔑 Sign In", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+                                    Text("Sign In", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
                                 }
                             }
                         }
@@ -393,7 +398,12 @@ fun ProfileScreen(
                             modifier = Modifier.size(50.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(text = "🏆", fontSize = 24.sp)
+                                Icon(
+                                    imageVector = Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD97706),
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                         }
                     }
@@ -449,7 +459,12 @@ fun ProfileScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🏆", fontSize = 18.sp)
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(20.dp)
+                            )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Community Leaderboard",
@@ -469,9 +484,9 @@ fun ProfileScreen(
 
                     sortedLeaderboard.forEachIndexed { index, user ->
                         val medal = when (index) {
-                            0 -> "🥇"
-                            1 -> "🥈"
-                            2 -> "🥉"
+                            0 -> "#1"
+                            1 -> "#2"
+                            2 -> "#3"
                             else -> "#${index + 1}"
                         }
                         val isSelf = user.id == currentUser?.id
@@ -519,11 +534,85 @@ fun ProfileScreen(
             }
         }
 
+        // CENRO Officer & Admin Access (App Only)
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, EcoBorder)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = EcoForestGreen.copy(alpha = 0.12f),
+                            modifier = Modifier.size(42.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.AdminPanelSettings,
+                                    contentDescription = "Admin Access",
+                                    tint = EcoForestGreen,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "CENRO Officer & Admin Console",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = EcoTextPrimary
+                            )
+                            Text(
+                                text = "Incident triage, citizen verification, and municipal controls",
+                                fontSize = 11.sp,
+                                color = EcoTextSecondary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            viewModel.setActiveTab("Admin")
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .testTag("btn_open_admin_console"),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AdminPanelSettings,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Open Admin Dashboard",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+        }
+
         // Climate Action Activities Section
         item {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(
-                    text = "🌱 Climate Action Activities",
+                    text = "Climate Action Activities",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = EcoTextPrimary
@@ -646,7 +735,7 @@ fun ProfileScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = if (act.isRegistered) "✓ Registered" else "Register Now",
+                                text = if (act.isRegistered) "Registered" else "Register Now",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -659,7 +748,7 @@ fun ProfileScreen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(
-                                    text = if (act.proofSubmitted) "Proof Verified ✓" else "Upload Proof",
+                                    text = if (act.proofSubmitted) "Proof Verified" else "Upload Proof",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )

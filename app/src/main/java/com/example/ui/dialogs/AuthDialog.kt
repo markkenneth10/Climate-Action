@@ -145,7 +145,7 @@ fun AuthDialog(
                                 modifier = Modifier.size(38.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(text = "🌱", fontSize = 20.sp)
+                                    Icon(imageVector = androidx.compose.material.icons.Icons.Default.Person, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
                                 }
                             }
                             Spacer(modifier = Modifier.width(10.dp))
@@ -198,7 +198,7 @@ fun AuthDialog(
                             color = if (isRegisterMode) EcoForestGreen else Color.Transparent
                         ) {
                             Text(
-                                text = "🌱 Create Account",
+                                text = "Create Account",
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
@@ -219,7 +219,7 @@ fun AuthDialog(
                             color = if (!isRegisterMode) EcoForestGreen else Color.Transparent
                         ) {
                             Text(
-                                text = "🔑 Sign In",
+                                text = "Sign In",
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
@@ -249,7 +249,7 @@ fun AuthDialog(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "📜", fontSize = 20.sp)
+                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Description, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "City Ordinance #2026-04 requires citizens to register and complete one-time government ID verification (KYC) before filing environmental incident reports.",
@@ -272,7 +272,7 @@ fun AuthDialog(
                                 modifier = Modifier.padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "⚠️", fontSize = 16.sp)
+                                Icon(imageVector = androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFFDC2626), modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = errorText,
@@ -448,7 +448,7 @@ fun AuthDialog(
                             if (isLoading) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                             } else {
-                                Text("🌱 Create Citizen Account (+50 Pts)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Create Citizen Account (+50 Pts)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                         }
 
@@ -560,7 +560,7 @@ fun AuthDialog(
                             if (isLoading) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                             } else {
-                                Text("🔑 Sign In to Citizen Portal", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Sign In to Citizen Portal", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                         }
 
@@ -601,7 +601,7 @@ fun AuthDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "👀 Browse Public Advisories as Guest",
+                            text = "Browse Public Advisories as Guest",
                             fontSize = 12.sp,
                             color = EcoTextSecondary
                         )
