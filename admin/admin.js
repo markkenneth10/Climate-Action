@@ -2302,3 +2302,18 @@ function copySupabaseSchema() {
  if (btn) btn.innerHTML = ' Copied!';
  });
 }
+
+async function triggerBackgroundUpload() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.multiple = true;
+  input.accept = "image/*";
+  input.onchange = async (e) => {
+    const files = e.target.files;
+    if (files.length > 3) { alert("Maximum 3 background images allowed."); return; }
+    
+    // Upload logic placeholder...
+    alert("Background image upload triggered. Functionality placeholder implemented.");
+  };
+  input.click();
+}
