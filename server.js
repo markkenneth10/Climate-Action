@@ -406,6 +406,21 @@ let websiteConfig = {
   climateAwarenessInfo: "Environmental violations are strictly governed by Philippine Environmental Laws including Republic Act 9003 (Ecological Solid Waste Management Act), Republic Act 8749 (Philippine Clean Air Act), Republic Act 9275 (Clean Water Act), and Presidential Decree 705 (Revised Forestry Code). Fines range up to ₱100,000 with criminal liability.",
   reportingGuideInfo: "When filing an environmental incident: (1) Ensure your personal safety first, (2) Capture at least one clear photograph of the hazard, (3) Specify the exact street, landmark, or GPS coordinate, (4) Categorize the severity accurately. CENRO field units are dispatched within 4 hours for Critical tickets.",
 
+  // Dashboard Visual Content
+  climateInformation: [
+    { title: "Climate Vulnerability", desc: "Understanding the risks for a safer future.", image: "" },
+    { title: "Flood Preparedness", desc: "Be prepared, stay safe and protect waterways.", image: "" },
+    { title: "Forest Protection", desc: "Healthy forests, healthier tomorrow and stable slopes.", image: "" },
+    { title: "Solid Waste Management", desc: "Reduce • Reuse • Recycle with RA 9003 compliance.", image: "" },
+    { title: "Water Resource Protection", desc: "Clean water, healthy communities and stream protection.", image: "" },
+    { title: "Energy Efficiency", desc: "Small actions, big impact for low-carbon living.", image: "" }
+  ],
+  responseProtocol: [
+    { stage: "Stage 1", title: "Intake & Digital Triage", desc: "Automated deduplication and geotag verification (< 1 hr)." },
+    { stage: "Stage 2", title: "Eco-Warden Field Dispatch", desc: "On-site photographic inspection within 4 hours for Critical tickets." },
+    { stage: "Stage 3", title: "Inter-Agency Remediation", desc: "Culvert clearance, waste extraction, or environmental citations." }
+  ],
+
   updatedAt: Date.now()
 };
 

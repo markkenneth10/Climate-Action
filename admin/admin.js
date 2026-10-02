@@ -906,6 +906,32 @@ function handleRemoveAboutImage() {
  if (removeBtn) removeBtn.style.display = 'none';
 }
 
+let activeInfoCardIdx = null;
+function triggerInfoCardUpload(idx) {
+ activeInfoCardIdx = idx;
+ document.getElementById('cms-info-card-file-input').click();
+}
+
+async function handleInfoCardFileSelect(event) {
+ const file = event.target.files[0];
+ if (!file || activeInfoCardIdx === null) return;
+ const statusEl = document.getElementById(`info-card-img-status-${activeInfoCardIdx}`);
+ if (statusEl) statusEl.textContent = ' Uploading...';
+
+ try {
+ const result = await uploadImageFile(file, 'info_card');
+ document.getElementById(`info-card-image-${activeInfoCardIdx}`).value = result.url;
+ if (statusEl) statusEl.textContent = ' Uploaded!';
+ loadMediaGallery();
+ } catch (err) {
+ alert(err.message);
+ if (statusEl) statusEl.textContent = ' Error';
+ } finally {
+ event.target.value = '';
+ activeInfoCardIdx = null;
+ }
+}
+
 // Media Gallery Loader
 async function loadMediaGallery() {
  const grid = document.getElementById('admin-media-gallery-grid');
@@ -985,7 +1011,34 @@ async function loadCMSData() {
  document.getElementById('cms-website-name').value = config.websiteName || '';
  document.getElementById('cms-website-subtitle').value = config.websiteSubtitle || '';
  document.getElementById('cms-website-logo').value = config.websiteLogo || '';
- document.getElementById('cms-emergency-hotline').value = config.emergencyHotline || '';
+  document.getElementById('cms-emergency-hotline').value = config.emergencyHotline || '';
+  if (document.getElementById('cms-denr-hotline')) document.getElementById('cms-denr-hotline').value = config.denrHotline || '';
+  if (document.getElementById('cms-health-hotline')) document.getElementById('cms-health-hotline').value = config.healthHotline || '';
+
+  // Climate Info Cards
+  const infoCards = config.climateInformation || [];
+  for (let i = 1; i <= 6; i++) {
+    const item = infoCards[i - 1] || {};
+    if (document.getElementById(`info-card-title-${i}`)) {
+      document.getElementById(`info-card-title-${i}`).value = item.title || '';
+      document.getElementById(`info-card-desc-${i}`).value = item.desc || '';
+      document.getElementById(`info-card-image-${i}`).value = item.image || '';
+      if (item.image) {
+        document.getElementById(`info-card-img-status-${i}`).textContent = ' Image Set';
+        document.getElementById(`info-card-img-status-${i}`).style.color = '#34d399';
+      }
+    }
+  }
+
+  // Response Protocol
+  const protocol = config.responseProtocol || [];
+  for (let i = 1; i <= 3; i++) {
+    const item = protocol[i - 1] || {};
+    if (document.getElementById(`protocol-title-${i}`)) {
+      document.getElementById(`protocol-title-${i}`).value = item.title || '';
+      document.getElementById(`protocol-desc-${i}`).value = item.desc || '';
+    }
+  }
 
  // Logo state & Image preview
  const logoUrl = config.logoImageUrl || '';
@@ -1073,26 +1126,53 @@ async function handleSaveCMS(e) {
  logoTypeVal = 'image';
  }
 
- const updates = {
- websiteName: document.getElementById('cms-website-name').value.trim(),
- websiteSubtitle: document.getElementById('cms-website-subtitle').value.trim(),
- websiteLogo: document.getElementById('cms-website-logo').value.trim(),
- logoType: logoTypeVal,
- logoImageUrl: logoUrlVal,
- heroImageUrl: document.getElementById('cms-hero-image-url').value.trim(),
- aboutImageUrl: document.getElementById('cms-about-image-url').value.trim(),
- emergencyHotline: document.getElementById('cms-emergency-hotline').value.trim(),
+  const updates = {
+    websiteName: document.getElementById('cms-website-name').value.trim(),
+    websiteSubtitle: document.getElementById('cms-website-subtitle').value.trim(),
+    websiteLogo: document.getElementById('cms-website-logo').value.trim(),
+    logoType: logoTypeVal,
+    logoImageUrl: logoUrlVal,
+    heroImageUrl: document.getElementById('cms-hero-image-url').value.trim(),
+    aboutImageUrl: document.getElementById('cms-about-image-url').value.trim(),
+    emergencyHotline: document.getElementById('cms-emergency-hotline').value.trim(),
+    denrHotline: document.getElementById('cms-denr-hotline') ? document.getElementById('cms-denr-hotline').value.trim() : '',
+    healthHotline: document.getElementById('cms-health-hotline') ? document.getElementById('cms-health-hotline').value.trim() : '',
 
- climateChangeInfo: document.getElementById('cms-climate-change').value.trim(),
- climateActionInfo: document.getElementById('cms-climate-action').value.trim(),
- climateAwarenessInfo: document.getElementById('cms-climate-awareness').value.trim(),
- reportingGuideInfo: document.getElementById('cms-reporting-guide').value.trim(),
+    climateChangeInfo: document.getElementById('cms-climate-change').value.trim(),
+    climateActionInfo: document.getElementById('cms-climate-action').value.trim(),
+    climateAwarenessInfo: document.getElementById('cms-climate-awareness').value.trim(),
+    reportingGuideInfo: document.getElementById('cms-reporting-guide').value.trim(),
 
- aboutWebsite: document.getElementById('cms-about-website').value.trim(),
- whyCreated: document.getElementById('cms-why-created').value.trim(),
- whoCreated: document.getElementById('cms-who-created').value.trim(),
- contactPartners: document.getElementById('cms-partners').value.trim()
- };
+    aboutWebsite: document.getElementById('cms-about-website').value.trim(),
+    whyCreated: document.getElementById('cms-why-created').value.trim(),
+    whoCreated: document.getElementById('cms-who-created').value.trim(),
+    contactPartners: document.getElementById('cms-partners').value.trim(),
+
+    climateInformation: [],
+    responseProtocol: []
+  };
+
+  // Collect Climate Info Cards
+  for (let i = 1; i <= 6; i++) {
+    if (document.getElementById(`info-card-title-${i}`)) {
+      updates.climateInformation.push({
+        title: document.getElementById(`info-card-title-${i}`).value.trim(),
+        desc: document.getElementById(`info-card-desc-${i}`).value.trim(),
+        image: document.getElementById(`info-card-image-${i}`).value.trim()
+      });
+    }
+  }
+
+  // Collect Response Protocol
+  for (let i = 1; i <= 3; i++) {
+    if (document.getElementById(`protocol-title-${i}`)) {
+      updates.responseProtocol.push({
+        stage: `Stage ${i}`,
+        title: document.getElementById(`protocol-title-${i}`).value.trim(),
+        desc: document.getElementById(`protocol-desc-${i}`).value.trim()
+      });
+    }
+  }
 
  try {
  const res = await adminFetch('/api/config', {
