@@ -3,9 +3,9 @@ package com.example.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Eco Tech Brand Colors
-val EcoGreenDark = Color(0xFF0F3E1B)
-val EcoForestGreen = Color(0xFF1B5E20)
-val EcoEmerald = Color(0xFF10B981)
+val EcoGreenDark = Color(0xFF15803D)
+val EcoForestGreen = Color(0xFF16A34A)
+val EcoEmerald = Color(0xFF22C55E)
 val EcoMint = Color(0xFFD1FAE5)
 val EcoTeal = Color(0xFF0D9488)
 val EcoSkyBlue = Color(0xFF0284C7)

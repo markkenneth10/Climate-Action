@@ -14,37 +14,5 @@
     "kycIdNumber": "CENRO-SUPER-ADMIN",
     "badges": ["Super Administrator", "Executive Directorate", "Verified Citizen"],
     "createdAt": 1789467840000
-  },
-  {
-    "id": "USR-1002",
-    "name": "John Santos",
-    "email": "john.santos@climateaction.org",
-    "password": "password123",
-    "phone": "0917-234-5678",
-    "barangay": "Barangay San Jose",
-    "address": "Block 4, Lot 12, Sunrise Village",
-    "role": "Citizen",
-    "ecoPoints": 290,
-    "kycStatus": "verified",
-    "kycIdType": "Philippine National ID (PhilSys)",
-    "kycIdNumber": "4819-2049-1823",
-    "badges": ["Eco Warrior", "Active Reporter", "Verified Citizen"],
-    "createdAt": 1789467840000
-  },
-  {
-    "id": "USR-1003",
-    "name": "Maria Clara",
-    "email": "maria.clara@climateaction.org",
-    "password": "password123",
-    "phone": "0918-345-6789",
-    "barangay": "Barangay Poblacion",
-    "address": "14 Rizal Avenue",
-    "role": "Citizen",
-    "ecoPoints": 240,
-    "kycStatus": "verified",
-    "kycIdType": "Driver's License (LTO)",
-    "kycIdNumber": "D02-18-091823",
-    "badges": ["Community Guardian", "Verified Citizen"],
-    "createdAt": 1789467840000
   }
 ]

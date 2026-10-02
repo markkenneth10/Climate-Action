@@ -162,8 +162,8 @@ async function handleQuickAutoLogin() {
  if (!success) {
  const emailInput = document.getElementById('admin-email-input');
  const passInput = document.getElementById('admin-password-input');
- if (emailInput && !emailInput.value) emailInput.value = 'markkennethulgasan@gmail.com';
- if (passInput && !passInput.value) passInput.value = 'kenmark10';
+ if (emailInput && !emailInput.value) emailInput.value = '';
+ if (passInput && !passInput.value) passInput.value = '';
  await handleAdminLogin();
  }
  } finally {

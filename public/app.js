@@ -20,7 +20,9 @@ const state = {
  },
  weather: {},
  announcements: [],
+ articles: [],
  userGuides: [],
+ activities: [],
  uploadedPhotoData: null,
  fullMapInstance: null,
  previewMapInstance: null,
@@ -28,57 +30,20 @@ const state = {
  previewMapMarkers: [],
  currentQuizIndex: 0,
  quizScore: 0,
- joinedActivities: new Set(['act-1'])
+ joinedActivities: new Set()
 };
 
-// Educational & Scientific Library Articles
-const articles = [
- {
- id: "art-1",
- title: "Understanding Urban Heat Islands & Canopy Defense",
- category: "Microclimate Science",
- readTime: "4 min read",
- summary: "How dense concrete coverage intensifies tropical temperatures and why neighborhood tree canopies are critical for municipal climate resilience.",
- content: "Urban Heat Islands (UHIs) occur when cities replace natural land cover with dense concentrations of pavement, asphalt, and buildings that absorb and retain heat. In Metro Verde, urban districts can be 3°C to 6°C warmer than surrounding rural barangays. Counteracting this requires aggressive tree planting, cool roofs, permeable pavements, and preserving riparian vegetation along river corridors.",
- image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80"
- },
- {
- id: "art-2",
- title: "Riparian Ecosystem Restoration & Flash Flood Defense",
- category: "Water Resource Management",
- readTime: "5 min read",
- summary: "Vegetated riverbanks absorb surge waters, stabilize riverbanks against landslides, and filter plastic pollutants before reaching drinking estuaries.",
- content: "Riparian buffer zones act as natural sponges. By retaining water-tolerant native trees like Bamboo, Narra, and Mangroves along river banks, communities drastically reduce flash flood velocity, mitigate erosion, and enhance water filtration naturally.",
- image: "https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=600&q=80"
- },
- {
- id: "art-3",
- title: "Zero-Waste Circularity & Republic Act 9003 Enforcement",
- category: "Solid Waste Policy",
- readTime: "6 min read",
- summary: "How barangay materials recovery facilities (MRF) divert single-use plastic from waterways and transform organic waste into nutrient-dense compost.",
- content: "Under Philippine Republic Act 9003 (Ecological Solid Waste Management Act), open dumping and burning of municipal waste are criminal violations carrying severe fines and imprisonment. Segregation at source is mandatory for every household and commercial establishment.",
- image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80"
- }
-];
+// Educational & Scientific Library Articles (Initially Empty for Fresh Publish)
+const articles = [];
 
 // 6 Core Climate Information Pillars (Modal data)
 const climatePillars = {
  'climate-change': {
- title: "Climate Change Realities in Metro Verde",
- subtitle: "Understanding local risks, sea-surface warming, and adaptation pathways",
+ title: "Climate Change Realities",
+ subtitle: "Understanding local risks and adaptation pathways",
  image: "/assets/climate_change_thumb_1789457800658.jpg",
  content: `
- <p>Metro Verde is situated at the intersection of critical coastal and river basin drainage systems. Regional meteorological data indicates average temperature increases of +1.2°C over the past two decades, with dry season heat indexes frequently breaching the 42°C 'Danger' threshold.</p>
- <h4 style="margin: 1rem 0 0.5rem; color: var(--primary-dark);">Key Municipal Climate Impacts:</h4>
- <ul style="padding-left: 1.25rem; line-height: 1.6; color: var(--text-muted);">
- <li><strong>Hyper-Localized Flash Flooding:</strong> Intense cloudburst events overwhelm drainage culverts within 30 minutes.</li>
- <li><strong>Agricultural Stress:</strong> Highland barangays report shifting rainfall seasons, threatening rice and vegetable yields.</li>
- <li><strong>Vector-Borne Disease Surge:</strong> Warmer stagnant pools accelerate dengue vector reproduction rates.</li>
- </ul>
- <div style="background: var(--surface-alt); padding: 0.85rem; border-radius: 8px; margin-top: 1rem; border-left: 4px solid var(--emerald);">
- <strong>Citizen Adaptation Protocol:</strong> Plant native shade trees, install rainwater catchment barrels, and report obstructed waterways before monsoon onset.
- </div>
+ <p>Information about climate change impacts and municipal adaptation strategies.</p>
  `
  },
  'flood-safety': {
@@ -86,14 +51,7 @@ const climatePillars = {
  subtitle: "Protecting life, waterways, and community drainage corridors",
  image: "https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=600&q=80",
  content: `
- <p>Flash floods in Metro Verde are intensified by illegal garbage dumping that clogs drainage culverts and spillway gates. Staying prepared saves lives and reduces disaster losses.</p>
- <h4 style="margin: 1rem 0 0.5rem; color: var(--primary-dark);">Barangay Action Checklist:</h4>
- <ul style="padding-left: 1.25rem; line-height: 1.6; color: var(--text-muted);">
- <li>Monitor PAGASA storm surge and rainfall color codes (Yellow, Orange, Red).</li>
- <li>Never wade into moving floodwaters; 15 cm of moving water can knock an adult off balance.</li>
- <li>Ensure family Go-Bags contain non-perishable rations, water purifying tablets, first-aid, and vital documents in waterproof pouches.</li>
- <li>Report blocked spillways or river obstructions using the Climate Action portal for immediate CENRO declogging dispatch.</li>
- </ul>
+ <p>Guidelines for flood safety and drainage maintenance.</p>
  `
  },
  'forest-protection': {
@@ -101,58 +59,31 @@ const climatePillars = {
  subtitle: "Preserving ecological canopy, slopes, and biodiversity",
  image: "/assets/climate_hero_banner.jpg",
  content: `
- <p>The upland forests of Metro Verde act as the primary watershed aquifer for the municipal potable water supply. Illegal timber felling and slash-and-burn clearing (kaingin) directly trigger catastrophic slope collapses during typhoons.</p>
- <h4 style="margin: 1rem 0 0.5rem; color: var(--primary-dark);">Legal Protections under PD 705:</h4>
- <ul style="padding-left: 1.25rem; line-height: 1.6; color: var(--text-muted);">
- <li>Cutting of premium indigenous species (Narra, Molave, Yakal) carries mandatory imprisonment without bail option under revised forestry codes.</li>
- <li>Municipal reforestation quotas mandate the planting of 10 saplings for every permitted utility trimming.</li>
- <li>Report suspected chainsaw operations or timber transport directly via the Incident Reporter for joint CENRO-PNP intercept.</li>
- </ul>
+ <p>Policies and practices for forest conservation.</p>
  `
  },
  'waste-mgmt': {
- title: "Ecological Solid Waste Management (RA 9003)",
- subtitle: "Source segregation, material recovery, and plastic elimination",
+ title: "Ecological Solid Waste Management",
+ subtitle: "Source segregation and plastic elimination",
  image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80",
  content: `
- <p>Republic Act 9003 mandates that waste must be segregated at the household level into Biodegradable, Recyclable, Residual, and Special / Hazardous fractions. Open dumping and burning are strictly outlawed.</p>
- <h4 style="margin: 1rem 0 0.5rem; color: var(--primary-dark);">Zero-Waste Hierarchy:</h4>
- <ul style="padding-left: 1.25rem; line-height: 1.6; color: var(--text-muted);">
- <li><strong>Reduce:</strong> Refuse single-use plastics, carrier bags, and polystyrene food containers.</li>
- <li><strong>Reuse:</strong> Maintain refillable containers for household cleaning agents.</li>
- <li><strong>Compost:</strong> Turn kitchen scraps into organic compost for community urban gardens.</li>
- <li><strong>Report:</strong> Report roadside garbage dumping sites to earn eco-points and initiate municipal collection.</li>
- </ul>
+ <p>Waste management protocols under RA 9003.</p>
  `
  },
  'water-protection': {
- title: "Freshwater & Aquifer Protection (RA 9275)",
- subtitle: "Preventing industrial effluent discharge and toxic water contamination",
+ title: "Freshwater & Aquifer Protection",
+ subtitle: "Preventing water contamination",
  image: "https://images.unsplash.com/photo-1618083707368-b3823daa2726?auto=format&fit=crop&w=600&q=80",
  content: `
- <p>The Philippine Clean Water Act of 2004 (RA 9275) protects freshwater bodies from industrial, commercial, and agricultural pollution. Direct discharge of untreated grease, dye, or wastewater into natural canals is punishable by daily fines of up to ₱200,000.</p>
- <h4 style="margin: 1rem 0 0.5rem; color: var(--primary-dark);">Signs of Chemical Contamination:</h4>
- <ul style="padding-left: 1.25rem; line-height: 1.6; color: var(--text-muted);">
- <li>Unusual discolored oily sheen, frothing, or opaque milky appearance in creeks.</li>
- <li>Pungent sulfur, ammonia, or chemical solvent odors emanating from storm outfalls.</li>
- <li>Sudden fish mortality or distressed aquatic wildlife.</li>
- </ul>
- <p style="margin-top: 0.75rem; color: var(--text-muted);">Immediate reporting allows municipal environmental inspectors to collect water samples for laboratory chain of custody.</p>
+ <p>Water resource protection guidelines.</p>
  `
  },
  'energy-saving': {
  title: "Low-Carbon Living & Energy Efficiency",
- subtitle: "Micro-actions to reduce municipal carbon footprint and grid strain",
+ subtitle: "Reducing municipal carbon footprint",
  image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=600&q=80",
  content: `
- <p>Decarbonization begins in our homes and commercial hubs. Reducing electricity consumption during peak midday hours prevents reliance on diesel peaker plants and lowers household utility costs.</p>
- <h4 style="margin: 1rem 0 0.5rem; color: var(--primary-dark);">Energy Conservation Tips:</h4>
- <ul style="padding-left: 1.25rem; line-height: 1.6; color: var(--text-muted);">
- <li>Set air-conditioning units to 24°C–25°C for optimal energy-to-cooling ratio.</li>
- <li>Switch all domestic lighting to high-efficiency LED fixtures.</li>
- <li>Unplug phantom electronics (chargers, televisions, microwave clocks) when not in use.</li>
- <li>Participate in Metro Verde's community rooftop solar collective programs.</li>
- </ul>
+ <p>Energy conservation tips for citizens.</p>
  `
  }
 };
@@ -194,39 +125,9 @@ const quizQuestions = [
  }
 ];
 
-// Community Activities
-const activities = [
- {
- id: "act-1",
- title: "Tree Planting Activity",
- date: "Sep 28, 2026 • 7:00 AM",
- location: "Upper Watershed Forest Reserve",
- category: "Reforestation",
- target: "1,200 Hardwood Saplings",
- registered: 120,
- max: 150
- },
- {
- id: "act-2",
- title: "Coastal & River Clean-up",
- date: "Oct 03, 2026 • 6:00 AM",
- location: "Makilas River Corridor Spillway",
- category: "River Restoration",
- target: "500 Native Bamboo Saplings & Trash Divert",
- registered: 85,
- max: 100
- },
- {
- id: "act-3",
- title: "Climate Awareness Seminar",
- date: "Oct 10, 2026 • 9:00 AM",
- location: "Barangay Malinis Civic Hall",
- category: "Civic Education",
- target: "60 Families Certified in Zero-Waste",
- registered: 60,
- max: 80
- }
-];
+// Community Activities (Initially Empty)
+const activities = [];
+
 
 // ==========================================================================
 // Initialization on DOM Load
@@ -1269,7 +1170,9 @@ async function loadAllData() {
  fetchWeather(),
  fetchAnnouncements(),
  fetchUserGuides(),
- fetchReports()
+ fetchReports(),
+ fetchActivities(),
+ fetchArticles()
  ]);
 }
 
@@ -1563,20 +1466,15 @@ function renderAnnouncementsUI(list) {
  const badgeCount = document.getElementById('notif-badge-count');
 
  if (badgeCount) {
- badgeCount.textContent = list.length || 3;
- badgeCount.style.display = 'flex';
+ badgeCount.textContent = list.length || 0;
+ badgeCount.style.display = list.length > 0 ? 'flex' : 'none';
  }
 
  if (notifContainer) {
  if (list.length === 0) {
  notifContainer.innerHTML = `
- <div class="notif-item priority-high" onclick="openNoticeDetailModal({title: 'Yellow Rainfall Alert Raised', content: 'PAGASA raised alert for river corridor barangays. Please inspect roadside culverts and report bottlenecks.', author: 'PAGASA / CDRRMO', priority: 'high', timestamp: Date.now()})" style="cursor:pointer;">
- <div style="font-weight:700; color:var(--text-main);">Yellow Rainfall Alert Raised</div>
- <div style="font-size:0.75rem; color:var(--text-muted);">PAGASA raised alert for river corridor barangays. Click to view directives.</div>
- </div>
- <div class="notif-item priority-low" onclick="openNoticeDetailModal({title: 'Upcoming Watershed Tree Planting', content: 'Join the municipal tree planting this Saturday in Sitio Watershed. Volunteers receive seedlings and earn +30 Eco-Points!', author: 'CENRO Taskforce', priority: 'low', timestamp: Date.now()})" style="cursor:pointer;">
- <div style="font-weight:700; color:var(--text-main);">Upcoming Watershed Tree Planting</div>
- <div style="font-size:0.75rem; color:var(--text-muted);">Join the community planting this Saturday. Earn +30 Eco-Points!</div>
+ <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+ No active alerts or official bulletins at this time.
  </div>
  `;
  } else {
@@ -1668,32 +1566,16 @@ function renderUserGuidesUI(guides) {
  const container = document.getElementById('user-guides-container');
  if (!container) return;
 
- const defaultGuides = [
- {
- icon: "",
- title: "How to Take Valid Photographic Evidence",
- category: "Reporting Standard",
- summary: "High quality photographic evidence accelerates CENRO inspection and avoids ticket rejection.",
- content: "Ensure daylight capture when possible. Frame both the specific hazard (e.g. leaking culvert, illegal dumping) and a recognizable background landmark (street corner, bridge pillar, barangay hall) so wardens can locate the site immediately."
- },
- {
- icon: "",
- title: "Understanding the 5-Stage Ticket Lifecycle",
- category: "Municipal Workflow",
- summary: "From citizen submission to final field audit photo verification.",
- content: "Once submitted, your ticket is verified within 24 hours. The assigned CENRO team cleans or declogs the site. After remediation, the wardens upload an after-photo and credit 50 eco-points to your profile."
- },
- {
- icon: "",
- title: "Redeeming Citizen Eco-Points",
- category: "Civic Rewards",
- summary: "Unlock tree saplings, compost starter kits, and civic commendations.",
- content: "Accumulated eco-points can be presented at the CENRO Municipal Helpdesk or during community activities to receive native seedling vouchers, recycling bins, and civic volunteer certificates."
+ if (guides.length === 0) {
+ container.innerHTML = `
+ <div class="card" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+ No user guides available yet.
+ </div>
+ `;
+ return;
  }
- ];
 
- const items = guides.length > 0 ? guides : defaultGuides;
- container.innerHTML = items.map(g => `
+ container.innerHTML = guides.map(g => `
  <div class="card" style="border-left: 5px solid var(--primary-light);">
  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
  <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -1850,7 +1732,14 @@ function renderDashboardData() {
  // Render Dashboard Activities List
  const activitiesContainer = document.getElementById('dashboard-activities-container');
  if (activitiesContainer) {
- activitiesContainer.innerHTML = activities.map(act => `
+ if (state.activities.length === 0) {
+ activitiesContainer.innerHTML = `
+ <div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+ No upcoming activities.
+ </div>
+ `;
+ } else {
+ activitiesContainer.innerHTML = state.activities.slice(0, 3).map(act => `
  <div class="activity-row-item">
  <div class="activity-info-block">
  <div class="activity-name">${act.title}</div>
@@ -1864,6 +1753,7 @@ function renderDashboardData() {
  </button>
  </div>
  `).join('');
+ }
  }
 }
 
@@ -2321,11 +2211,43 @@ function handlePhotoSelect(e) {
 }
 
 // 9. Articles, Quiz & Activities
+async function fetchActivities() {
+ try {
+ const res = await fetch('/api/activities');
+ const data = await res.json();
+ state.activities = data.activities || [];
+ renderActivities();
+ renderDashboardData();
+ } catch (e) {
+ console.warn('Activities fetch fallback');
+ }
+}
+
+async function fetchArticles() {
+ try {
+ const res = await fetch('/api/articles');
+ const data = await res.json();
+ state.articles = data.articles || [];
+ renderArticles();
+ } catch (e) {
+ console.warn('Articles fetch fallback');
+ }
+}
+
 function renderArticles() {
  const grid = document.getElementById('articles-grid');
  if (!grid) return;
 
- grid.innerHTML = articles.map(a => `
+ if (state.articles.length === 0) {
+ grid.innerHTML = `
+ <div class="card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2rem;">
+ No climate library articles available yet.
+ </div>
+ `;
+ return;
+ }
+
+ grid.innerHTML = state.articles.map(a => `
  <div class="card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
  <img src="${a.image}" style="height: 160px; width: 100%; object-fit: cover;" alt="${a.title}">
  <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
@@ -2405,7 +2327,16 @@ function renderActivities() {
  const grid = document.getElementById('activities-grid');
  if (!grid) return;
 
- grid.innerHTML = activities.map(act => `
+ if (state.activities.length === 0) {
+ grid.innerHTML = `
+ <div class="card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2rem;">
+ No community activities scheduled at this time.
+ </div>
+ `;
+ return;
+ }
+
+ grid.innerHTML = state.activities.map(act => `
  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
  <div>
  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
@@ -2433,7 +2364,7 @@ function toggleJoinActivity(actId) {
  showToast('Please sign in to register for community restoration drives.');
  return;
  }
- const act = activities.find(a => a.id === actId);
+ const act = state.activities.find(a => a.id === actId);
  if (!act) return;
 
  if (state.joinedActivities.has(actId)) {

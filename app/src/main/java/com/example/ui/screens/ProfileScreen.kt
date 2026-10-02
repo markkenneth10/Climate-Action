@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Verified
@@ -534,75 +535,78 @@ fun ProfileScreen(
             }
         }
 
-        // CENRO Officer & Admin Access (App Only)
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = EcoSurface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, EcoBorder)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = EcoForestGreen.copy(alpha = 0.12f),
-                            modifier = Modifier.size(42.dp)
+        // CENRO Officer & Admin Access (App Only - Hidden for regular citizens)
+        val isAdminOrOfficer = currentUser?.role == "Administrator" || currentUser?.role == "Environmental Officer"
+        if (isAdminOrOfficer) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, EcoBorder)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.AdminPanelSettings,
-                                    contentDescription = "Admin Access",
-                                    tint = EcoForestGreen,
-                                    modifier = Modifier.size(24.dp)
+                            Surface(
+                                shape = CircleShape,
+                                color = EcoForestGreen.copy(alpha = 0.12f),
+                                modifier = Modifier.size(42.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.AdminPanelSettings,
+                                        contentDescription = "Admin Access",
+                                        tint = EcoForestGreen,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "CENRO Officer & Admin Console",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EcoTextPrimary
+                                )
+                                Text(
+                                    text = "Incident triage, citizen verification, and municipal controls",
+                                    fontSize = 11.sp,
+                                    color = EcoTextSecondary
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "CENRO Officer & Admin Console",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = EcoTextPrimary
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = {
+                                viewModel.setActiveTab("Admin")
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("btn_open_admin_console"),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AdminPanelSettings,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Incident triage, citizen verification, and municipal controls",
-                                fontSize = 11.sp,
-                                color = EcoTextSecondary
+                                text = "Open Admin Dashboard",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
                             )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Button(
-                        onClick = {
-                            viewModel.setActiveTab("Admin")
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp)
-                            .testTag("btn_open_admin_console"),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AdminPanelSettings,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Open Admin Dashboard",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
                     }
                 }
             }

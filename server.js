@@ -498,18 +498,7 @@ function loadWeatherFromDisk() {
 loadWeatherFromDisk();
 
 // 5. Announcements (Official Municipal Directives)
-let announcementsStore = [
-  {
-    id: "ann-01",
-    title: "Official Municipal Climate Action Reporting System Active",
-    category: "System Directive",
-    priority: "High",
-    pinned: true,
-    content: "The City Environment and Natural Resources Office (CENRO) Climate Action Incident Reporting and Tracking System is officially operational. Citizens are encouraged to actively report environmental infractions and track municipal remediation.",
-    author: "Mark Kenneth Ulgasan (Super Admin)",
-    timestamp: Date.now()
-  }
-];
+let announcementsStore = [];
 
 const ANNOUNCEMENTS_FILE = path.join(__dirname, 'announcements_store.json');
 const TMP_ANNOUNCEMENTS_FILE = path.join('/tmp', 'climate_announcements_store.json');
@@ -542,32 +531,7 @@ function loadAnnouncementsFromDisk() {
 loadAnnouncementsFromDisk();
 
 // 6. User Guides (Authentic official guidelines for reporting & laws)
-let userGuidesStore = [
-  {
-    id: "guide-01",
-    title: "How to File a Verified Environmental Report",
-    icon: "",
-    category: "Reporting",
-    summary: "Step-by-step checklist to submit geotagged photos that CENRO officers can immediately action.",
-    content: "1. Log into your citizen account. 2. Select 'Report Incident' in the menu. 3. Select hazard type (Dumping, Tree Felling, Open Burning, Pollution). 4. Attach photo showing scope. 5. Provide landmark (e.g., 'Behind purok basketball court'). 6. Submit and save your Ticket ID (e.g. ECO-2026-1004)."
-  },
-  {
-    id: "guide-02",
-    title: "Understanding the 6-Stage Resolution Lifecycle",
-    icon: "",
-    category: "Tracking",
-    summary: "What happens after you hit submit? Track municipal audit milestones in real-time.",
-    content: "Stage 1: Submitted (Ticket generated) -> Stage 2: Under Review (CENRO Desk Triage) -> Stage 3: Verified (Field inspection confirmed) -> Stage 4: In Progress (Clean-up or enforcement underway) -> Stage 5: Resolved (Hazard remediated with proof) -> Stage 6: Closed (Audited by citizen & admin)."
-  },
-  {
-    id: "guide-03",
-    title: "Community Environmental Drives",
-    icon: "",
-    category: "Participation",
-    summary: "How reporting environmental violations and joining cleanups helps Metro Verde.",
-    content: "Participate in local tree-planting drives, river cleanups, and community zero-waste initiatives organized by CENRO and accredited barangay civic groups."
-  }
-];
+let userGuidesStore = [];
 
 const GUIDES_FILE = path.join(__dirname, 'guides_store.json');
 const TMP_GUIDES_FILE = path.join('/tmp', 'climate_guides_store.json');
@@ -600,38 +564,7 @@ function loadUserGuidesFromDisk() {
 loadUserGuidesFromDisk();
 
 // Community Activities Store
-let activitiesStore = [
-  {
-    id: "act-1",
-    title: "Community Watershed Tree-Planting",
-    date: "Oct 12, 2026 • 7:00 AM",
-    location: "Upper Watershed Forest Reserve",
-    category: "Reforestation",
-    target: "1,200 Hardwood Saplings",
-    registered: 0,
-    max: 150
-  },
-  {
-    id: "act-2",
-    title: "Makilas River Corridor Clean-Up",
-    date: "Oct 18, 2026 • 6:00 AM",
-    location: "Makilas River Corridor Spillway",
-    category: "River Restoration",
-    target: "500 Native Bamboo Saplings & Trash Divert",
-    registered: 0,
-    max: 100
-  },
-  {
-    id: "act-3",
-    title: "Barangay Zero-Waste & Segregation Workshop",
-    date: "Oct 25, 2026 • 9:00 AM",
-    location: "Barangay Malinis Civic Hall",
-    category: "Civic Education",
-    target: "60 Families Certified in Zero-Waste",
-    registered: 0,
-    max: 80
-  }
-];
+let activitiesStore = [];
 
 const ACTIVITIES_FILE = path.join(__dirname, 'activities_store.json');
 const TMP_ACTIVITIES_FILE = path.join('/tmp', 'climate_activities_store.json');
@@ -1516,6 +1449,10 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/activities' && req.method === 'GET') {
       loadActivitiesFromDisk();
       return sendJson(200, { activities: activitiesStore });
+    }
+
+    if (pathname === '/api/articles' && req.method === 'GET') {
+      return sendJson(200, { articles: [] }); // Initially empty for fresh publish
     }
 
     if (pathname === '/api/activities' && req.method === 'POST') {
