@@ -180,9 +180,9 @@ button, input, select, textarea, a {
   overflow: visible !important;
   width: auto !important;
   min-width: 44px !important;
-  max-width: 200px !important;
-  height: 44px !important;
-  max-height: 44px !important;
+  max-width: 220px !important;
+  height: 52px !important;
+  max-height: 52px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -193,9 +193,9 @@ button, input, select, textarea, a {
 .admin-logo-img,
 #admin-header-logo img {
   height: 100% !important;
-  max-height: 44px !important;
+  max-height: 52px !important;
   width: auto !important;
-  max-width: 200px !important;
+  max-width: 220px !important;
   object-fit: contain !important;
   display: block !important;
   background: transparent !important;

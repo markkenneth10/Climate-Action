@@ -656,9 +656,9 @@ function updateAdminHeaderLogo(config) {
  headerLogoEl.style.borderRadius = '0';
  headerLogoEl.style.overflow = 'visible';
  headerLogoEl.style.width = 'auto';
- headerLogoEl.style.maxWidth = '200px';
- headerLogoEl.style.height = '44px';
- headerLogoEl.innerHTML = `<img src="${logoUrl}" alt="Logo" class="admin-logo-img" style="height:100%!important; max-height:44px!important; width:auto!important; max-width:200px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="this.onerror=null; this.src='/assets/ic_climate_app_icon.jpg';">`;
+ headerLogoEl.style.maxWidth = '220px';
+ headerLogoEl.style.height = '52px';
+ headerLogoEl.innerHTML = `<img src="${logoUrl}" alt="Logo" class="admin-logo-img" style="height:100%!important; max-height:52px!important; width:auto!important; max-width:220px!important; object-fit:contain!important; display:block!important; margin:auto; background:transparent!important; background-image:none!important; border:none!important; border-radius:0!important; box-shadow:none!important;" onerror="this.onerror=null; this.src='/assets/ic_climate_app_icon.jpg';">`;
  } else {
  headerLogoEl.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
  headerLogoEl.classList.remove('has-image');
@@ -1534,22 +1534,16 @@ function renderKycCards() {
 
  <!-- Action Controls -->
  <div style="padding-top: 0.75rem; border-top: 1px solid #1c4228; display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
- ${!isVerified ? `
+ ${isVerified ? `
+ <button onclick="handleAdminKycReview('${item.id}', 'reverify')" class="btn-admin-outline" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; color: #60a5fa; border-color: #1e40af;">
+ Set for Re-verification
+ </button>
+ ` : `
  <button onclick="handleAdminKycReview('${item.id}', 'approve')" class="btn-admin-primary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; background: #059669; border-color: #10B981;">
  Approve & Verify
  </button>
- ` : `
- <button onclick="handleAdminKycReview('${item.id}', 'reject')" class="btn-admin-outline" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; color: #f87171; border-color: #7f1d1d;">
- Revoke Verification
- </button>
- `}
- ${!isRejected ? `
  <button onclick="handleAdminKycReview('${item.id}', 'reject')" class="btn-admin-outline" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; color: #f87171; border-color: #7f1d1d;">
  Reject
- </button>
- ` : `
- <button onclick="handleAdminKycReview('${item.id}', 'approve')" class="btn-admin-outline" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; color: #34d399; border-color: #065f46;">
- Re-approve
  </button>
  `}
  </div>

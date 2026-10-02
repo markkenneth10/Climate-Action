@@ -1645,8 +1645,13 @@ const server = http.createServer(async (req, res) => {
         user.kycReviewedAt = Date.now();
         user.kycReviewedBy = session ? session.name : 'Municipal CENRO Admin';
         user.kycRejectReason = data.reason || 'Document copy was unclear, expired, or information did not match municipal records.';
+      } else if (action === 'reverify') {
+        user.kycStatus = 'pending';
+        user.kycReviewedAt = Date.now();
+        user.kycReviewedBy = session ? session.name : 'Municipal CENRO Admin';
+        user.kycRejectReason = 'Administrative request for re-verification of citizen documents.';
       } else {
-        return sendJson(400, { error: 'Invalid action. Must be approve or reject.' });
+        return sendJson(400, { error: 'Invalid action. Must be approve, reject or reverify.' });
       }
       saveUsersToDisk();
 

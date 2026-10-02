@@ -138,20 +138,20 @@ button, input, select, textarea, a {
 }
 
 .brand-icon-box {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-  max-width: 38px;
-  min-height: 38px;
-  max-height: 38px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  max-width: 48px;
+  min-height: 48px;
+  max-height: 48px;
   background: linear-gradient(135deg, #22C55E, #16A34A);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
   flex-shrink: 0;
   overflow: hidden !important;
   box-sizing: border-box;
@@ -168,10 +168,10 @@ button, input, select, textarea, a {
   border-radius: 0 !important;
   overflow: visible !important;
   width: auto !important;
-  min-width: 38px !important;
-  max-width: 180px !important;
-  height: 38px !important;
-  max-height: 38px !important;
+  min-width: 48px !important;
+  max-width: 220px !important;
+  height: 48px !important;
+  max-height: 48px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -185,9 +185,9 @@ button, input, select, textarea, a {
 #drawer-logo-icon img,
 #footer-logo-icon img {
   height: 100% !important;
-  max-height: 38px !important;
+  max-height: 48px !important;
   width: auto !important;
-  max-width: 180px !important;
+  max-width: 220px !important;
   object-fit: contain !important;
   display: block !important;
   background: transparent !important;
@@ -2145,16 +2145,23 @@ textarea.form-control {
 }
 
 .footer-bottom-strip {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
+  width: 100%;
+  background: #064E3B; /* Deep Forest Green background */
+  color: #ECFDF5;
+  padding: 1.5rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
-  font-size: 0.78rem;
+  gap: 1.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.footer-bottom-strip div {
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 /* ==========================================================================
